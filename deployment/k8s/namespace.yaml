@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckempire
+  labels:
+    name: ckempire
+    app: ck-empire-builder 
