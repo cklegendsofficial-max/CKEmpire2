@@ -7,7 +7,7 @@ import logging
 from typing import List
 
 # Import routers
-from routers import projects, revenue, ethics, ai
+from routers import projects, revenue, ethics, ai, content
 from database import get_db, init_db
 from models import ProjectModel, RevenueModel
 from config import settings
@@ -58,6 +58,7 @@ app.include_router(projects.router, prefix="/api/v1", tags=["projects"])
 app.include_router(revenue.router, prefix="/api/v1", tags=["revenue"])
 app.include_router(ethics.router, prefix="/api/v1", tags=["ethics"])
 app.include_router(ai.router, prefix="/api/v1", tags=["ai"])
+app.include_router(content.router, prefix="/api/v1", tags=["content"])
 
 @app.get("/")
 async def root():

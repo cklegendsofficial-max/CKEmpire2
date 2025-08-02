@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -9,6 +9,22 @@ class ProjectStatus(str, Enum):
     INACTIVE = "inactive"
     COMPLETED = "completed"
     ON_HOLD = "on_hold"
+
+class ContentType(str, Enum):
+    """Content type enum"""
+    BLOG = "blog"
+    VIDEO = "video"
+    SOCIAL = "social"
+    EMAIL = "email"
+    ARTICLE = "article"
+    PODCAST = "podcast"
+
+class ContentStatus(str, Enum):
+    """Content status enum"""
+    DRAFT = "draft"
+    REVIEW = "review"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
 
 class RiskLevel(str, Enum):
     """Risk level enum"""
@@ -26,6 +42,16 @@ class ProjectBase(BaseModel):
     budget: float = Field(0.0, ge=0, description="Project budget")
     revenue: float = Field(0.0, ge=0, description="Project revenue")
 
+class ContentBase(BaseModel):
+    """Base content model"""
+    project_id: int = Field(..., gt=0, description="Project ID")
+    title: str = Field(..., min_length=1, max_length=255, description="Content title")
+    content_type: ContentType = Field(..., description="Content type")
+    content_data: str = Field(..., min_length=1, description="Content data")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    status: ContentStatus = Field(ContentStatus.DRAFT, description="Content status")
+    ai_generated: bool = Field(False, description="Whether content was AI generated")
+
 class RevenueBase(BaseModel):
     """Base revenue model"""
     project_id: int = Field(..., gt=0, description="Project ID")
@@ -36,6 +62,10 @@ class RevenueBase(BaseModel):
 # Create Models
 class ProjectCreate(ProjectBase):
     """Create project model"""
+    pass
+
+class ContentCreate(ContentBase):
+    """Create content model"""
     pass
 
 class RevenueCreate(RevenueBase):
@@ -51,6 +81,15 @@ class ProjectUpdate(BaseModel):
     budget: Optional[float] = Field(None, ge=0)
     revenue: Optional[float] = Field(None, ge=0)
 
+class ContentUpdate(BaseModel):
+    """Update content model"""
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    content_type: Optional[ContentType] = None
+    content_data: Optional[str] = Field(None, min_length=1)
+    metadata: Optional[Dict[str, Any]] = None
+    status: Optional[ContentStatus] = None
+    ai_generated: Optional[bool] = None
+
 class RevenueUpdate(BaseModel):
     """Update revenue model"""
     amount: Optional[float] = Field(None, gt=0)
@@ -64,6 +103,19 @@ class ProjectModel(ProjectBase):
     created_at: datetime
     updated_at: datetime
     is_active: bool
+    
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+class ContentResponse(ContentBase):
+    """Content response model"""
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    published_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -87,6 +139,13 @@ class RevenueModel(RevenueBase):
 class ProjectList(BaseModel):
     """Project list response"""
     projects: List[ProjectModel]
+    total: int
+    page: int
+    limit: int
+
+class ContentList(BaseModel):
+    """Content list response"""
+    content: List[ContentResponse]
     total: int
     page: int
     limit: int
@@ -148,6 +207,20 @@ def validate_project_name(cls, v):
     """Validate project name"""
     if not v.strip():
         raise ValueError('Project name cannot be empty')
+    return v.strip()
+
+@validator('title')
+def validate_content_title(cls, v):
+    """Validate content title"""
+    if not v.strip():
+        raise ValueError('Content title cannot be empty')
+    return v.strip()
+
+@validator('content_data')
+def validate_content_data(cls, v):
+    """Validate content data"""
+    if not v.strip():
+        raise ValueError('Content data cannot be empty')
     return v.strip()
 
 @validator('amount')
