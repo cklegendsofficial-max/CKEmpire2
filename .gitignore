@@ -101,6 +101,9 @@ celerybeat.pid
 # CKEmpireMobile - React Native app
 CKEmpireMobile/
 
+# Backup files
+backups/
+
 # Environments
 .env
 .venv
