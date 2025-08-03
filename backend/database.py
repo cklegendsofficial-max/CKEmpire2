@@ -178,6 +178,40 @@ class AILog(Base):
     def __repr__(self):
         return f"<AILog(id={self.id}, model='{self.model}', tokens={self.tokens_used})>"
 
+class User(Base):
+    """User model"""
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    full_name = Column(String(255), nullable=False)
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', name='{self.full_name}')>"
+
+class Subscription(Base):
+    """Subscription model"""
+    __tablename__ = "subscriptions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    stripe_subscription_id = Column(String(255), unique=True, nullable=False, index=True)
+    tier = Column(String(50), nullable=False)  # freemium, premium, enterprise
+    billing_cycle = Column(String(20), nullable=False)  # monthly, yearly
+    status = Column(String(50), nullable=False)  # active, inactive, trialing, past_due, canceled
+    current_period_start = Column(DateTime, nullable=False)
+    current_period_end = Column(DateTime, nullable=False)
+    cancel_at_period_end = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<Subscription(id={self.id}, user_id={self.user_id}, tier='{self.tier}', status='{self.status}')>"
+
 # SQLAlchemy event listeners for encryption and audit logging
 @event.listens_for(Project, 'before_insert')
 def encrypt_project_metadata(mapper, connection, target):

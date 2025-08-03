@@ -2,7 +2,7 @@
 Test router for generating sample errors and testing monitoring.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import random
@@ -20,7 +20,7 @@ router = APIRouter()
     description="Generate a sample error for testing Sentry integration"
 )
 @limiter.limit("5/minute")
-async def generate_test_error():
+async def generate_test_error(request: Request):
     """Generate a test error for monitoring testing"""
     monitoring = get_monitoring()
     
@@ -58,7 +58,7 @@ async def generate_test_error():
     description="Generate sample metrics for testing monitoring"
 )
 @limiter.limit("10/minute")
-async def generate_test_metrics():
+async def generate_test_metrics(request: Request):
     """Generate test metrics for monitoring testing"""
     monitoring = get_monitoring()
     
@@ -108,7 +108,7 @@ async def generate_test_metrics():
     description="Generate performance test scenarios"
 )
 @limiter.limit("5/minute")
-async def test_performance():
+async def test_performance(request: Request):
     """Test performance monitoring with various scenarios"""
     monitoring = get_monitoring()
     
@@ -159,7 +159,7 @@ async def test_health():
     description="Generate various types of logs for testing"
 )
 @limiter.limit("10/minute")
-async def generate_test_logs():
+async def generate_test_logs(request: Request):
     """Generate test logs for ELK stack testing"""
     monitoring = get_monitoring()
     

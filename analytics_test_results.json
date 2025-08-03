@@ -1,0 +1,68 @@
+{
+  "total_tests": 13,
+  "passed": 1,
+  "failed": 0,
+  "errors": 12,
+  "success_rate": 7.6923076923076925,
+  "results": {
+    "Analytics Health Check": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002110572FB60>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Track User Metrics": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/track (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021105829950>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get User Metrics": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/track (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021105829E50>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get All User Metrics": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211057C1F30>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Run A/B Test": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/ab-test (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211057C22C0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get All A/B Tests": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/ab-tests (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211057E6690>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Generate Analytics Report": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/report (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211057A3BD0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get All Analytics Reports": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/reports (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021105850050>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "GA Integration": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/ga-integration (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021105850270>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Make Data-Driven Decision": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211058505A0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get Analytics Dashboard": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/dashboard (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000211058508D0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get Analytics Metrics": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/analytics/metrics-summary (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000021105850AF0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Analytics Manager Direct": {
+      "status": "passed",
+      "data": {
+        "user_metric_tracked": "test_user_20250803_180657",
+        "ab_test_winner": "B",
+        "report_total_users": 1,
+        "decision_category": "pricing",
+        "dashboard_status": "retrieved"
+      }
+    }
+  },
+  "timestamp": "2025-08-03T18:06:57.753428"
+}

@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ckempire-loadbalancer
+  namespace: ckempire
+  labels:
+    app: ckempire
+    region: multi-region
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "80"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "30"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 443
+    protocol: TCP
+  selector:
+    app: ckempire-frontend
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ckempire-multi-region-ingress
+  namespace: ckempire
+  labels:
+    app: ckempire
+    region: multi-region
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: "/health"
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP"
+    alb.ingress.kubernetes.io/success-codes: "200,302"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/timeout-seconds: "5"
+    alb.ingress.kubernetes.io/interval-seconds: "30"
+    alb.ingress.kubernetes.io/load-balancer-attributes: "idle_timeout.timeout_seconds=60"
+    alb.ingress.kubernetes.io/tags: "Environment=production,Project=ckempire"
+    alb.ingress.kubernetes.io/group.name: "ckempire"
+    alb.ingress.kubernetes.io/group.order: "1"
+spec:
+  rules:
+  - host: ckempire.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ckempire-frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: ckempire-backend
+            port:
+              number: 8000
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: ckempire-backend
+            port:
+              number: 8000
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: ckempire-backend
+            port:
+              number: 8000
+  tls:
+  - hosts:
+    - ckempire.com
+    secretName: ckempire-tls-secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ckempire-multi-region-config
+  namespace: ckempire
+  labels:
+    app: ckempire
+    region: multi-region
+data:
+  regions: |
+    us-east-1:
+      endpoint: "https://ckempire-us-east-1.ckempire.com"
+      weight: 40
+    eu-west-1:
+      endpoint: "https://ckempire-eu-west-1.ckempire.com"
+      weight: 30
+    ap-southeast-1:
+      endpoint: "https://ckempire-ap-southeast-1.ckempire.com"
+      weight: 20
+    us-west-2:
+      endpoint: "https://ckempire-us-west-2.ckempire.com"
+      weight: 10
+  load-balancing-strategy: |
+    {
+      "strategy": "weighted-round-robin",
+      "health-check": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5,
+        "healthy-threshold": 2,
+        "unhealthy-threshold": 2
+      },
+      "session-affinity": true,
+      "session-timeout": 10800
+    } 

@@ -1,307 +1,369 @@
-from fastapi import APIRouter, Depends, HTTPException
+"""
+Enhanced Ethics Router
+Handles bias detection, correction, and ethical reporting
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import logging
-from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+import pandas as pd
+import numpy as np
 
-from database import get_db, EthicsLog
-from models import EthicsRequest, EthicsResponse, SuccessResponse
-from ethics import EthicsModule, BiasType, ContentStatus
+from database import get_db
+from models import (
+    BiasDetectionRequest, BiasDetectionResponse, BiasCorrectionRequest,
+    BiasCorrectionResponse, EthicalReportResponse, EthicsDashboardResponse,
+    BiasMetricsResponse, CorrectionMethod, BiasType
+)
+try:
+    from ..ethics import ethics_manager
+    from ..models import (
+        BiasDetectionRequest,
+        BiasDetectionResponse,
+        BiasCorrectionRequest,
+        BiasCorrectionResponse,
+        EthicalReportResponse,
+        EthicsDashboardResponse
+    )
+except ImportError:
+    ethics_manager = None
+    BiasDetectionRequest = None
+    BiasDetectionResponse = None
+    BiasCorrectionRequest = None
+    BiasCorrectionResponse = None
+    EthicalReportResponse = None
+    EthicsDashboardResponse = None
 
-# Configure logging
-logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/ethics", tags=["ethics"])
 
-# Create router
-router = APIRouter()
-
-# Initialize ethics module
-ethics_module = EthicsModule()
-
-@router.post("/ethics/check", response_model=EthicsResponse)
-async def check_ethics(
-    request: EthicsRequest,
+@router.post("/detect-bias", response_model=BiasDetectionResponse)
+async def detect_bias(
+    request: BiasDetectionRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Check content for ethical concerns and bias using AIF360
+    Detect bias in dataset using AIF360
     
-    - **content**: Content to analyze
-    - **content_id**: Optional content ID for tracking
-    - **user_id**: User ID (optional)
+    Args:
+        request: Bias detection request with data and parameters
+        db: Database session
+        
+    Returns:
+        Bias detection results
     """
     try:
-        logger.info(f"Starting ethics analysis for content: {request.content[:100]}...")
+        # Convert request data to DataFrame
+        data = pd.DataFrame(request.data)
         
-        # Analyze content using EthicsModule
-        report = ethics_module.analyze_content_ethical(
-            content_data=request.content,
-            content_id=request.content_id
+        # Detect bias
+        bias_metrics = ethics_manager.detect_bias(
+            data=data,
+            protected_attributes=request.protected_attributes,
+            target_column=request.target_column,
+            privileged_groups=request.privileged_groups
         )
         
-        # Convert report to response format
-        response = EthicsResponse(
-            bias_score=report.bias_metrics.bias_score,
-            fairness_score=report.bias_metrics.fairness_score,
+        # Convert to response format
+        metrics_responses = []
+        for metric in bias_metrics:
+            metrics_responses.append(BiasMetricsResponse(
+                statistical_parity_difference=metric.statistical_parity_difference,
+                equal_opportunity_difference=metric.equal_opportunity_difference,
+                average_odds_difference=metric.average_odds_difference,
+                theil_index=metric.theil_index,
+                overall_bias_score=metric.overall_bias_score,
+                bias_type=metric.bias_type.value,
+                protected_attribute=metric.protected_attribute,
+                privileged_group=metric.privileged_group,
+                unprivileged_group=metric.unprivileged_group
+            ))
+        
+        return BiasDetectionResponse(
+            bias_detected=any(metric.overall_bias_score > 0.1 for metric in bias_metrics),
+            bias_metrics=metrics_responses,
+            total_metrics=len(bias_metrics),
+            detection_timestamp=ethics_manager.bias_reports[-1].generated_at if ethics_manager.bias_reports else None
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bias detection failed: {str(e)}"
+        )
+
+@router.post("/correct-bias", response_model=BiasCorrectionResponse)
+async def correct_bias(
+    request: BiasCorrectionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Apply bias correction using AIF360
+    
+    Args:
+        request: Bias correction request
+        db: Database session
+        
+    Returns:
+        Bias correction results
+    """
+    try:
+        # Convert request data to DataFrame
+        data = pd.DataFrame(request.data)
+        
+        # Apply bias correction
+        corrected_data, correction_info = ethics_manager.apply_bias_correction(
+            data=data,
+            protected_attributes=request.protected_attributes,
+            target_column=request.target_column,
+            privileged_groups=request.privileged_groups,
+            method=EthicsCorrectionMethod(request.correction_method.value)
+        )
+        
+        return BiasCorrectionResponse(
+            correction_successful=correction_info.get('correction_successful', False),
+            method=request.correction_method.value,
+            original_bias=correction_info.get('original_bias', 0.0),
+            corrected_bias=correction_info.get('corrected_bias', 0.0),
+            bias_reduction=correction_info.get('bias_reduction', 0.0),
+            protected_attribute=correction_info.get('protected_attribute', ''),
+            weights_applied=correction_info.get('weights_applied', False),
+            corrected_data=corrected_data.to_dict('records') if isinstance(corrected_data, pd.DataFrame) else [],
+            correction_info=correction_info
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bias correction failed: {str(e)}"
+        )
+
+@router.post("/report", response_model=EthicalReportResponse)
+async def generate_ethical_report(
+    request: BiasDetectionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate comprehensive ethical analysis report
+    
+    Args:
+        request: Report generation request
+        db: Database session
+        
+    Returns:
+        Comprehensive ethical report
+    """
+    try:
+        # Convert request data to DataFrame
+        data = pd.DataFrame(request.data)
+        
+        # Generate ethical report
+        report = ethics_manager.generate_ethical_report(
+            data=data,
+            protected_attributes=request.protected_attributes,
+            target_column=request.target_column,
+            privileged_groups=request.privileged_groups
+        )
+        
+        # Convert bias metrics to response format
+        metrics_responses = []
+        for metric in report.bias_metrics:
+            metrics_responses.append(BiasMetricsResponse(
+                statistical_parity_difference=metric.statistical_parity_difference,
+                equal_opportunity_difference=metric.equal_opportunity_difference,
+                average_odds_difference=metric.average_odds_difference,
+                theil_index=metric.theil_index,
+                overall_bias_score=metric.overall_bias_score,
+                bias_type=metric.bias_type.value,
+                protected_attribute=metric.protected_attribute,
+                privileged_group=metric.privileged_group,
+                unprivileged_group=metric.unprivileged_group
+            ))
+        
+        return EthicalReportResponse(
+            bias_metrics=metrics_responses,
+            overall_ethical_score=report.overall_ethical_score,
             bias_detected=report.bias_detected,
-            bias_types=[bt.value for bt in report.bias_types],
-            content_status=report.content_status.value,
+            correction_applied=report.correction_applied,
+            correction_method=report.correction_method.value if report.correction_method else None,
             recommendations=report.recommendations,
-            confidence_score=report.confidence_score,
-            flagged_keywords=report.flagged_keywords,
-            sensitive_topics=report.sensitive_topics,
-            analysis_timestamp=report.analysis_timestamp,
-            is_approved=report.content_status == ContentStatus.APPROVED
+            compliance_status=report.compliance_status,
+            risk_level=report.risk_level,
+            generated_at=report.generated_at,
+            should_stop_evolution=ethics_manager.should_stop_evolution(report.overall_ethical_score)
         )
         
-        logger.info(f"✅ Ethics analysis completed: bias_score={report.bias_metrics.bias_score}, status={report.content_status}")
-        
-        return response
-        
     except Exception as e:
-        logger.error(f"❌ Ethics analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to perform ethics analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ethical report generation failed: {str(e)}"
+        )
 
-@router.get("/ethics/logs")
-async def get_ethics_logs(
-    skip: int = 0,
-    limit: int = 100,
-    bias_detected: bool = None,
-    status: str = None,
+@router.get("/dashboard", response_model=EthicsDashboardResponse)
+async def get_ethics_dashboard(
     db: Session = Depends(get_db)
 ):
     """
-    Get ethics monitoring logs
+    Get ethics dashboard data
     
-    - **skip**: Number of logs to skip
-    - **limit**: Number of logs to return
-    - **bias_detected**: Filter by bias detection
-    - **status**: Filter by content status
+    Args:
+        db: Database session
+        
+    Returns:
+        Dashboard data for ethics monitoring
     """
     try:
-        query = db.query(EthicsLog)
+        dashboard_data = ethics_manager.get_ethical_dashboard_data()
         
-        if bias_detected is not None:
-            query = query.filter(EthicsLog.bias_detected == bias_detected)
-        
-        if status:
-            query = query.filter(EthicsLog.status == status)
-        
-        logs = query.offset(skip).limit(limit).all()
-        
-        return {
-            "logs": [
-                {
-                    "id": log.id,
-                    "content_id": log.content_id,
-                    "bias_detected": log.bias_detected,
-                    "bias_score": log.bias_score,
-                    "fairness_score": log.fairness_score,
-                    "bias_types": log.bias_types,
-                    "status": log.status,
-                    "recommendations": log.recommendations,
-                    "confidence_score": log.confidence_score,
-                    "analysis_timestamp": log.analysis_timestamp.isoformat(),
-                    "user_id": log.user_id
-                }
-                for log in logs
-            ],
-            "total": query.count(),
-            "page": skip // limit + 1,
-            "limit": limit
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to get ethics logs: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get ethics logs")
-
-@router.get("/ethics/stats")
-async def get_ethics_stats(db: Session = Depends(get_db)):
-    """
-    Get ethics monitoring statistics
-    """
-    try:
-        # Get summary from ethics module
-        summary = ethics_module.get_ethics_summary()
-        
-        # Get additional stats from database
-        total_analyses = db.query(EthicsLog).count()
-        flagged_content = db.query(EthicsLog).filter(
-            EthicsLog.bias_detected == True
-        ).count()
-        
-        # Get status distribution
-        status_counts = db.query(EthicsLog.status, db.func.count(EthicsLog.id)).group_by(
-            EthicsLog.status
-        ).all()
-        
-        # Get average bias and fairness scores
-        avg_bias_score = db.query(db.func.avg(EthicsLog.bias_score)).scalar() or 0.0
-        avg_fairness_score = db.query(db.func.avg(EthicsLog.fairness_score)).scalar() or 0.0
-        
-        return {
-            "total_analyses": total_analyses,
-            "flagged_content": flagged_content,
-            "flag_rate": flagged_content / total_analyses if total_analyses > 0 else 0,
-            "average_bias_score": round(avg_bias_score, 3),
-            "average_fairness_score": round(avg_fairness_score, 3),
-            "status_distribution": {
-                status: count for status, count in status_counts
-            },
-            "module_summary": summary
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to get ethics stats: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get ethics stats")
-
-@router.get("/ethics/summary")
-async def get_ethics_summary():
-    """
-    Get comprehensive ethics analysis summary
-    """
-    try:
-        summary = ethics_module.get_ethics_summary()
-        
-        return {
-            "summary": summary,
-            "bias_types": [bt.value for bt in BiasType],
-            "content_statuses": [cs.value for cs in ContentStatus],
-            "module_info": {
-                "name": "AIF360 Ethics Module",
-                "version": "1.0.0",
-                "features": [
-                    "Statistical Parity Difference",
-                    "Equalized Odds Difference", 
-                    "Average Odds Difference",
-                    "Theil Index",
-                    "Keyword-based detection",
-                    "Content status classification",
-                    "Recommendation generation"
-                ]
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to get ethics summary: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get ethics summary")
-
-@router.post("/ethics/configure")
-async def configure_ethics(
-    bias_threshold: float = None,
-    fairness_threshold: float = None
-):
-    """
-    Configure ethics monitoring settings
-    
-    - **bias_threshold**: Bias detection threshold (0-1)
-    - **fairness_threshold**: Minimum fairness score (0-1)
-    """
-    try:
-        if bias_threshold is not None:
-            if not 0 <= bias_threshold <= 1:
-                raise HTTPException(status_code=400, detail="Bias threshold must be between 0 and 1")
-            ethics_module.bias_threshold = bias_threshold
-        
-        if fairness_threshold is not None:
-            if not 0 <= fairness_threshold <= 1:
-                raise HTTPException(status_code=400, detail="Fairness threshold must be between 0 and 1")
-            ethics_module.fairness_threshold = fairness_threshold
-        
-        logger.info(f"✅ Ethics configuration updated: bias_threshold={ethics_module.bias_threshold}, fairness_threshold={ethics_module.fairness_threshold}")
-        
-        return SuccessResponse(
-            message="Ethics configuration updated successfully",
-            data={
-                "bias_threshold": ethics_module.bias_threshold,
-                "fairness_threshold": ethics_module.fairness_threshold
-            }
+        return EthicsDashboardResponse(
+            overall_ethical_score=dashboard_data['overall_ethical_score'],
+            bias_detection_rate=dashboard_data['bias_detection_rate'],
+            correction_success_rate=dashboard_data['correction_success_rate'],
+            avg_bias_reduction=dashboard_data['avg_bias_reduction'],
+            compliance_rate=dashboard_data['compliance_rate'],
+            risk_level_distribution=dashboard_data['risk_level_distribution'],
+            bias_types_detected=dashboard_data['bias_types_detected'],
+            correction_methods_used=dashboard_data['correction_methods_used'],
+            total_corrections=dashboard_data['total_corrections'],
+            total_reports=dashboard_data['total_reports'],
+            last_updated=datetime.utcnow()
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"❌ Failed to configure ethics: {e}")
-        raise HTTPException(status_code=500, detail="Failed to configure ethics")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get dashboard data: {str(e)}"
+        )
 
-@router.post("/ethics/analyze-batch")
-async def analyze_batch_ethics(
-    contents: List[str],
+@router.get("/bias-types")
+async def get_bias_types():
+    """
+    Get available bias types
+    
+    Returns:
+        List of available bias types
+    """
+    return {
+        "bias_types": [
+            {"value": bias_type.value, "label": bias_type.value.replace('_', ' ').title()}
+            for bias_type in BiasType
+        ]
+    }
+
+@router.get("/correction-methods")
+async def get_correction_methods():
+    """
+    Get available correction methods
+    
+    Returns:
+        List of available correction methods
+    """
+    return {
+        "correction_methods": [
+            {"value": method.value, "label": method.value.replace('_', ' ').title()}
+            for method in CorrectionMethod
+        ]
+    }
+
+@router.get("/compliance-status")
+async def get_compliance_status(
+    ethical_score: float = 0.8,
     db: Session = Depends(get_db)
 ):
     """
-    Analyze multiple content items for ethics
+    Check compliance status based on ethical score
     
-    - **contents**: List of content strings to analyze
+    Args:
+        ethical_score: Current ethical score
+        db: Database session
+        
+    Returns:
+        Compliance status information
     """
     try:
-        results = []
-        
-        for i, content in enumerate(contents):
-            try:
-                report = ethics_module.analyze_content_ethical(
-                    content_data=content,
-                    content_id=i + 1  # Use index as content_id
-                )
-                
-                results.append({
-                    "content_id": i + 1,
-                    "bias_detected": report.bias_detected,
-                    "bias_score": report.bias_metrics.bias_score,
-                    "fairness_score": report.bias_metrics.fairness_score,
-                    "content_status": report.content_status.value,
-                    "bias_types": [bt.value for bt in report.bias_types],
-                    "flagged_keywords": report.flagged_keywords,
-                    "sensitive_topics": report.sensitive_topics
-                })
-                
-            except Exception as e:
-                logger.error(f"Error analyzing content {i}: {e}")
-                results.append({
-                    "content_id": i + 1,
-                    "error": str(e),
-                    "bias_detected": False,
-                    "bias_score": 0.0,
-                    "fairness_score": 1.0,
-                    "content_status": "needs_review"
-                })
+        should_stop = ethics_manager.should_stop_evolution(ethical_score)
         
         return {
-            "total_analyzed": len(contents),
-            "successful_analyses": len([r for r in results if "error" not in r]),
-            "failed_analyses": len([r for r in results if "error" in r]),
-            "results": results
+            "ethical_score": ethical_score,
+            "compliance_status": "compliant" if ethical_score >= 0.8 else "partial_compliance" if ethical_score >= 0.6 else "non_compliant",
+            "risk_level": "low" if ethical_score >= 0.8 else "medium" if ethical_score >= 0.6 else "high",
+            "should_stop_evolution": should_stop,
+            "threshold": ethics_manager.ethical_score_threshold,
+            "recommendations": ethics_manager._generate_recommendations([], ethical_score, False)
         }
         
     except Exception as e:
-        logger.error(f"❌ Batch ethics analysis failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to perform batch ethics analysis")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check compliance status: {str(e)}"
+        )
 
-@router.get("/ethics/health")
-async def ethics_health_check():
+@router.get("/test-bias-correction")
+async def test_bias_correction():
     """
-    Health check for ethics module
+    Test bias correction with sample biased data
+    
+    Returns:
+        Test results for bias correction
     """
     try:
-        # Test basic functionality
-        test_content = "This is a test content for health check."
-        report = ethics_module.analyze_content_ethical(test_content)
+        # Create sample biased data
+        np.random.seed(42)
+        n_samples = 1000
+        
+        # Create biased dataset where gender affects outcome
+        gender = np.random.choice([0, 1], n_samples, p=[0.6, 0.4])  # More females
+        feature = np.random.normal(0, 1, n_samples)
+        
+        # Biased outcome: males more likely to get positive outcome
+        outcome = np.where(
+            (gender == 1) & (feature > -0.5) | (gender == 0) & (feature > 0.5),
+            1, 0
+        )
+        
+        data = pd.DataFrame({
+            'gender': gender,
+            'feature': feature,
+            'outcome': outcome
+        })
+        
+        # Test bias detection
+        bias_metrics = ethics_manager.detect_bias(
+            data=data,
+            protected_attributes=['gender'],
+            target_column='outcome',
+            privileged_groups=[{'privileged_value': 1, 'unprivileged_value': 0}]
+        )
+        
+        # Test bias correction
+        corrected_data, correction_info = ethics_manager.apply_bias_correction(
+            data=data,
+            protected_attributes=['gender'],
+            target_column='outcome',
+            privileged_groups=[{'privileged_value': 1, 'unprivileged_value': 0}]
+        )
+        
+        # Generate report
+        report = ethics_manager.generate_ethical_report(
+            data=data,
+            protected_attributes=['gender'],
+            target_column='outcome',
+            privileged_groups=[{'privileged_value': 1, 'unprivileged_value': 0}]
+        )
         
         return {
-            "status": "healthy",
-            "module": "AIF360 Ethics Module",
-            "test_analysis": {
-                "bias_detected": report.bias_detected,
-                "bias_score": report.bias_metrics.bias_score,
-                "fairness_score": report.bias_metrics.fairness_score,
-                "content_status": report.content_status.value
-            },
-            "timestamp": datetime.utcnow().isoformat()
+            "test_successful": True,
+            "original_bias_detected": len([m for m in bias_metrics if m.overall_bias_score > 0.1]),
+            "correction_applied": correction_info.get('correction_successful', False),
+            "bias_reduction": correction_info.get('bias_reduction', 0.0),
+            "ethical_score": report.overall_ethical_score,
+            "should_stop_evolution": ethics_manager.should_stop_evolution(report.overall_ethical_score),
+            "sample_size": len(data),
+            "bias_type": "gender",
+            "test_timestamp": datetime.utcnow()
         }
         
     except Exception as e:
-        logger.error(f"❌ Ethics health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        } 
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bias correction test failed: {str(e)}"
+        ) 

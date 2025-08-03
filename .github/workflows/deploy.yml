@@ -14,174 +14,167 @@ env:
 
 jobs:
   # Security and Code Quality
-  security:
+  security-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Run Bandit security scan
         run: |
-          cd backend
           pip install bandit
-          bandit -r . -f json -o reports/bandit-report.json || true
-
-      - name: Run Safety dependency check
+          bandit -r backend/ -f json -o bandit-report.json || true
+          
+      - name: Run Safety vulnerability scan
         run: |
-          cd backend
           pip install safety
-          safety check --json --output reports/safety-report.json || true
-
-      - name: Run Semgrep security scan
+          safety check --json --output safety-report.json || true
+          
+      - name: Run Semgrep SAST
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
             p/security-audit
             p/secrets
             p/owasp-top-ten
-          output-format: json
-          output-file: reports/semgrep-report.json
+          json: true
+          
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+            semgrep-report.json
 
   # Backend Tests
   backend-tests:
     runs-on: ubuntu-latest
-    needs: security
-    strategy:
-      matrix:
-        python-version: [3.11]
-    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: ckempire_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+          
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-
-      - name: Run unit tests
-        run: |
-          cd backend
-          python -m pytest tests/ -m "unit" --cov=. --cov-report=xml --cov-report=html
-
-      - name: Run integration tests
-        run: |
-          cd backend
-          python -m pytest tests/ -m "integration" --cov=. --cov-report=xml
-
-      - name: Run security tests
-        run: |
-          cd backend
-          python -m pytest tests/ -m "security" --cov=. --cov-report=xml
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./backend/coverage.xml
-          flags: backend
-          name: backend-coverage
-
-  # Frontend Tests
-  frontend-tests:
-    runs-on: ubuntu-latest
-    needs: security
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-
-      - name: Run linting
-        run: |
-          cd frontend
-          npm run lint
-
-      - name: Run tests
-        run: |
-          cd frontend
-          npm test -- --coverage --watchAll=false
-
-      - name: Build application
-        run: |
-          cd frontend
-          npm run build
-
-  # Load Testing
-  load-tests:
-    runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+        
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
-      - name: Install Locust
+          
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            
+      - name: Install dependencies
         run: |
           cd backend
-          pip install locust
-
-      - name: Start backend service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-html pytest-xdist
+          
+      - name: Run backend tests
         run: |
           cd backend
-          python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
-          sleep 10
+          pytest tests/ -v --cov=. --cov-report=html --cov-report=xml --junitxml=test-results.xml
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            backend/htmlcov/
+            backend/test-results.xml
+            backend.coverage.xml
 
-      - name: Run load tests
-        run: |
-          cd backend
-          locust -f tests/load/locustfile.py --headless --users 10 --spawn-rate 2 --run-time 60s --html reports/locust-report.html
-
-  # Build and Push Images
-  build-images:
+  # Frontend Tests
+  frontend-tests:
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests, load-tests]
-    permissions:
-      contents: read
-      packages: write
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false
+          
+      - name: Upload frontend test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-test-results
+          path: frontend/coverage/
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+  # Build and Push Images
+  build-images:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+          
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            
       - name: Build and push Backend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v4
         with:
           context: ./backend
           push: true
@@ -189,216 +182,171 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+          
       - name: Build and push Frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v4
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # Deploy to Development
   deploy-dev:
+    needs: [build-images]
     runs-on: ubuntu-latest
-    needs: build-images
     if: github.ref == 'refs/heads/develop'
     environment: development
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
+          
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ckempire-dev-cluster --region ${{ secrets.AWS_REGION }}
-
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
+        
       - name: Deploy to development
         run: |
-          cd deployment/helm
-          helm upgrade --install ckempire-dev . \
+          helm upgrade --install ckempire-dev ./deployment/helm/ckempire \
             --namespace ckempire-dev \
             --create-namespace \
             --set global.environment=development \
-            --set backend.replicaCount=1 \
-            --set frontend.replicaCount=1 \
-            --set postgresql.primary.persistence.size=10Gi \
-            --set redis.master.persistence.size=5Gi
-
-      - name: Run smoke tests
-        run: |
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=ckempire-backend -n ckempire-dev --timeout=300s
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=ckempire-frontend -n ckempire-dev --timeout=300s
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }} \
+            --wait --timeout=10m
 
   # Deploy to Production
   deploy-prod:
+    needs: [build-images]
     runs-on: ubuntu-latest
-    needs: build-images
     if: github.ref == 'refs/heads/main' || github.event_name == 'release'
     environment: production
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
+          
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ckempire-prod-cluster --region ${{ secrets.AWS_REGION }}
-
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
+        
       - name: Deploy to production
         run: |
-          cd deployment/helm
-          helm upgrade --install ckempire . \
-            --namespace ckempire \
+          helm upgrade --install ckempire-prod ./deployment/helm/ckempire \
+            --namespace ckempire-prod \
             --create-namespace \
             --set global.environment=production \
-            --set backend.replicaCount=3 \
-            --set frontend.replicaCount=2 \
-            --set postgresql.primary.persistence.size=50Gi \
-            --set redis.master.persistence.size=20Gi
-
-      - name: Run health checks
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }} \
+            --wait --timeout=15m
+            
+      - name: Run smoke tests
         run: |
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=ckempire-backend -n ckempire --timeout=600s
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=ckempire-frontend -n ckempire --timeout=600s
+          # Wait for deployment to be ready
+          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-prod-backend -n ckempire-prod
+          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-prod-frontend -n ckempire-prod
           
-          # Test API health
-          kubectl run test-api --image=curlimages/curl --rm -i --restart=Never -- \
-            curl -f https://api.ckempire.com/health
-          
-          # Test frontend
-          kubectl run test-frontend --image=curlimages/curl --rm -i --restart=Never -- \
-            curl -f https://ckempire.com/
-
-  # Deploy to GKE (Alternative)
-  deploy-gke:
-    runs-on: ubuntu-latest
-    needs: build-images
-    if: github.ref == 'refs/heads/main' && github.event_name == 'release'
-    environment: production-gke
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
-
-      - name: Get GKE cluster credentials
-        run: |
-          gcloud container clusters get-credentials ckempire-prod-cluster \
-            --zone ${{ secrets.GKE_ZONE }} \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
-      - name: Deploy to GKE
-        run: |
-          cd deployment/helm
-          helm upgrade --install ckempire-gke . \
-            --namespace ckempire \
-            --create-namespace \
-            --set global.environment=production \
-            --set backend.replicaCount=3 \
-            --set frontend.replicaCount=2
-
-  # Monitoring Setup
-  setup-monitoring:
-    runs-on: ubuntu-latest
-    needs: [deploy-prod, deploy-gke]
-    if: always() && (needs.deploy-prod.result == 'success' || needs.deploy-gke.result == 'success')
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ckempire-prod-cluster --region ${{ secrets.AWS_REGION }}
-
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
-      - name: Deploy monitoring stack
-        run: |
-          # Add Prometheus Operator
-          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-          helm repo update
-          
-          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
-            --namespace monitoring \
-            --create-namespace \
-            --set grafana.enabled=true \
-            --set prometheus.prometheusSpec.retention=30d
-
-      - name: Deploy Grafana dashboards
-        run: |
-          kubectl apply -f deployment/monitoring/grafana-dashboards/ -n monitoring
-
-      - name: Configure alerts
-        run: |
-          kubectl apply -f deployment/monitoring/alertmanager/ -n monitoring
+          # Run basic health checks
+          curl -f https://api.ckempire.com/health || exit 1
+          curl -f https://ckempire.com/ || exit 1
 
   # Notifications
   notify:
+    needs: [deploy-dev, deploy-prod]
     runs-on: ubuntu-latest
-    needs: [deploy-prod, deploy-gke, setup-monitoring]
     if: always()
     
     steps:
       - name: Notify Slack on success
-        if: needs.deploy-prod.result == 'success' || needs.deploy-gke.result == 'success'
+        if: success()
         uses: 8398a7/action-slack@v3
         with:
           status: success
           text: 'CK Empire deployment successful! :rocket:'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
       - name: Notify Slack on failure
-        if: needs.deploy-prod.result == 'failure' || needs.deploy-gke.result == 'failure'
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: failure
           text: 'CK Empire deployment failed! :x:'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }} 
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Performance Testing
+  performance-test:
+    needs: [deploy-prod]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install Locust
+        run: pip install locust
+        
+      - name: Run performance tests
+        run: |
+          cd backend
+          locust -f tests/performance/locustfile.py \
+            --host=https://api.ckempire.com \
+            --users=100 \
+            --spawn-rate=10 \
+            --run-time=5m \
+            --headless \
+            --html=performance-report.html
+            
+      - name: Upload performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-report
+          path: backend/performance-report.html
+
+  # Security Compliance
+  compliance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif' 

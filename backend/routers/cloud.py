@@ -4,10 +4,25 @@ from pydantic import BaseModel
 from datetime import datetime
 import logging
 
-from ..cloud.backup_service import backup_service
-from ..cloud.aws_manager import AWSManager
-from ..config.cloud_config import cloud_config
-from ..database import get_db
+try:
+    from ..cloud.backup_service import backup_service
+    from ..cloud.aws_manager import AWSManager
+except ImportError:
+    # Fallback for when cloud modules are not available
+    backup_service = None
+    AWSManager = None
+
+try:
+    from ..config.cloud_config import cloud_config
+except ImportError:
+    # Fallback for when cloud config is not available
+    cloud_config = None
+
+try:
+    from ..database import get_db
+except ImportError:
+    # Fallback for when database module is not available
+    get_db = None
 
 logger = logging.getLogger(__name__)
 

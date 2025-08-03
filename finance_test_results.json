@@ -1,0 +1,58 @@
+{
+  "total_tests": 10,
+  "passed": 1,
+  "failed": 0,
+  "errors": 9,
+  "success_rate": 10.0,
+  "results": {
+    "Finance Health Check": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DC8BCB0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Calculate ROI": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/roi (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DD85A90>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Create DCF Model": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/dcf (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DD85F90>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Run A/B Test": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/ab-test (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DD35940>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Generate Financial Report": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/report (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DD35CD0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Calculate Break-Even": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/break-even (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DD46570>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Calculate Cash Flow": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/cash-flow (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DC97CE0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Calculate Financial Ratios": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/ratios (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DDA8160>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get Finance Metrics": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/finance/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020B5DDA8380>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Finance Manager Direct": {
+      "status": "passed",
+      "data": {
+        "roi_percentage": 233.33333333333334,
+        "dcf_npv": 13911.565280563293,
+        "ab_winner": "B",
+        "break_even_units": 100.0,
+        "cash_flow_months": 12,
+        "profit_margin": 30.0,
+        "report_status": "generated"
+      }
+    }
+  },
+  "timestamp": "2025-08-03T16:42:05.626034"
+}

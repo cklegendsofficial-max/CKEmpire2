@@ -1,0 +1,347 @@
+# CK Empire Helm Chart Values
+# Production deployment configuration
+
+global:
+  environment: production
+  domain: ckempire.com
+
+# Backend API Configuration
+backend:
+  replicaCount: 3
+  image:
+    repository: ckempire/backend
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: database-url
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: redis-url
+    - name: OPENAI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: openai-api-key
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: secret-key
+    - name: ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: encryption-key
+    - name: SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+  service:
+    type: ClusterIP
+    port: 8000
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: api.ckempire.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-api-tls
+        hosts:
+          - api.ckempire.com
+
+# Frontend Configuration
+frontend:
+  replicaCount: 2
+  image:
+    repository: ckempire/frontend
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+  env:
+    - name: REACT_APP_API_URL
+      value: "https://api.ckempire.com"
+    - name: REACT_APP_SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: ckempire.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-tls
+        hosts:
+          - ckempire.com
+
+# PostgreSQL Database
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "ckempire-postgres-password"
+    database: "ckempire"
+    username: "ckempire"
+    password: "ckempire-password"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Redis Cache
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "ckempire-redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+# Elasticsearch
+elasticsearch:
+  enabled: true
+  replicas: 3
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  volumeClaimTemplate:
+    resources:
+      requests:
+        storage: 10Gi
+
+# Kibana
+kibana:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Prometheus Monitoring
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 10Gi
+
+# Grafana
+grafana:
+  enabled: true
+  adminPassword: "ckempire-grafana-admin"
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+  dashboards:
+    default:
+      ckempire-dashboard:
+        json: |
+          {
+            "dashboard": {
+              "id": null,
+              "title": "CK Empire Dashboard",
+              "tags": ["ckempire"],
+              "timezone": "browser",
+              "panels": [],
+              "time": {
+                "from": "now-6h",
+                "to": "now"
+              },
+              "refresh": "5s"
+            }
+          }
+
+# Alertmanager
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    retention: 120h
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 5Gi
+
+# Celery Workers
+celery:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ckempire/backend
+    tag: latest
+  command: ["celery", "-A", "main.celery", "worker", "--loglevel=info"]
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+
+# Celery Beat Scheduler
+celeryBeat:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ckempire/backend
+    tag: latest
+  command: ["celery", "-A", "main.celery", "beat", "--loglevel=info"]
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "100m"
+
+# Nginx Ingress Controller
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Pod Disruption Budget
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# Horizontal Pod Autoscaler
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Network Policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+
+# Pod Security Standards
+podSecurity:
+  enabled: true
+  level: restricted
+  version: latest
+
+# Resource Quotas
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+    requests.storage: "50Gi"
+    persistentvolumeclaims: "10"
+    services: "20"
+    services.loadbalancers: "2"
+
+# Priority Classes
+priorityClass:
+  enabled: true
+  value: 1000000
+  globalDefault: false
+  description: "High priority for CK Empire pods" 

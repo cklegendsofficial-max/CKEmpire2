@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer
@@ -9,9 +9,12 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from routers import projects, revenue, ethics, ai, performance, cloud, test
+from routers import projects, revenue, ethics, ai, performance, cloud, test, subscription, video, finance, analytics
 from database import init_db, get_db
-from config.cloud_config import cloud_config
+try:
+    from config.cloud_config import cloud_config
+except ImportError:
+    cloud_config = None
 from monitoring import get_monitoring
 from middleware import MonitoringMiddleware, HealthCheckMiddleware, MetricsMiddleware
 
@@ -55,11 +58,14 @@ async def lifespan(app: FastAPI):
     
     # Initialize cloud configuration
     try:
-        validation = cloud_config.validate_config()
-        if not validation['valid']:
-            logger.warning(f"Cloud configuration validation failed: {validation['errors']}")
+        if cloud_config:
+            validation = cloud_config.validate_config()
+            if not validation['valid']:
+                logger.warning(f"Cloud configuration validation failed: {validation['errors']}")
+            else:
+                logger.info("Cloud configuration validated successfully")
         else:
-            logger.info("Cloud configuration validated successfully")
+            logger.warning("Cloud configuration module not found. Skipping validation.")
     except Exception as e:
         logger.error(f"Failed to validate cloud configuration: {e}")
     
@@ -299,6 +305,10 @@ app.include_router(ai.router, prefix="/api/v1")
 app.include_router(performance.router, prefix="/api/v1")
 app.include_router(cloud.router, prefix="/api/v1")
 app.include_router(test.router, prefix="/api/v1")
+app.include_router(subscription.router, prefix="/api/v1")
+app.include_router(video.router, prefix="/api/v1")
+app.include_router(finance.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
 
 @app.get("/", 
     response_description="Root endpoint with API information",
@@ -306,14 +316,14 @@ app.include_router(test.router, prefix="/api/v1")
     description="Get basic API information and available endpoints"
 )
 @limiter.limit("10/minute")
-async def root():
+async def root(request: Request):
     """Root endpoint with API information"""
     return {
         "message": "CK Empire Builder API",
         "version": "1.0.0",
         "status": "running",
-        "cloud_enabled": cloud_config.is_cloud_enabled(),
-        "cloud_provider": cloud_config.config.provider.value,
+        "cloud_enabled": cloud_config.is_cloud_enabled() if cloud_config else False,
+        "cloud_provider": cloud_config.config.provider.value if cloud_config else "N/A",
         "docs_url": "/docs",
         "redoc_url": "/redoc",
         "openapi_url": "/openapi.json"
@@ -338,7 +348,7 @@ async def health_check():
         return {
             "status": "healthy",
             "database": "connected",
-            "cloud_enabled": cloud_config.is_cloud_enabled(),
+            "cloud_enabled": cloud_config.is_cloud_enabled() if cloud_config else False,
             "monitoring": monitoring_health,
             "timestamp": "2024-01-01T00:00:00Z"
         }
@@ -352,7 +362,7 @@ async def health_check():
     description="Get application performance metrics and statistics"
 )
 @limiter.limit("30/minute")
-async def metrics():
+async def metrics(request: Request):
     """Application metrics endpoint"""
     try:
         db = get_db()
@@ -368,8 +378,8 @@ async def metrics():
             "active_agents": 18,
             "total_projects": 12,
             "total_content": 156,
-            "cloud_provider": cloud_config.config.provider.value,
-            "cloud_enabled": cloud_config.is_cloud_enabled(),
+            "cloud_provider": cloud_config.config.provider.value if cloud_config else "N/A",
+            "cloud_enabled": cloud_config.is_cloud_enabled() if cloud_config else False,
             "prometheus_metrics": prometheus_metrics
         }
         
@@ -399,11 +409,11 @@ async def info():
             "Auto-scaling"
         ],
         "cloud_config": {
-            "provider": cloud_config.config.provider.value,
-            "enabled": cloud_config.is_cloud_enabled(),
-            "auto_backup": cloud_config.config.auto_backup,
-            "auto_scaling": cloud_config.config.auto_scaling,
-            "monitoring": cloud_config.config.monitoring
+            "provider": cloud_config.config.provider.value if cloud_config else "N/A",
+            "enabled": cloud_config.is_cloud_enabled() if cloud_config else False,
+            "auto_backup": cloud_config.config.auto_backup if cloud_config else "N/A",
+            "auto_scaling": cloud_config.config.auto_scaling if cloud_config else "N/A",
+            "monitoring": cloud_config.config.monitoring if cloud_config else "N/A"
         }
     }
 

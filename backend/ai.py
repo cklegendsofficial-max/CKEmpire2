@@ -1,12 +1,13 @@
 """
 AI Module for CK Empire Builder
-Handles OpenAI integration, video production, NFT automation, and AGI evolution
+Handles OpenAI integration, video production, NFT automation, AGI evolution, and fine-tuning
 """
 
 import os
 import json
 import asyncio
 import logging
+import math
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
@@ -54,7 +55,7 @@ except ImportError:
     logging.warning("Stripe not available. Install with: pip install stripe")
 
 # Configuration
-from config import settings
+# from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,58 @@ class NFTStatus(Enum):
     LISTED = "listed"
     SOLD = "sold"
     FAILED = "failed"
+
+class StrategyType(Enum):
+    """Empire strategy types"""
+    LEAN_STARTUP = "lean_startup"
+    SCALE_UP = "scale_up"
+    DIVERSIFICATION = "diversification"
+    ACQUISITION = "acquisition"
+    INNOVATION = "innovation"
+    COST_OPTIMIZATION = "cost_optimization"
+
+@dataclass
+class EmpireStrategy:
+    """Empire strategy structure"""
+    strategy_type: StrategyType
+    title: str
+    description: str
+    key_actions: List[str]
+    timeline_months: int
+    estimated_investment: float
+    projected_roi: float
+    risk_level: str
+    success_metrics: List[str]
+    created_at: datetime = None
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.utcnow()
+
+@dataclass
+class FinancialMetrics:
+    """Financial analysis metrics"""
+    npv: float  # Net Present Value
+    irr: float  # Internal Rate of Return
+    payback_period: float  # in months
+    roi_percentage: float
+    monthly_cash_flow: float
+    break_even_month: int
+    total_investment: float
+    projected_revenue: float
+
+@dataclass
+class FineTuningDataset:
+    """Fine-tuning dataset structure"""
+    training_data: List[Dict[str, str]]
+    validation_data: List[Dict[str, str]]
+    model_name: str
+    training_status: str = "pending"
+    created_at: datetime = None
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.utcnow()
 
 @dataclass
 class ContentIdea:
@@ -147,53 +200,574 @@ class AGIState:
     evolution_count: int = 0
 
 class AIModule:
-    """Main AI module for content generation, video production, and NFT automation"""
+    """Main AI module for content generation, video production, NFT automation, and fine-tuning"""
     
     def __init__(self):
-        self.openai_client = None
-        self.stripe_client = None
-        self.web3 = None
+        self.client = None
+        self.fine_tuned_model = None
+        self.dataset_path = "data/fine_tuning_dataset.jsonl"
+        self.strategy_templates = self._load_strategy_templates()
+        
+        if OPENAI_AVAILABLE:
+            try:
+                self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                logger.info("OpenAI client initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize OpenAI client: {e}")
+        else:
+            logger.warning("OpenAI not available. Using mock responses.")
+        
+        # Initialize AGI state
         self.agi_state = AGIState(
             consciousness_score=0.1,
             decision_capability=0.2,
             learning_rate=0.15,
             creativity_level=0.3,
             ethical_awareness=0.25,
-            last_evolution=datetime.utcnow()
+            last_evolution=datetime.utcnow(),
+            evolution_count=0
         )
         
-        # Initialize OpenAI
-        if OPENAI_AVAILABLE and settings.OPENAI_API_KEY:
-            self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            logger.info("✅ OpenAI client initialized")
+        # Load fine-tuning dataset
+        self._ensure_dataset_directory()
+        self._load_or_create_dataset()
+
+    def _load_strategy_templates(self) -> Dict[str, Dict[str, Any]]:
+        """Load empire strategy templates"""
+        return {
+            "lean_startup": {
+                "title": "Lean Startup Strategy",
+                "description": "Minimal viable product approach with rapid iteration",
+                "key_actions": [
+                    "Build MVP in 2-3 months",
+                    "Validate with early adopters",
+                    "Iterate based on feedback",
+                    "Focus on product-market fit"
+                ],
+                "timeline_months": 6,
+                "estimated_investment": 50000,
+                "projected_roi": 0.15,
+                "risk_level": "Medium",
+                "success_metrics": ["User growth", "Retention rate", "Revenue per user"]
+            },
+            "scale_up": {
+                "title": "Scale-Up Strategy",
+                "description": "Rapid growth with significant investment",
+                "key_actions": [
+                    "Secure Series A funding",
+                    "Expand team to 50+ employees",
+                    "Enter new markets",
+                    "Invest in marketing and sales"
+                ],
+                "timeline_months": 18,
+                "estimated_investment": 2000000,
+                "projected_roi": 0.25,
+                "risk_level": "High",
+                "success_metrics": ["Revenue growth", "Market share", "Team size"]
+            },
+            "diversification": {
+                "title": "Diversification Strategy",
+                "description": "Expand into new product lines and markets",
+                "key_actions": [
+                    "Research new market opportunities",
+                    "Develop complementary products",
+                    "Acquire smaller companies",
+                    "Build strategic partnerships"
+                ],
+                "timeline_months": 24,
+                "estimated_investment": 1000000,
+                "projected_roi": 0.20,
+                "risk_level": "Medium-High",
+                "success_metrics": ["Revenue diversification", "Market penetration", "Customer acquisition"]
+            }
+        }
+
+    def _ensure_dataset_directory(self):
+        """Ensure dataset directory exists"""
+        os.makedirs("data", exist_ok=True)
+
+    def _load_or_create_dataset(self):
+        """Load existing dataset or create new one"""
+        if os.path.exists(self.dataset_path):
+            logger.info(f"Loading existing dataset from {self.dataset_path}")
         else:
-            logger.warning("❌ OpenAI not available or API key not set")
+            logger.info("Creating new fine-tuning dataset")
+            self._create_sample_dataset()
+
+    def _create_sample_dataset(self):
+        """Create sample dataset for fine-tuning"""
+        sample_data = [
+            {"input": "Düşük bütçe ile başla", "output": "Lean startup stratejisi: MVP geliştir, erken kullanıcılarla test et, hızlı iterasyon yap. Bütçe: $50K, Süre: 6 ay, ROI: %15"},
+            {"input": "Revenue hedefi $20K", "output": "Scale-up stratejisi: Pazarlama bütçesini artır, satış ekibi kur, yeni pazarlara açıl. Bütçe: $200K, Süre: 12 ay, ROI: %25"},
+            {"input": "Yüksek risk toleransı", "output": "Innovation stratejisi: R&D yatırımı yap, yeni teknolojiler dene, patent başvuruları. Bütçe: $500K, Süre: 18 ay, ROI: %40"},
+            {"input": "Hızlı büyüme istiyorum", "output": "Acquisition stratejisi: Küçük şirketleri satın al, stratejik ortaklıklar kur, pazar payını artır. Bütçe: $1M, Süre: 24 ay, ROI: %30"},
+            {"input": "Maliyet optimizasyonu", "output": "Cost optimization stratejisi: Operasyonel verimliliği artır, otomasyon yatırımı yap, gereksiz maliyetleri kes. Bütçe: $100K, Süre: 6 ay, ROI: %20"},
+            {"input": "Yeni pazarlara açıl", "output": "Diversification stratejisi: Yeni ürün hatları geliştir, farklı pazarları araştır, stratejik ortaklıklar kur. Bütçe: $300K, Süre: 12 ay, ROI: %18"},
+            {"input": "Teknoloji odaklı", "output": "Innovation stratejisi: AI/ML yatırımı yap, yeni teknolojiler geliştir, patent portföyü oluştur. Bütçe: $400K, Süre: 15 ay, ROI: %35"},
+            {"input": "Konsolide et", "output": "Acquisition stratejisi: Rakip şirketleri satın al, pazar konsolidasyonu yap, monopol pozisyonu kur. Bütçe: $2M, Süre: 30 ay, ROI: %50"},
+            {"input": "Sürdürülebilir büyüme", "output": "Scale-up stratejisi: Organik büyüme odaklan, müşteri memnuniyetini artır, uzun vadeli planlama yap. Bütçe: $150K, Süre: 18 ay, ROI: %22"},
+            {"input": "Kriz yönetimi", "output": "Lean startup stratejisi: Nakit akışını koru, kritik operasyonları sürdür, esnek yapı kur. Bütçe: $50K, Süre: 6 ay, ROI: %10"}
+        ]
         
-        # Initialize Stripe
-        if STRIPE_AVAILABLE and settings.STRIPE_SECRET_KEY:
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            self.stripe_client = stripe
-            logger.info("✅ Stripe client initialized")
-        else:
-            logger.warning("❌ Stripe not available or API key not set")
+        # Add more diverse examples
+        for i in range(90):  # Total 100 examples
+            strategy_type = list(self.strategy_templates.keys())[i % len(self.strategy_templates)]
+            template = self.strategy_templates[strategy_type]
+            
+            input_text = f"Scenario {i+1}: {self._generate_random_input()}"
+            output_text = f"{template['title']}: {template['description']}. Bütçe: ${template['estimated_investment']:,}, Süre: {template['timeline_months']} ay, ROI: %{template['projected_roi']*100:.0f}"
+            
+            sample_data.append({"input": input_text, "output": output_text})
         
-        # Initialize Web3
-        if WEB3_AVAILABLE and settings.ETHEREUM_RPC_URL:
-            self.web3 = Web3(Web3.HTTPProvider(settings.ETHEREUM_RPC_URL))
-            if self.web3.is_connected():
-                logger.info("✅ Web3 connected to Ethereum")
+        # Save to JSONL format
+        with open(self.dataset_path, 'w', encoding='utf-8') as f:
+            for item in sample_data:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        
+        logger.info(f"Created sample dataset with {len(sample_data)} examples")
+
+    def _generate_random_input(self) -> str:
+        """Generate random input for dataset"""
+        inputs = [
+            "Düşük bütçe ile başla",
+            "Revenue hedefi $50K",
+            "Yüksek risk toleransı",
+            "Hızlı büyüme istiyorum",
+            "Maliyet optimizasyonu",
+            "Yeni pazarlara açıl",
+            "Teknoloji odaklı",
+            "Konsolide et",
+            "Sürdürülebilir büyüme",
+            "Kriz yönetimi"
+        ]
+        return inputs[len(inputs) % 10]
+
+    async def generate_empire_strategy(self, user_input: str) -> EmpireStrategy:
+        """
+        Generate personalized empire strategy based on user input
+        
+        Args:
+            user_input: User's strategy requirements
+            
+        Returns:
+            EmpireStrategy with personalized recommendations
+        """
+        try:
+            if self.client and self.fine_tuned_model:
+                # Use fine-tuned model
+                response = await self._call_fine_tuned_model(user_input)
             else:
-                logger.warning("❌ Web3 connection failed")
+                # Use base model with prompt engineering
+                response = await self._call_base_model(user_input)
+            
+            # Parse response and create strategy
+            strategy = self._parse_strategy_response(response, user_input)
+            
+            # Calculate financial metrics
+            financial_metrics = self._calculate_financial_metrics(strategy)
+            
+            logger.info(f"Generated empire strategy: {strategy.title}")
+            return strategy
+            
+        except Exception as e:
+            logger.error(f"Error generating empire strategy: {e}")
+            return self._create_fallback_strategy(user_input)
+
+    async def _call_fine_tuned_model(self, user_input: str) -> str:
+        """Call fine-tuned model for strategy generation"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.fine_tuned_model,
+                messages=[
+                    {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş strateji öner."},
+                    {"role": "user", "content": user_input}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Fine-tuned model call failed: {e}")
+            return await self._call_base_model(user_input)
+
+    async def _call_base_model(self, user_input: str) -> str:
+        """Call base model with prompt engineering"""
+        try:
+            prompt = f"""
+            Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş strateji öner.
+            
+            Kullanıcı Girdisi: {user_input}
+            
+            Lütfen şu formatta yanıt ver:
+            - Strateji Türü: [Lean Startup/Scale-Up/Diversification/Acquisition/Innovation]
+            - Başlık: [Strateji başlığı]
+            - Açıklama: [Detaylı açıklama]
+            - Ana Aksiyonlar: [1. 2. 3. 4.]
+            - Süre: [Ay cinsinden]
+            - Tahmini Yatırım: [USD]
+            - Projeksiyon ROI: [%]
+            - Risk Seviyesi: [Düşük/Orta/Yüksek]
+            - Başarı Metrikleri: [1. 2. 3.]
+            """
+            
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Base model call failed: {e}")
+            return self._create_mock_response(user_input)
+
+    def _parse_strategy_response(self, response: str, user_input: str) -> EmpireStrategy:
+        """Parse AI response into EmpireStrategy object"""
+        try:
+            # Extract strategy type based on keywords
+            strategy_type = self._determine_strategy_type(response, user_input)
+            
+            # Extract other fields from response
+            title = self._extract_field(response, "Başlık", "Empire Strategy")
+            description = self._extract_field(response, "Açıklama", "Personalized strategy")
+            key_actions = self._extract_list_field(response, "Ana Aksiyonlar")
+            timeline_months = self._extract_number_field(response, "Süre", 12)
+            estimated_investment = self._extract_number_field(response, "Tahmini Yatırım", 100000)
+            projected_roi = self._extract_percentage_field(response, "Projeksiyon ROI", 0.15)
+            risk_level = self._extract_field(response, "Risk Seviyesi", "Orta")
+            success_metrics = self._extract_list_field(response, "Başarı Metrikleri")
+            
+            return EmpireStrategy(
+                strategy_type=strategy_type,
+                title=title,
+                description=description,
+                key_actions=key_actions,
+                timeline_months=timeline_months,
+                estimated_investment=estimated_investment,
+                projected_roi=projected_roi,
+                risk_level=risk_level,
+                success_metrics=success_metrics
+            )
+        except Exception as e:
+            logger.error(f"Error parsing strategy response: {e}")
+            return self._create_fallback_strategy(user_input)
+
+    def _determine_strategy_type(self, response: str, user_input: str) -> StrategyType:
+        """Determine strategy type based on response and input"""
+        response_lower = response.lower()
+        input_lower = user_input.lower()
+        
+        if any(word in input_lower for word in ["düşük", "lean", "minimal"]):
+            return StrategyType.LEAN_STARTUP
+        elif any(word in input_lower for word in ["büyüme", "scale", "hızlı"]):
+            return StrategyType.SCALE_UP
+        elif any(word in input_lower for word in ["diversification", "çeşitlendirme", "yeni pazar"]):
+            return StrategyType.DIVERSIFICATION
+        elif any(word in input_lower for word in ["acquisition", "satın alma", "konsolidasyon"]):
+            return StrategyType.ACQUISITION
+        elif any(word in input_lower for word in ["innovation", "teknoloji", "R&D"]):
+            return StrategyType.INNOVATION
         else:
-            logger.warning("❌ Web3 not available or RPC URL not set")
+            return StrategyType.COST_OPTIMIZATION
+
+    def _extract_field(self, text: str, field_name: str, default: str) -> str:
+        """Extract field from response text"""
+        try:
+            lines = text.split('\n')
+            for line in lines:
+                if field_name in line:
+                    return line.split(':', 1)[1].strip()
+            return default
+        except:
+            return default
+
+    def _extract_list_field(self, text: str, field_name: str) -> List[str]:
+        """Extract list field from response text"""
+        try:
+            items = []
+            lines = text.split('\n')
+            in_list = False
+            for line in lines:
+                if field_name in line:
+                    in_list = True
+                    continue
+                if in_list and line.strip() and not line.startswith('-'):
+                    break
+                if in_list and line.strip().startswith('-'):
+                    items.append(line.strip()[1:].strip())
+            return items if items else ["Action 1", "Action 2", "Action 3"]
+        except:
+            return ["Action 1", "Action 2", "Action 3"]
+
+    def _extract_number_field(self, text: str, field_name: str, default: float) -> float:
+        """Extract number field from response text"""
+        try:
+            field_text = self._extract_field(text, field_name, str(default))
+            # Extract numbers from text
+            import re
+            numbers = re.findall(r'\d+', field_text)
+            if numbers:
+                return float(numbers[0])
+            return default
+        except:
+            return default
+
+    def _extract_percentage_field(self, text: str, field_name: str, default: float) -> float:
+        """Extract percentage field from response text"""
+        try:
+            field_text = self._extract_field(text, field_name, f"{default*100}%")
+            # Extract percentage
+            import re
+            percentage = re.findall(r'(\d+)%', field_text)
+            if percentage:
+                return float(percentage[0]) / 100
+            return default
+        except:
+            return default
+
+    def _create_fallback_strategy(self, user_input: str) -> EmpireStrategy:
+        """Create fallback strategy when AI fails"""
+        return EmpireStrategy(
+            strategy_type=StrategyType.LEAN_STARTUP,
+            title="Fallback Strategy",
+            description=f"Basic strategy for: {user_input}",
+            key_actions=["Analyze market", "Build MVP", "Test with users"],
+            timeline_months=6,
+            estimated_investment=50000,
+            projected_roi=0.15,
+            risk_level="Medium",
+            success_metrics=["User growth", "Revenue", "Market fit"]
+        )
+
+    def _create_mock_response(self, user_input: str) -> str:
+        """Create mock response for testing"""
+        return f"""
+        Strateji Türü: Lean Startup
+        Başlık: {user_input} Stratejisi
+        Açıklama: Kullanıcı girdisine göre kişiselleştirilmiş strateji
+        Ana Aksiyonlar:
+        - 1. Pazar analizi yap
+        - 2. MVP geliştir
+        - 3. Kullanıcı testleri
+        - 4. İterasyon yap
+        Süre: 6
+        Tahmini Yatırım: 50000
+        Projeksiyon ROI: 15%
+        Risk Seviyesi: Orta
+        Başarı Metrikleri:
+        - 1. Kullanıcı büyümesi
+        - 2. Gelir artışı
+        - 3. Pazar uyumu
+        """
+
+    def _calculate_financial_metrics(self, strategy: EmpireStrategy) -> FinancialMetrics:
+        """
+        Calculate financial metrics using DCF (Discounted Cash Flow) formula
         
-        # Video processing setup
-        self.video_output_dir = Path("output/videos")
-        self.video_output_dir.mkdir(parents=True, exist_ok=True)
+        Args:
+            strategy: Empire strategy object
+            
+        Returns:
+            FinancialMetrics with calculated values
+        """
+        try:
+            # DCF calculation parameters
+            discount_rate = 0.10  # 10% discount rate
+            monthly_revenue_growth = strategy.projected_roi / 12
+            initial_investment = strategy.estimated_investment
+            
+            # Calculate monthly cash flows
+            monthly_cash_flows = []
+            cumulative_cash_flow = -initial_investment
+            
+            for month in range(strategy.timeline_months):
+                monthly_revenue = initial_investment * monthly_revenue_growth * (1 + monthly_revenue_growth) ** month
+                monthly_cash_flow = monthly_revenue - (initial_investment / strategy.timeline_months)
+                monthly_cash_flows.append(monthly_cash_flow)
+                cumulative_cash_flow += monthly_cash_flow
+                
+                if cumulative_cash_flow >= 0 and len(monthly_cash_flows) == month + 1:
+                    break_even_month = month + 1
+                else:
+                    break_even_month = strategy.timeline_months
+            
+            # Calculate NPV
+            npv = -initial_investment
+            for i, cash_flow in enumerate(monthly_cash_flows):
+                npv += cash_flow / ((1 + discount_rate/12) ** (i + 1))
+            
+            # Calculate IRR (simplified)
+            total_revenue = sum(monthly_cash_flows)
+            irr = (total_revenue / initial_investment) ** (1 / strategy.timeline_months) - 1
+            
+            # Calculate payback period
+            payback_period = break_even_month
+            
+            # Calculate ROI percentage
+            roi_percentage = (total_revenue - initial_investment) / initial_investment * 100
+            
+            return FinancialMetrics(
+                npv=npv,
+                irr=irr,
+                payback_period=payback_period,
+                roi_percentage=roi_percentage,
+                monthly_cash_flow=monthly_cash_flows[0] if monthly_cash_flows else 0,
+                break_even_month=break_even_month,
+                total_investment=initial_investment,
+                projected_revenue=total_revenue
+            )
+            
+        except Exception as e:
+            logger.error(f"Error calculating financial metrics: {e}")
+            return FinancialMetrics(
+                npv=0,
+                irr=0,
+                payback_period=12,
+                roi_percentage=15,
+                monthly_cash_flow=0,
+                break_even_month=12,
+                total_investment=strategy.estimated_investment,
+                projected_revenue=0
+            )
+
+    async def create_fine_tuning_dataset(self) -> FineTuningDataset:
+        """
+        Create fine-tuning dataset for empire strategy generation
         
-        # NFT storage
-        self.nft_output_dir = Path("output/nfts")
-        self.nft_output_dir.mkdir(parents=True, exist_ok=True)
+        Returns:
+            FineTuningDataset object
+        """
+        try:
+            # Load existing dataset
+            training_data = []
+            validation_data = []
+            
+            with open(self.dataset_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Split into training and validation (80/20)
+            split_index = int(len(lines) * 0.8)
+            training_lines = lines[:split_index]
+            validation_lines = lines[split_index:]
+            
+            for line in training_lines:
+                data = json.loads(line.strip())
+                training_data.append({
+                    "messages": [
+                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                        {"role": "user", "content": data["input"]},
+                        {"role": "assistant", "content": data["output"]}
+                    ]
+                })
+            
+            for line in validation_lines:
+                data = json.loads(line.strip())
+                validation_data.append({
+                    "messages": [
+                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                        {"role": "user", "content": data["input"]},
+                        {"role": "assistant", "content": data["output"]}
+                    ]
+                })
+            
+            dataset = FineTuningDataset(
+                training_data=training_data,
+                validation_data=validation_data,
+                model_name="gpt-4",
+                training_status="ready"
+            )
+            
+            logger.info(f"Created fine-tuning dataset with {len(training_data)} training and {len(validation_data)} validation examples")
+            return dataset
+            
+        except Exception as e:
+            logger.error(f"Error creating fine-tuning dataset: {e}")
+            return FineTuningDataset(
+                training_data=[],
+                validation_data=[],
+                model_name="gpt-4",
+                training_status="failed"
+            )
+
+    async def start_fine_tuning(self, dataset: FineTuningDataset) -> str:
+        """
+        Start fine-tuning process
+        
+        Args:
+            dataset: FineTuningDataset object
+            
+        Returns:
+            Fine-tuning job ID
+        """
+        try:
+            if not self.client:
+                raise Exception("OpenAI client not available")
+            
+            # Create training file
+            training_file_path = "data/training_data.jsonl"
+            with open(training_file_path, 'w', encoding='utf-8') as f:
+                for item in dataset.training_data:
+                    f.write(json.dumps(item) + '\n')
+            
+            # Upload file to OpenAI
+            with open(training_file_path, 'rb') as f:
+                file_response = self.client.files.create(
+                    file=f,
+                    purpose="fine-tune"
+                )
+            
+            # Create fine-tuning job
+            job_response = self.client.fine_tuning.jobs.create(
+                training_file=file_response.id,
+                model="gpt-4",
+                hyperparameters={
+                    "n_epochs": 3,
+                    "batch_size": 1,
+                    "learning_rate_multiplier": 0.1
+                }
+            )
+            
+            logger.info(f"Started fine-tuning job: {job_response.id}")
+            return job_response.id
+            
+        except Exception as e:
+            logger.error(f"Error starting fine-tuning: {e}")
+            return "failed"
+
+    async def check_fine_tuning_status(self, job_id: str) -> Dict[str, Any]:
+        """
+        Check fine-tuning job status
+        
+        Args:
+            job_id: Fine-tuning job ID
+            
+        Returns:
+            Status information
+        """
+        try:
+            if not self.client:
+                return {"status": "error", "message": "OpenAI client not available"}
+            
+            job = self.client.fine_tuning.jobs.retrieve(job_id)
+            
+            if job.status == "succeeded":
+                self.fine_tuned_model = job.fine_tuned_model
+                logger.info(f"Fine-tuning completed. Model: {self.fine_tuned_model}")
+            
+            return {
+                "status": job.status,
+                "model": job.fine_tuned_model,
+                "created_at": job.created_at,
+                "finished_at": job.finished_at,
+                "trained_tokens": job.trained_tokens
+            }
+            
+        except Exception as e:
+            logger.error(f"Error checking fine-tuning status: {e}")
+            return {"status": "error", "message": str(e)}
     
     async def generate_viral_content_ideas(
         self, 
