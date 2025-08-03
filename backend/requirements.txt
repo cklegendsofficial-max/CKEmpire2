@@ -79,6 +79,8 @@ locust==2.17.0
 bandit==1.7.5
 safety==2.3.5
 semgrep==1.50.0
+hvac==1.1.1
+zapv2==0.1.0
 
 # Code Quality
 black==23.12.1

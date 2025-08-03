@@ -4,8 +4,8 @@ import logging
 from datetime import datetime
 
 try:
-    from ..analytics import analytics_manager
-    from ..models import (
+    from analytics import analytics_manager
+    from models import (
         UserMetricsRequest,
         UserMetricsResponse,
         AnalyticsReportResponse,

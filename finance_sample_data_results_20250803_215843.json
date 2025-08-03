@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-08-03T21:58:43.954909",
+  "sample_data": {
+    "startup": {
+      "current_revenue": 50000,
+      "target_revenue": 200000,
+      "current_cac": 75,
+      "current_ltv": 300,
+      "available_budget": 100000,
+      "growth_timeline": 18
+    },
+    "scaleup": {
+      "current_revenue": 500000,
+      "target_revenue": 1000000,
+      "current_cac": 120,
+      "current_ltv": 800,
+      "available_budget": 300000,
+      "growth_timeline": 12
+    },
+    "enterprise": {
+      "current_revenue": 2000000,
+      "target_revenue": 5000000,
+      "current_cac": 200,
+      "current_ltv": 1500,
+      "available_budget": 1000000,
+      "growth_timeline": 24
+    }
+  },
+  "results": {
+    "startup": {
+      "roi_analysis": {
+        "roi_percentage": 100.0,
+        "annualized_roi": 58.74010519681994,
+        "payback_period": 1.5
+      },
+      "cac_ltv_analysis": {
+        "cac": 75,
+        "ltv": 300,
+        "ltv_cac_ratio": 4.0,
+        "payback_period": 3.0,
+        "profitability_score": "Excellent",
+        "recommendations_count": 3
+      },
+      "dcf_analysis": {
+        "npv": 105969.79681085257,
+        "irr": 1.97664,
+        "present_value": 205969.79681085257
+      },
+      "financial_strategy": {
+        "required_investment": 37500,
+        "required_new_customers": 500,
+        "expected_roi": 400.0,
+        "risk_level": "Low",
+        "growth_strategy": "Aggressive - Scale rapidly with confidence in unit economics",
+        "timeline_breakdown_count": 18
+      }
+    },
+    "scaleup": {
+      "roi_analysis": {
+        "roi_percentage": 233.33333333333334,
+        "annualized_roi": 233.33333333333334,
+        "payback_period": 0.42857142857142855
+      },
+      "cac_ltv_analysis": {
+        "cac": 120,
+        "ltv": 800,
+        "ltv_cac_ratio": 6.666666666666667,
+        "payback_period": 1.7999999999999998,
+        "profitability_score": "Excellent",
+        "recommendations_count": 3
+      },
+      "dcf_analysis": {
+        "npv": 729848.9840542629,
+        "irr": 3.9610666666666665,
+        "present_value": 1029848.9840542629
+      },
+      "financial_strategy": {
+        "required_investment": 75000,
+        "required_new_customers": 625,
+        "expected_roi": 666.6666666666667,
+        "risk_level": "Low",
+        "growth_strategy": "Aggressive - Scale rapidly with confidence in unit economics",
+        "timeline_breakdown_count": 12
+      }
+    },
+    "enterprise": {
+      "roi_analysis": {
+        "roi_percentage": 400.0,
+        "annualized_roi": 123.60679774997898,
+        "payback_period": 0.5
+      },
+      "cac_ltv_analysis": {
+        "cac": 200,
+        "ltv": 1500,
+        "ltv_cac_ratio": 7.5,
+        "payback_period": 1.6,
+        "profitability_score": "Excellent",
+        "recommendations_count": 3
+      },
+      "dcf_analysis": {
+        "npv": 4149244.9202713137,
+        "irr": 6.4416,
+        "present_value": 5149244.920271314
+      },
+      "financial_strategy": {
+        "required_investment": 400000,
+        "required_new_customers": 2000,
+        "expected_roi": 750.0,
+        "risk_level": "Low",
+        "growth_strategy": "Aggressive - Scale rapidly with confidence in unit economics",
+        "timeline_breakdown_count": 24
+      }
+    }
+  },
+  "summary": {
+    "total_scenarios": 3,
+    "successful_tests": 3,
+    "features_tested": [
+      "ROI",
+      "CAC/LTV",
+      "DCF",
+      "Strategy",
+      "Dashboard Graphs"
+    ]
+  }
+}

@@ -1,0 +1,471 @@
+# CKEmpire Application Values
+# This file contains the configuration values for the CKEmpire Helm chart
+
+# Global configuration
+global:
+  environment: dev
+  domain: ckempire.local
+  imageRegistry: ""
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+# Backend configuration
+backend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: ckempire/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  imagePullSecrets: []
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations: {}
+  podSecurityContext: {}
+  
+  securityContext: {}
+  
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: api.ckempire.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-backend-tls
+        hosts:
+          - api.ckempire.local
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: database-url
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: redis-url
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: secret-key
+    - name: ENVIRONMENT
+      value: "production"
+    - name: LOG_LEVEL
+      value: "INFO"
+    - name: SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: aws-access-key-id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: aws-secret-access-key
+    - name: AWS_REGION
+      value: "us-west-2"
+
+# Frontend configuration
+frontend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: ckempire/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  imagePullSecrets: []
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations: {}
+  podSecurityContext: {}
+  
+  securityContext: {}
+  
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: ckempire.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-frontend-tls
+        hosts:
+          - ckempire.local
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  
+  env:
+    - name: REACT_APP_API_URL
+      value: "https://api.ckempire.local"
+    - name: REACT_APP_ENVIRONMENT
+      value: "production"
+    - name: REACT_APP_SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+
+# Database configuration
+database:
+  enabled: true
+  
+  postgresql:
+    enabled: true
+    auth:
+      postgresPassword: ""
+      database: ckempire
+      username: ckempire
+      password: ""
+    primary:
+      persistence:
+        enabled: true
+        size: 20Gi
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+    readReplicas:
+      persistence:
+        enabled: true
+        size: 20Gi
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+
+# Redis configuration
+redis:
+  enabled: true
+  
+  auth:
+    enabled: true
+    sentinel: false
+  
+  architecture: standalone
+  
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  
+  prometheus:
+    enabled: true
+    retention: 15d
+  
+  grafana:
+    enabled: true
+    adminPassword: ""
+    persistence:
+      enabled: true
+      size: 10Gi
+  
+  alertmanager:
+    enabled: true
+    config:
+      global:
+        smtp_smarthost: 'localhost:587'
+        smtp_from: 'alertmanager@ckempire.local'
+      route:
+        group_by: ['alertname']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 1h
+        receiver: 'web.hook'
+      receivers:
+        - name: 'web.hook'
+          webhook_configs:
+            - url: 'http://127.0.0.1:5001/'
+
+# Logging configuration
+logging:
+  enabled: true
+  
+  elasticsearch:
+    enabled: true
+    replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+  
+  kibana:
+    enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+  
+  fluentd:
+    enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Ingress configuration
+ingress:
+  enabled: true
+  
+  nginx:
+    enabled: true
+    controller:
+      replicaCount: 2
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+  
+  certManager:
+    enabled: true
+    installCRDs: true
+    replicaCount: 1
+
+# Security configuration
+security:
+  enabled: true
+  
+  networkPolicies:
+    enabled: true
+  
+  podSecurityPolicies:
+    enabled: true
+  
+  resourceQuotas:
+    enabled: true
+  
+  limitRanges:
+    enabled: true
+
+# Backup configuration
+backup:
+  enabled: true
+  
+  cronjob:
+    schedule: "0 2 * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+  
+  s3:
+    bucket: ckempire-backups
+    region: us-west-2
+  
+  retention:
+    days: 30
+
+# Secrets configuration
+secrets:
+  enabled: true
+  
+  # These will be created as Kubernetes secrets
+  databaseUrl: ""
+  redisUrl: ""
+  secretKey: ""
+  sentryDsn: ""
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
+
+# Service mesh configuration
+serviceMesh:
+  enabled: false
+  
+  istio:
+    enabled: false
+    version: 1.18.0
+  
+  linkerd:
+    enabled: false
+    version: 2.12.0
+
+# CI/CD configuration
+cicd:
+  enabled: true
+  
+  argoCD:
+    enabled: true
+    version: 2.7.0
+  
+  tekton:
+    enabled: false
+    version: 0.47.0
+
+# Horizontal Pod Autoscaler
+hpa:
+  enabled: true
+  
+  backend:
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  
+  frontend:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+# Vertical Pod Autoscaler
+vpa:
+  enabled: false
+  
+  backend:
+    mode: "Auto"
+  
+  frontend:
+    mode: "Auto"
+
+# Pod Disruption Budget
+pdb:
+  enabled: true
+  
+  backend:
+    minAvailable: 1
+  
+  frontend:
+    minAvailable: 1
+
+# Priority Classes
+priorityClasses:
+  enabled: true
+  
+  high:
+    value: 1000000
+    globalDefault: false
+    description: "High priority pods"
+  
+  medium:
+    value: 100000
+    globalDefault: false
+    description: "Medium priority pods"
+  
+  low:
+    value: 10000
+    globalDefault: false
+    description: "Low priority pods" 

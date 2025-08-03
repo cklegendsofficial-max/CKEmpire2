@@ -1,0 +1,421 @@
+# Prometheus Stack Values
+# This file contains the configuration for the kube-prometheus-stack
+
+# Global configuration
+global:
+  evaluation_interval: 30s
+  scrape_interval: 30s
+  external_labels:
+    cluster: ckempire-cluster
+    environment: production
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp2
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    additionalScrapeConfigs:
+      - job_name: 'ckempire-backend'
+        static_configs:
+          - targets: ['ckempire-backend:8000']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+      - job_name: 'ckempire-frontend'
+        static_configs:
+          - targets: ['ckempire-frontend:80']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+      - job_name: 'sentry'
+        static_configs:
+          - targets: ['sentry-web:9000']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+    alerting:
+      alertmanagers:
+        - namespace: monitoring
+          name: alertmanager-operated
+          port: web
+
+# Grafana configuration
+grafana:
+  adminPassword: "admin123"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: gp2
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'ckempire'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/ckempire
+  dashboards:
+    ckempire:
+      ckempire-overview:
+        gnetId: 1
+        revision: 1
+        datasource: Prometheus
+      ckempire-backend:
+        gnetId: 2
+        revision: 1
+        datasource: Prometheus
+      ckempire-frontend:
+        gnetId: 3
+        revision: 1
+        datasource: Prometheus
+      ckempire-database:
+        gnetId: 4
+        revision: 1
+        datasource: Prometheus
+      ckempire-redis:
+        gnetId: 5
+        revision: 1
+        datasource: Prometheus
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          access: proxy
+          isDefault: true
+        - name: Sentry
+          type: prometheus
+          url: http://sentry-web.monitoring.svc.cluster.local:9000/metrics
+          access: proxy
+        - name: Elasticsearch
+          type: elasticsearch
+          url: http://elasticsearch-master.monitoring.svc.cluster.local:9200
+          access: proxy
+          database: "ckempire-logs"
+  plugins:
+    - sentry-datasource-plugin
+    - grafana-piechart-panel
+    - grafana-worldmap-panel
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    retention: 120h
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp2
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    config:
+      global:
+        smtp_smarthost: 'smtp.gmail.com:587'
+        smtp_from: 'alertmanager@ckempire.local'
+        smtp_auth_username: 'alertmanager@ckempire.local'
+        smtp_auth_password: 'password'
+      route:
+        group_by: ['alertname', 'cluster', 'service']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 1h
+        receiver: 'web.hook'
+        routes:
+          - match:
+              severity: critical
+            receiver: 'pager-duty'
+            continue: true
+          - match:
+              severity: warning
+            receiver: 'slack'
+            continue: true
+      receivers:
+        - name: 'web.hook'
+          webhook_configs:
+            - url: 'http://127.0.0.1:5001/'
+        - name: 'slack'
+          slack_configs:
+            - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+              channel: '#alerts'
+              title: '{{ template "slack.ckempire.title" . }}'
+              text: '{{ template "slack.ckempire.text" . }}'
+        - name: 'pager-duty'
+          pagerduty_configs:
+            - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+              description: '{{ template "pagerduty.ckempire.description" . }}'
+              severity: '{{ if eq .CommonAnnotations.severity "critical" }}critical{{ else }}warning{{ end }}'
+
+# Prometheus Operator configuration
+prometheusOperator:
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true
+  tls:
+    enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Node Exporter configuration
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Kube State Metrics configuration
+kubeStateMetrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Service Monitor configuration
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# Pod Monitor configuration
+podMonitor:
+  enabled: true
+  interval: 30s
+
+# Probe configuration
+probe:
+  enabled: true
+  interval: 60s
+
+# Thanos configuration (for long-term storage)
+thanos:
+  enabled: false
+  objectStorageConfig: ""
+  query:
+    enabled: false
+  storegateway:
+    enabled: false
+  compactor:
+    enabled: false
+  ruler:
+    enabled: false
+
+# Custom Rules
+prometheusRule:
+  enabled: true
+  rules:
+    ckempire:
+      - alert: CKEmpireBackendDown
+        expr: up{job="ckempire-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "CKEmpire backend is down"
+          description: "Backend service has been down for more than 1 minute"
+      
+      - alert: CKEmpireFrontendDown
+        expr: up{job="ckempire-frontend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: "CKEmpire frontend is down"
+          description: "Frontend service has been down for more than 1 minute"
+      
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for 5 minutes"
+      
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for 5 minutes"
+      
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is above 85% for 5 minutes"
+      
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod is restarting frequently"
+          description: "Pod {{ $labels.pod }} is restarting frequently"
+      
+      - alert: DatabaseConnectionHigh
+        expr: pg_stat_database_numbackends > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High database connections"
+          description: "Database has more than 100 active connections"
+      
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is above 80%"
+      
+      - alert: APILatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile API latency is above 1 second"
+      
+      - alert: ErrorRateHigh
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is above 5% for 2 minutes"
+
+# Additional ServiceMonitors
+additionalServiceMonitors:
+  - name: ckempire-backend
+    selector:
+      matchLabels:
+        app: ckempire-backend
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire
+  
+  - name: ckempire-frontend
+    selector:
+      matchLabels:
+        app: ckempire-frontend
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire
+  
+  - name: ckempire-database
+    selector:
+      matchLabels:
+        app: postgresql
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire
+  
+  - name: ckempire-redis
+    selector:
+      matchLabels:
+        app: redis
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire
+
+# Additional PodMonitors
+additionalPodMonitors:
+  - name: ckempire-backend-pods
+    selector:
+      matchLabels:
+        app: ckempire-backend
+    podMetricsEndpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire
+  
+  - name: ckempire-frontend-pods
+    selector:
+      matchLabels:
+        app: ckempire-frontend
+    podMetricsEndpoints:
+      - port: metrics
+        path: /metrics
+        interval: 30s
+    namespaceSelector:
+      matchNames:
+        - ckempire 

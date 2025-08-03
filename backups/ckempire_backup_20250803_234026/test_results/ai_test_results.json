@@ -1,0 +1,135 @@
+[
+  {
+    "test_name": "custom_strategy_generation",
+    "total_tests": 6,
+    "passed_tests": 3,
+    "results": [
+      {
+        "test_case": 1,
+        "input": "Düşük bütçe ile başla",
+        "expected_type": "lean_startup",
+        "actual_type": "lean_startup",
+        "type_match": true,
+        "metrics_valid": true,
+        "strategy_title": "Düşük bütçe ile başla Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": true
+      },
+      {
+        "test_case": 2,
+        "input": "Revenue hedefi $50K",
+        "expected_type": "scale_up",
+        "actual_type": "lean_startup",
+        "type_match": false,
+        "metrics_valid": true,
+        "strategy_title": "Revenue hedefi $50K Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": false
+      },
+      {
+        "test_case": 3,
+        "input": "Yüksek risk toleransı",
+        "expected_type": "innovation",
+        "actual_type": "lean_startup",
+        "type_match": false,
+        "metrics_valid": true,
+        "strategy_title": "Yüksek risk toleransı Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": false
+      },
+      {
+        "test_case": 4,
+        "input": "Start with low budget",
+        "expected_type": "lean_startup",
+        "actual_type": "lean_startup",
+        "type_match": true,
+        "metrics_valid": true,
+        "strategy_title": "Start with low budget Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": true
+      },
+      {
+        "test_case": 5,
+        "input": "Technology focused growth",
+        "expected_type": "innovation",
+        "actual_type": "scale_up",
+        "type_match": false,
+        "metrics_valid": true,
+        "strategy_title": "Technology focused growth Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": false
+      },
+      {
+        "test_case": 6,
+        "input": "Cost optimization needed",
+        "expected_type": "cost_optimization",
+        "actual_type": "cost_optimization",
+        "type_match": true,
+        "metrics_valid": true,
+        "strategy_title": "Cost optimization needed Özel Stratejisi",
+        "estimated_investment": 75000.0,
+        "projected_roi": 0.18,
+        "success": true
+      }
+    ],
+    "timestamp": "2025-08-03T16:25:35.306627"
+  },
+  {
+    "test_name": "fine_tuning_accuracy",
+    "accuracy": 1.0,
+    "accuracy_percentage": "100.00%",
+    "correct_predictions": 15,
+    "total_predictions": 15,
+    "threshold": 0.7,
+    "threshold_percentage": "70.00%",
+    "meets_threshold": true,
+    "test_inputs": [
+      "Düşük bütçe ile başla",
+      "Revenue hedefi $50K",
+      "Yüksek risk toleransı",
+      "Hızlı büyüme istiyorum",
+      "Maliyet optimizasyonu",
+      "Yeni pazarlara açıl",
+      "Teknoloji odaklı",
+      "Konsolide et",
+      "Sürdürülebilir büyüme",
+      "Kriz yönetimi",
+      "Start with low budget",
+      "Technology focused",
+      "Cost optimization",
+      "Market expansion",
+      "Innovation strategy"
+    ],
+    "timestamp": "2025-08-03T16:25:39.941525"
+  },
+  {
+    "test_name": "dataset_creation",
+    "training_examples": 84,
+    "validation_examples": 21,
+    "total_examples": 105,
+    "training_status": "ready",
+    "model_name": "gpt-4",
+    "dataset_valid": true,
+    "success": true,
+    "timestamp": "2025-08-03T16:25:39.992999"
+  },
+  {
+    "test_name": "financial_calculations",
+    "npv": -163160.61437539622,
+    "irr": "(-0.06570744461317779+0.25034293571030897j)",
+    "roi_percentage": -167.06089150947676,
+    "payback_period": 12,
+    "present_value": -63160.614375396224,
+    "terminal_value": -450099.82214668347,
+    "wacc": 0.12,
+    "discounted_cash_flows_count": 12,
+    "calculations_valid": false,
+    "success": false,
+    "timestamp": "2025-08-03T16:25:39.994337"
+  }
+]

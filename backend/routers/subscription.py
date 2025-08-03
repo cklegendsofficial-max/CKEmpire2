@@ -46,6 +46,7 @@ async def create_subscription(
     """
     try:
         # Convert to monetization manager types
+        from ..monetization import SubscriptionTier as MonetizationTier, BillingCycle as MonetizationBillingCycle
         tier = MonetizationTier(request.tier.value)
         billing_cycle = MonetizationBillingCycle(request.billing_cycle.value)
         
@@ -279,4 +280,120 @@ async def test_payment():
         "test_cvc": "123",
         "test_expiry": "12/25",
         "test_amount": "$49.00"
-    } 
+    }
+
+@router.post("/simulate-payment")
+async def simulate_payment(amount: float = 49.00, currency: str = "usd"):
+    """
+    Simulate payment test for development
+    
+    Args:
+        amount: Payment amount
+        currency: Currency code
+        
+    Returns:
+        Test payment result
+    """
+    try:
+        result = await monetization_manager.simulate_payment_test(amount, currency)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Payment simulation failed: {str(e)}"
+        )
+
+@router.get("/ab-test/{test_name}")
+async def get_ab_test_variant(test_name: str):
+    """
+    Get A/B test variant for current user
+    
+    Args:
+        test_name: Name of the A/B test
+        
+    Returns:
+        Variant information
+    """
+    try:
+        # Mock user ID (in real app, get from authentication)
+        user_id = 1
+        
+        result = await monetization_manager.get_user_variant(user_id, test_name)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get A/B test variant: {str(e)}"
+        )
+
+@router.post("/ab-test/{test_name}/track")
+async def track_ab_test_event(test_name: str, event: str, value: float = 1.0):
+    """
+    Track A/B test event
+    
+    Args:
+        test_name: Name of the A/B test
+        event: Event type
+        value: Event value
+        
+    Returns:
+        Tracking result
+    """
+    try:
+        # Mock user ID (in real app, get from authentication)
+        user_id = 1
+        
+        result = await monetization_manager.track_ab_test_event(user_id, test_name, event, value)
+        return {"success": result}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to track A/B test event: {str(e)}"
+        )
+
+@router.get("/freemium-features")
+async def get_freemium_features(db: Session = Depends(get_db)):
+    """
+    Get all freemium features for current user
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Freemium features information
+    """
+    try:
+        # Mock user ID (in real app, get from authentication)
+        user_id = 1
+        
+        result = await monetization_manager.get_all_freemium_features(user_id, db)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get freemium features: {str(e)}"
+        )
+
+@router.get("/freemium-features/{feature_name}")
+async def get_freemium_feature_info(feature_name: str, db: Session = Depends(get_db)):
+    """
+    Get specific freemium feature information
+    
+    Args:
+        feature_name: Name of the feature
+        db: Database session
+        
+    Returns:
+        Feature information
+    """
+    try:
+        # Mock user ID (in real app, get from authentication)
+        user_id = 1
+        
+        result = await monetization_manager.get_freemium_feature_info(feature_name, user_id, db)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get feature info: {str(e)}"
+        ) 

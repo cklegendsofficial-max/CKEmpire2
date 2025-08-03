@@ -1,0 +1,75 @@
+{
+  "total_tests": 8,
+  "passed": 1,
+  "failed": 0,
+  "errors": 7,
+  "success_rate": 12.5,
+  "results": {
+    "Video Health Check": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E993BB60>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get Video Styles": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/styles (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E9A35950>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Generate Video": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/generate (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E9A35E50>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Generate NFT": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/nft/generate (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E99CA060>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Predict NFT Pricing": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/nft/pricing (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E99CA520>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Get NFT Metadata": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/nft/metadata/test_prod_123 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E99EA7B0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Create Stripe Product": {
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/video/nft/create-stripe-product (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000289E99AFDF0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+    },
+    "Video Manager Direct": {
+      "status": "passed",
+      "data": {
+        "video_prompt_length": 1124,
+        "video_metadata": {
+          "title": "Cinematic Zack Snyder Style Video",
+          "description": "\n        Zack Snyder Style Video Production Script\n        \n        Theme: Epic battle between light and darkness\n        Duration: 120 seconds\n        Style: Dark, cinematic, high contrast with slow ...",
+          "style": "Zack Snyder Style",
+          "duration": "Variable",
+          "resolution": "1920x1080",
+          "frame_rate": "24 fps",
+          "aspect_ratio": "2.35:1",
+          "color_grading": {
+            "contrast": 1.3,
+            "saturation": 0.8,
+            "brightness": 0.9,
+            "gamma": 1.1
+          },
+          "effects": [
+            "slow_motion",
+            "dark_contrast",
+            "cinematic_lighting"
+          ],
+          "created_at": "2025-08-03T16:11:03.980535",
+          "version": "1.0"
+        },
+        "nft_metadata": "NFTMetadata(name='Cinematic Zack Snyder Style Video', description='Cinematic Zack Snyder Style video with 2.35:1 aspect ratio', image_url='https://ckempire.com/video-preview.jpg', animation_url='https://ckempire.com/video.mp4', attributes=[{'trait_type': 'Style', 'value': 'Zack Snyder Style'}, {'trait_type': 'Resolution', 'value': '1920x1080'}, {'trait_type': 'Frame Rate', 'value': '24 fps'}, {'trait_type': 'Aspect Ratio', 'value': '2.35:1'}, {'trait_type': 'Effects', 'value': 3}, {'trait_type': 'Rarity', 'value': 'Legendary'}], external_url='https://ckempire.com/nft', seller_fee_basis_points=500, collection={'name': 'CKEmpire Videos', 'family': 'CKEmpire'})",
+        "pricing_prediction": "PricingPrediction(predicted_price=1.5, confidence=0.7, factors=['Style popularity', 'Rarity', 'Collection value'], market_analysis={'style_popularity': 'High', 'collection_value': 'Premium', 'rarity_score': 0.8}, recommendation='List at 0.5-1.0 ETH based on rarity and style')",
+        "stripe_product": {
+          "product_id": "prod_cinematic_zack_snyder_style_video",
+          "price_id": "price_cinematic_zack_snyder_style_video",
+          "price_usd": 3000.0,
+          "price_eth": 1.5,
+          "status": "active"
+        }
+      }
+    }
+  },
+  "timestamp": "2025-08-03T16:11:03.980761"
+}

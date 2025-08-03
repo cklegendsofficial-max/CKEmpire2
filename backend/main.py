@@ -9,7 +9,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from routers import projects, revenue, ethics, ai, performance, cloud, test, subscription, video, finance, analytics
+from routers import projects, revenue, ethics, ai, performance, cloud, test, subscription, video, finance, analytics, auth, security
 from database import init_db, get_db
 try:
     from config.cloud_config import cloud_config
@@ -294,10 +294,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Security
-security = HTTPBearer()
-
 # Include routers
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(security.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(revenue.router, prefix="/api/v1")
 app.include_router(ethics.router, prefix="/api/v1")

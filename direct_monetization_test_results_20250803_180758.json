@@ -1,0 +1,27 @@
+{
+  "total_tests": 3,
+  "passed_tests": 0,
+  "failed_tests": 3,
+  "success_rate": 0.0,
+  "timestamp": "2025-08-03T18:07:58.287982",
+  "test_results": {
+    "monetization_manager": {
+      "monetization_manager": {
+        "success": false,
+        "error": "cannot import name 'settings' from partially initialized module 'config' (most likely due to a circular import) (C:\\CKEmpire\\scripts\\..\\backend\\config\\__init__.py)"
+      }
+    },
+    "freemium_model": {
+      "freemium_test": {
+        "success": false,
+        "error": "cannot import name 'settings' from partially initialized module 'config' (most likely due to a circular import) (C:\\CKEmpire\\scripts\\..\\backend\\config\\__init__.py)"
+      }
+    },
+    "ab_testing": {
+      "ab_testing": {
+        "success": false,
+        "error": "cannot import name 'settings' from partially initialized module 'config' (most likely due to a circular import) (C:\\CKEmpire\\scripts\\..\\backend\\config\\__init__.py)"
+      }
+    }
+  }
+}

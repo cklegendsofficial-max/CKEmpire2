@@ -1,0 +1,93 @@
+{
+  "total_tests": 7,
+  "passed_tests": 7,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-08-03T18:09:15.095632",
+  "test_results": {
+    "pricing_plans": {
+      "pricing_plans": {
+        "success": true,
+        "plans_count": 3,
+        "plans": [
+          "freemium",
+          "premium",
+          "enterprise"
+        ],
+        "freemium_price": 0,
+        "premium_price": 49,
+        "enterprise_price": 199
+      }
+    },
+    "freemium_model": {
+      "freemium_features": {
+        "success": true,
+        "total_features": 6,
+        "available_features": 2,
+        "features": [
+          "ai_requests",
+          "projects",
+          "video_generation",
+          "nft_creation",
+          "advanced_analytics",
+          "api_access"
+        ],
+        "user_tier": "freemium"
+      }
+    },
+    "ab_testing": {
+      "pricing_page_variant": {
+        "success": true,
+        "test_active": true,
+        "variant": "A",
+        "test_id": "pricing_page_v1",
+        "variant_data": {
+          "layout": "grid",
+          "highlight_feature": "ai_requests",
+          "cta_text": "Start Free Trial",
+          "price_display": "monthly"
+        }
+      },
+      "subscription_flow_variant": {
+        "success": true,
+        "test_active": true,
+        "variant": "A",
+        "test_id": "subscription_flow_v1",
+        "variant_data": {
+          "steps": 3,
+          "payment_methods": [
+            "card"
+          ],
+          "trial_days": 7,
+          "upsell_position": "after_payment"
+        }
+      }
+    },
+    "payment_simulation": {
+      "payment_9.99": {
+        "success": true,
+        "payment_success": true,
+        "amount": 9.99,
+        "currency": "usd",
+        "test_mode": true,
+        "payment_id": "test_payment_1754233755"
+      },
+      "payment_49.0": {
+        "success": true,
+        "payment_success": true,
+        "amount": 49.0,
+        "currency": "usd",
+        "test_mode": true,
+        "payment_id": "test_payment_1754233755"
+      },
+      "payment_199.0": {
+        "success": true,
+        "payment_success": true,
+        "amount": 199.0,
+        "currency": "usd",
+        "test_mode": true,
+        "payment_id": "test_payment_1754233755"
+      }
+    }
+  }
+}

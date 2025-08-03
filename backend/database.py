@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet
 import os
 from dotenv import load_dotenv
 try:
-    from config import settings
+    from settings import settings
 except ImportError:
     # For testing purposes, create a simple settings object
     class Settings:
@@ -179,19 +179,35 @@ class AILog(Base):
         return f"<AILog(id={self.id}, model='{self.model}', tokens={self.tokens_used})>"
 
 class User(Base):
-    """User model"""
+    """User model with enhanced security features"""
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    full_name = Column(String(255), nullable=False)
-    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    full_name = Column(String(255), nullable=True)
+    hashed_password = Column(String(255), nullable=True)  # For local auth
     is_active = Column(Boolean, default=True)
+    last_login = Column(DateTime, nullable=True)
+    oauth_provider = Column(String(50), nullable=True)  # google, github, microsoft
+    oauth_id = Column(String(255), nullable=True)  # External provider user ID
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    
+    # Enhanced security fields
+    failed_login_attempts = Column(Integer, default=0)  # Track failed login attempts
+    last_failed_login = Column(DateTime, nullable=True)  # Last failed login timestamp
+    account_locked_until = Column(DateTime, nullable=True)  # Account lockout until
+    password_changed_at = Column(DateTime, nullable=True)  # Last password change
+    session_token_hash = Column(String(255), nullable=True)  # Current session token hash
+    two_factor_enabled = Column(Boolean, default=False)  # 2FA status
+    two_factor_secret = Column(String(255), nullable=True)  # 2FA secret
+    last_security_audit = Column(DateTime, nullable=True)  # Last security audit
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def __repr__(self):
-        return f"<User(id={self.id}, email='{self.email}', name='{self.full_name}')>"
+        return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
 
 class Subscription(Base):
     """Subscription model"""

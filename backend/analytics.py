@@ -404,8 +404,21 @@ class AnalyticsManager:
         
         return {
             "summary": summary,
-            "user_metrics": list(self.user_metrics.values()),
-            "ab_test_results": list(self.ab_tests.values()),
+            "user_metrics": [metric.to_dict() for metric in self.user_metrics.values()],
+            "ab_test_results": [
+                {
+                    "test_id": test.test_id,
+                    "variant_a": test.variant_a,
+                    "variant_b": test.variant_b,
+                    "confidence_level": test.confidence_level,
+                    "winner": test.winner,
+                    "p_value": test.p_value,
+                    "sample_size": test.sample_size,
+                    "metric": test.metric,
+                    "timestamp": test.timestamp.isoformat()
+                }
+                for test in self.ab_tests.values()
+            ],
             "top_pages": summary.get("top_performing_pages", []),
             "revenue_trends": [12000, 15000, 18000, 22000, 25000, 28000],
             "conversion_funnel": [1000, 700, 350, 175],

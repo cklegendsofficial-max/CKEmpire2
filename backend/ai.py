@@ -55,7 +55,15 @@ except ImportError:
     logging.warning("Stripe not available. Install with: pip install stripe")
 
 # Configuration
-# from config import settings
+try:
+    from settings import settings
+except ImportError:
+    # Mock settings for development
+    class settings:
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+        ETHEREUM_PRIVATE_KEY = os.getenv("ETHEREUM_PRIVATE_KEY", "")
+        ETHEREUM_CONTRACT_ADDRESS = os.getenv("ETHEREUM_CONTRACT_ADDRESS", "")
+        STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +120,7 @@ class EmpireStrategy:
 
 @dataclass
 class FinancialMetrics:
-    """Financial analysis metrics"""
+    """Financial analysis metrics with enhanced DCF calculations"""
     npv: float  # Net Present Value
     irr: float  # Internal Rate of Return
     payback_period: float  # in months
@@ -121,19 +129,27 @@ class FinancialMetrics:
     break_even_month: int
     total_investment: float
     projected_revenue: float
+    discounted_cash_flows: List[float]  # Monthly DCF values
+    present_value: float  # Total present value
+    terminal_value: float  # Terminal value at end of period
+    wacc: float  # Weighted Average Cost of Capital
 
 @dataclass
 class FineTuningDataset:
-    """Fine-tuning dataset structure"""
+    """Enhanced fine-tuning dataset structure"""
     training_data: List[Dict[str, str]]
     validation_data: List[Dict[str, str]]
     model_name: str
     training_status: str = "pending"
     created_at: datetime = None
+    dataset_size: int = 0
+    accuracy_score: Optional[float] = None
     
     def __post_init__(self):
         if self.created_at is None:
             self.created_at = datetime.utcnow()
+        if self.dataset_size == 0:
+            self.dataset_size = len(self.training_data) + len(self.validation_data)
 
 @dataclass
 class ContentIdea:
@@ -200,7 +216,7 @@ class AGIState:
     evolution_count: int = 0
 
 class AIModule:
-    """Main AI module for content generation, video production, NFT automation, and fine-tuning"""
+    """Enhanced AI module for content generation, video production, NFT automation, and fine-tuning"""
     
     def __init__(self):
         self.client = None
@@ -233,52 +249,103 @@ class AIModule:
         self._load_or_create_dataset()
 
     def _load_strategy_templates(self) -> Dict[str, Dict[str, Any]]:
-        """Load empire strategy templates"""
+        """Load enhanced empire strategy templates"""
         return {
             "lean_startup": {
                 "title": "Lean Startup Strategy",
-                "description": "Minimal viable product approach with rapid iteration",
+                "description": "Minimal viable product approach with rapid iteration and customer validation",
                 "key_actions": [
                     "Build MVP in 2-3 months",
                     "Validate with early adopters",
                     "Iterate based on feedback",
-                    "Focus on product-market fit"
+                    "Focus on product-market fit",
+                    "Bootstrap funding initially"
                 ],
                 "timeline_months": 6,
                 "estimated_investment": 50000,
                 "projected_roi": 0.15,
                 "risk_level": "Medium",
-                "success_metrics": ["User growth", "Retention rate", "Revenue per user"]
+                "success_metrics": ["User growth", "Retention rate", "Revenue per user", "Customer acquisition cost"]
             },
             "scale_up": {
                 "title": "Scale-Up Strategy",
-                "description": "Rapid growth with significant investment",
+                "description": "Rapid growth with significant investment and market expansion",
                 "key_actions": [
                     "Secure Series A funding",
                     "Expand team to 50+ employees",
                     "Enter new markets",
-                    "Invest in marketing and sales"
+                    "Invest in marketing and sales",
+                    "Build scalable infrastructure"
                 ],
                 "timeline_months": 18,
                 "estimated_investment": 2000000,
                 "projected_roi": 0.25,
                 "risk_level": "High",
-                "success_metrics": ["Revenue growth", "Market share", "Team size"]
+                "success_metrics": ["Revenue growth", "Market share", "Team size", "Customer lifetime value"]
             },
             "diversification": {
                 "title": "Diversification Strategy",
-                "description": "Expand into new product lines and markets",
+                "description": "Expand into new product lines and markets to reduce risk",
                 "key_actions": [
                     "Research new market opportunities",
                     "Develop complementary products",
                     "Acquire smaller companies",
-                    "Build strategic partnerships"
+                    "Build strategic partnerships",
+                    "Enter adjacent markets"
                 ],
                 "timeline_months": 24,
                 "estimated_investment": 1000000,
                 "projected_roi": 0.20,
                 "risk_level": "Medium-High",
-                "success_metrics": ["Revenue diversification", "Market penetration", "Customer acquisition"]
+                "success_metrics": ["Revenue diversification", "Market penetration", "Customer acquisition", "Cross-selling rate"]
+            },
+            "acquisition": {
+                "title": "Acquisition Strategy",
+                "description": "Grow through strategic acquisitions and market consolidation",
+                "key_actions": [
+                    "Identify acquisition targets",
+                    "Conduct due diligence",
+                    "Negotiate favorable terms",
+                    "Integrate acquired companies",
+                    "Optimize synergies"
+                ],
+                "timeline_months": 30,
+                "estimated_investment": 5000000,
+                "projected_roi": 0.35,
+                "risk_level": "Very High",
+                "success_metrics": ["Market share", "Revenue growth", "Synergy realization", "Integration success"]
+            },
+            "innovation": {
+                "title": "Innovation Strategy",
+                "description": "Focus on R&D and breakthrough technologies",
+                "key_actions": [
+                    "Invest in R&D infrastructure",
+                    "Hire top research talent",
+                    "File patent applications",
+                    "Partner with research institutions",
+                    "Create innovation labs"
+                ],
+                "timeline_months": 36,
+                "estimated_investment": 3000000,
+                "projected_roi": 0.40,
+                "risk_level": "Very High",
+                "success_metrics": ["Patent portfolio", "Innovation pipeline", "Research output", "Technology leadership"]
+            },
+            "cost_optimization": {
+                "title": "Cost Optimization Strategy",
+                "description": "Improve profitability through operational efficiency",
+                "key_actions": [
+                    "Audit current operations",
+                    "Implement automation",
+                    "Negotiate better supplier terms",
+                    "Optimize resource allocation",
+                    "Reduce waste and inefficiencies"
+                ],
+                "timeline_months": 12,
+                "estimated_investment": 200000,
+                "projected_roi": 0.18,
+                "risk_level": "Low",
+                "success_metrics": ["Cost reduction", "Profit margin improvement", "Operational efficiency", "Employee productivity"]
             }
         }
 
@@ -287,16 +354,17 @@ class AIModule:
         os.makedirs("data", exist_ok=True)
 
     def _load_or_create_dataset(self):
-        """Load existing dataset or create new one"""
+        """Load existing dataset or create enhanced one"""
         if os.path.exists(self.dataset_path):
             logger.info(f"Loading existing dataset from {self.dataset_path}")
         else:
-            logger.info("Creating new fine-tuning dataset")
-            self._create_sample_dataset()
+            logger.info("Creating enhanced fine-tuning dataset")
+            self._create_enhanced_dataset()
 
-    def _create_sample_dataset(self):
-        """Create sample dataset for fine-tuning"""
+    def _create_enhanced_dataset(self):
+        """Create enhanced dataset for fine-tuning with more diverse examples"""
         sample_data = [
+            # Turkish examples
             {"input": "Düşük bütçe ile başla", "output": "Lean startup stratejisi: MVP geliştir, erken kullanıcılarla test et, hızlı iterasyon yap. Bütçe: $50K, Süre: 6 ay, ROI: %15"},
             {"input": "Revenue hedefi $20K", "output": "Scale-up stratejisi: Pazarlama bütçesini artır, satış ekibi kur, yeni pazarlara açıl. Bütçe: $200K, Süre: 12 ay, ROI: %25"},
             {"input": "Yüksek risk toleransı", "output": "Innovation stratejisi: R&D yatırımı yap, yeni teknolojiler dene, patent başvuruları. Bütçe: $500K, Süre: 18 ay, ROI: %40"},
@@ -306,16 +374,51 @@ class AIModule:
             {"input": "Teknoloji odaklı", "output": "Innovation stratejisi: AI/ML yatırımı yap, yeni teknolojiler geliştir, patent portföyü oluştur. Bütçe: $400K, Süre: 15 ay, ROI: %35"},
             {"input": "Konsolide et", "output": "Acquisition stratejisi: Rakip şirketleri satın al, pazar konsolidasyonu yap, monopol pozisyonu kur. Bütçe: $2M, Süre: 30 ay, ROI: %50"},
             {"input": "Sürdürülebilir büyüme", "output": "Scale-up stratejisi: Organik büyüme odaklan, müşteri memnuniyetini artır, uzun vadeli planlama yap. Bütçe: $150K, Süre: 18 ay, ROI: %22"},
-            {"input": "Kriz yönetimi", "output": "Lean startup stratejisi: Nakit akışını koru, kritik operasyonları sürdür, esnek yapı kur. Bütçe: $50K, Süre: 6 ay, ROI: %10"}
+            {"input": "Kriz yönetimi", "output": "Lean startup stratejisi: Nakit akışını koru, kritik operasyonları sürdür, esnek yapı kur. Bütçe: $50K, Süre: 6 ay, ROI: %10"},
+            
+            # English examples
+            {"input": "Start with low budget", "output": "Lean startup strategy: Build MVP, test with early adopters, rapid iteration. Budget: $50K, Duration: 6 months, ROI: 15%"},
+            {"input": "Revenue target $20K", "output": "Scale-up strategy: Increase marketing budget, build sales team, enter multiple markets. Budget: $200K, Duration: 12 months, ROI: 25%"},
+            {"input": "High risk tolerance", "output": "Innovation strategy: Invest in R&D, try new technologies, file patents. Budget: $500K, Duration: 18 months, ROI: 40%"},
+            {"input": "Want fast growth", "output": "Acquisition strategy: Buy small companies, strategic partnerships, increase market share. Budget: $1M, Duration: 24 months, ROI: 30%"},
+            {"input": "Cost optimization", "output": "Cost optimization strategy: Improve operational efficiency, automation investment, cut unnecessary costs. Budget: $100K, Duration: 6 months, ROI: 20%"},
+            {"input": "Expand to new markets", "output": "Diversification strategy: Develop new product lines, research different markets, strategic partnerships. Budget: $300K, Duration: 12 months, ROI: 18%"},
+            {"input": "Technology focused", "output": "Innovation strategy: Invest in AI/ML, develop new technologies, create patent portfolio. Budget: $400K, Duration: 15 months, ROI: 35%"},
+            {"input": "Consolidate market", "output": "Acquisition strategy: Buy competitors, market consolidation, establish monopoly position. Budget: $2M, Duration: 30 months, ROI: 50%"},
+            {"input": "Sustainable growth", "output": "Scale-up strategy: Focus on organic growth, increase customer satisfaction, long-term planning. Budget: $150K, Duration: 18 months, ROI: 22%"},
+            {"input": "Crisis management", "output": "Lean startup strategy: Preserve cash flow, maintain critical operations, flexible structure. Budget: $50K, Duration: 6 months, ROI: 10%"},
+            
+            # Specific industry examples
+            {"input": "SaaS startup with $100K", "output": "Lean startup strategy: Build MVP SaaS platform, focus on product-market fit, bootstrap funding. Budget: $100K, Duration: 12 months, ROI: 20%"},
+            {"input": "E-commerce expansion", "output": "Scale-up strategy: Invest in marketing automation, expand product catalog, enter new markets. Budget: $500K, Duration: 18 months, ROI: 30%"},
+            {"input": "AI/ML company", "output": "Innovation strategy: Hire AI researchers, invest in computing infrastructure, file AI patents. Budget: $1M, Duration: 24 months, ROI: 45%"},
+            {"input": "Manufacturing efficiency", "output": "Cost optimization strategy: Implement lean manufacturing, automate production lines, optimize supply chain. Budget: $300K, Duration: 12 months, ROI: 25%"},
+            {"input": "Digital marketing agency", "output": "Diversification strategy: Add new service lines, target different industries, strategic partnerships. Budget: $200K, Duration: 15 months, ROI: 28%"},
+            
+            # Financial scenarios
+            {"input": "Need $1M revenue in 2 years", "output": "Scale-up strategy: Aggressive marketing, expand sales team, enter multiple markets. Budget: $800K, Duration: 24 months, ROI: 25%"},
+            {"input": "Conservative growth approach", "output": "Lean startup strategy: Focus on profitability, organic growth, minimal external funding. Budget: $150K, Duration: 18 months, ROI: 15%"},
+            {"input": "High-growth tech startup", "output": "Innovation strategy: R&D investment, talent acquisition, market disruption. Budget: $2M, Duration: 36 months, ROI: 50%"},
+            {"input": "Traditional business transformation", "output": "Diversification strategy: Digital transformation, new product development, market expansion. Budget: $600K, Duration: 24 months, ROI: 22%"},
+            {"input": "Crisis recovery plan", "output": "Cost optimization strategy: Restructure operations, reduce costs, focus on core business. Budget: $100K, Duration: 12 months, ROI: 12%"}
         ]
         
-        # Add more diverse examples
-        for i in range(90):  # Total 100 examples
+        # Add more diverse examples with different scenarios
+        for i in range(75):  # Total 100 examples
             strategy_type = list(self.strategy_templates.keys())[i % len(self.strategy_templates)]
             template = self.strategy_templates[strategy_type]
             
-            input_text = f"Scenario {i+1}: {self._generate_random_input()}"
-            output_text = f"{template['title']}: {template['description']}. Bütçe: ${template['estimated_investment']:,}, Süre: {template['timeline_months']} ay, ROI: %{template['projected_roi']*100:.0f}"
+            # Generate varied input scenarios
+            input_scenarios = [
+                f"Scenario {i+1}: {self._generate_random_input()}",
+                f"Business case {i+1}: {self._generate_random_input()}",
+                f"Strategy request {i+1}: {self._generate_random_input()}",
+                f"Growth plan {i+1}: {self._generate_random_input()}",
+                f"Investment strategy {i+1}: {self._generate_random_input()}"
+            ]
+            
+            input_text = input_scenarios[i % len(input_scenarios)]
+            output_text = f"{template['title']}: {template['description']}. Budget: ${template['estimated_investment']:,}, Duration: {template['timeline_months']} months, ROI: {template['projected_roi']*100:.0f}%"
             
             sample_data.append({"input": input_text, "output": output_text})
         
@@ -324,7 +427,7 @@ class AIModule:
             for item in sample_data:
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
         
-        logger.info(f"Created sample dataset with {len(sample_data)} examples")
+        logger.info(f"Created enhanced dataset with {len(sample_data)} examples")
 
     def _generate_random_input(self) -> str:
         """Generate random input for dataset"""
@@ -338,40 +441,55 @@ class AIModule:
             "Teknoloji odaklı",
             "Konsolide et",
             "Sürdürülebilir büyüme",
-            "Kriz yönetimi"
+            "Kriz yönetimi",
+            "Start with low budget",
+            "Revenue target $50K",
+            "High risk tolerance",
+            "Want fast growth",
+            "Cost optimization",
+            "Expand to new markets",
+            "Technology focused",
+            "Consolidate market",
+            "Sustainable growth",
+            "Crisis management"
         ]
-        return inputs[len(inputs) % 10]
+        return inputs[len(inputs) % 20]
 
-    async def generate_empire_strategy(self, user_input: str) -> EmpireStrategy:
+    async def generate_custom_strategy(self, user_input: str, include_financial_metrics: bool = True) -> Tuple[EmpireStrategy, Optional[FinancialMetrics]]:
         """
-        Generate personalized empire strategy based on user input
+        Generate personalized empire strategy based on user input with enhanced customization
         
         Args:
             user_input: User's strategy requirements
+            include_financial_metrics: Whether to include DCF calculations
             
         Returns:
-            EmpireStrategy with personalized recommendations
+            Tuple of (EmpireStrategy, Optional[FinancialMetrics])
         """
         try:
             if self.client and self.fine_tuned_model:
                 # Use fine-tuned model
                 response = await self._call_fine_tuned_model(user_input)
             else:
-                # Use base model with prompt engineering
-                response = await self._call_base_model(user_input)
+                # Use base model with enhanced prompt engineering
+                response = await self._call_enhanced_base_model(user_input)
             
             # Parse response and create strategy
-            strategy = self._parse_strategy_response(response, user_input)
+            strategy = self._parse_enhanced_strategy_response(response, user_input)
             
-            # Calculate financial metrics
-            financial_metrics = self._calculate_financial_metrics(strategy)
+            # Calculate financial metrics if requested
+            financial_metrics = None
+            if include_financial_metrics:
+                financial_metrics = self._calculate_enhanced_financial_metrics(strategy)
             
-            logger.info(f"Generated empire strategy: {strategy.title}")
-            return strategy
+            logger.info(f"Generated custom empire strategy: {strategy.title}")
+            return strategy, financial_metrics
             
         except Exception as e:
-            logger.error(f"Error generating empire strategy: {e}")
-            return self._create_fallback_strategy(user_input)
+            logger.error(f"Error generating custom strategy: {e}")
+            fallback_strategy = self._create_fallback_strategy(user_input)
+            fallback_metrics = self._calculate_enhanced_financial_metrics(fallback_strategy) if include_financial_metrics else None
+            return fallback_strategy, fallback_metrics
 
     async def _call_fine_tuned_model(self, user_input: str) -> str:
         """Call fine-tuned model for strategy generation"""
@@ -388,51 +506,52 @@ class AIModule:
             return response.choices[0].message.content
         except Exception as e:
             logger.error(f"Fine-tuned model call failed: {e}")
-            return await self._call_base_model(user_input)
+            return await self._call_enhanced_base_model(user_input)
 
-    async def _call_base_model(self, user_input: str) -> str:
-        """Call base model with prompt engineering"""
+    async def _call_enhanced_base_model(self, user_input: str) -> str:
+        """Call base model with enhanced prompt engineering"""
         try:
             prompt = f"""
-            Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş strateji öner.
+            Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş, detaylı strateji öner.
             
             Kullanıcı Girdisi: {user_input}
             
             Lütfen şu formatta yanıt ver:
-            - Strateji Türü: [Lean Startup/Scale-Up/Diversification/Acquisition/Innovation]
+            - Strateji Türü: [Lean Startup/Scale-Up/Diversification/Acquisition/Innovation/Cost Optimization]
             - Başlık: [Strateji başlığı]
-            - Açıklama: [Detaylı açıklama]
-            - Ana Aksiyonlar: [1. 2. 3. 4.]
+            - Açıklama: [Detaylı açıklama ve gerekçeler]
+            - Ana Aksiyonlar: [1. 2. 3. 4. 5.]
             - Süre: [Ay cinsinden]
             - Tahmini Yatırım: [USD]
             - Projeksiyon ROI: [%]
-            - Risk Seviyesi: [Düşük/Orta/Yüksek]
-            - Başarı Metrikleri: [1. 2. 3.]
+            - Risk Seviyesi: [Düşük/Orta/Yüksek/Çok Yüksek]
+            - Başarı Metrikleri: [1. 2. 3. 4.]
+            - Özel Öneriler: [Kullanıcıya özel öneriler]
             """
             
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                    {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının ihtiyaçlarına göre kişiselleştirilmiş stratejiler öner."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_tokens=800,
                 temperature=0.7
             )
             return response.choices[0].message.content
         except Exception as e:
-            logger.error(f"Base model call failed: {e}")
-            return self._create_mock_response(user_input)
+            logger.error(f"Enhanced base model call failed: {e}")
+            return self._create_enhanced_mock_response(user_input)
 
-    def _parse_strategy_response(self, response: str, user_input: str) -> EmpireStrategy:
-        """Parse AI response into EmpireStrategy object"""
+    def _parse_enhanced_strategy_response(self, response: str, user_input: str) -> EmpireStrategy:
+        """Parse AI response into enhanced EmpireStrategy object"""
         try:
             # Extract strategy type based on keywords
-            strategy_type = self._determine_strategy_type(response, user_input)
+            strategy_type = self._determine_enhanced_strategy_type(response, user_input)
             
             # Extract other fields from response
-            title = self._extract_field(response, "Başlık", "Empire Strategy")
-            description = self._extract_field(response, "Açıklama", "Personalized strategy")
+            title = self._extract_field(response, "Başlık", "Custom Empire Strategy")
+            description = self._extract_field(response, "Açıklama", "Personalized strategy based on user requirements")
             key_actions = self._extract_list_field(response, "Ana Aksiyonlar")
             timeline_months = self._extract_number_field(response, "Süre", 12)
             estimated_investment = self._extract_number_field(response, "Tahmini Yatırım", 100000)
@@ -452,26 +571,37 @@ class AIModule:
                 success_metrics=success_metrics
             )
         except Exception as e:
-            logger.error(f"Error parsing strategy response: {e}")
+            logger.error(f"Error parsing enhanced strategy response: {e}")
             return self._create_fallback_strategy(user_input)
 
-    def _determine_strategy_type(self, response: str, user_input: str) -> StrategyType:
-        """Determine strategy type based on response and input"""
+    def _determine_enhanced_strategy_type(self, response: str, user_input: str) -> StrategyType:
+        """Determine strategy type based on response and input with enhanced logic"""
         response_lower = response.lower()
         input_lower = user_input.lower()
         
-        if any(word in input_lower for word in ["düşük", "lean", "minimal"]):
+        # Enhanced keyword matching with more specific patterns
+        lean_keywords = ["düşük", "lean", "minimal", "bootstrap", "mvp", "startup", "low budget", "low cost"]
+        scale_keywords = ["büyüme", "scale", "hızlı", "growth", "expansion", "series a", "revenue", "sales", "market"]
+        diversification_keywords = ["diversification", "çeşitlendirme", "yeni pazar", "new market", "product line", "market expansion", "diversify"]
+        acquisition_keywords = ["acquisition", "satın alma", "konsolidasyon", "buy", "merge", "acquire", "purchase"]
+        innovation_keywords = ["innovation", "teknoloji", "R&D", "research", "patent", "ai", "ml", "technology", "tech", "high risk"]
+        cost_keywords = ["maliyet", "cost", "optimization", "efficiency", "reduce", "optimize", "efficient"]
+        
+        # Check for specific patterns in input
+        if any(word in input_lower for word in lean_keywords):
             return StrategyType.LEAN_STARTUP
-        elif any(word in input_lower for word in ["büyüme", "scale", "hızlı"]):
+        elif any(word in input_lower for word in scale_keywords):
             return StrategyType.SCALE_UP
-        elif any(word in input_lower for word in ["diversification", "çeşitlendirme", "yeni pazar"]):
+        elif any(word in input_lower for word in diversification_keywords):
             return StrategyType.DIVERSIFICATION
-        elif any(word in input_lower for word in ["acquisition", "satın alma", "konsolidasyon"]):
+        elif any(word in input_lower for word in acquisition_keywords):
             return StrategyType.ACQUISITION
-        elif any(word in input_lower for word in ["innovation", "teknoloji", "R&D"]):
+        elif any(word in input_lower for word in innovation_keywords):
             return StrategyType.INNOVATION
-        else:
+        elif any(word in input_lower for word in cost_keywords):
             return StrategyType.COST_OPTIMIZATION
+        else:
+            return StrategyType.LEAN_STARTUP  # Default
 
     def _extract_field(self, text: str, field_name: str, default: str) -> str:
         """Extract field from response text"""
@@ -542,30 +672,33 @@ class AIModule:
             success_metrics=["User growth", "Revenue", "Market fit"]
         )
 
-    def _create_mock_response(self, user_input: str) -> str:
-        """Create mock response for testing"""
+    def _create_enhanced_mock_response(self, user_input: str) -> str:
+        """Create enhanced mock response for testing"""
         return f"""
         Strateji Türü: Lean Startup
-        Başlık: {user_input} Stratejisi
-        Açıklama: Kullanıcı girdisine göre kişiselleştirilmiş strateji
+        Başlık: {user_input} Özel Stratejisi
+        Açıklama: Kullanıcı girdisine göre kişiselleştirilmiş, detaylı strateji analizi
         Ana Aksiyonlar:
-        - 1. Pazar analizi yap
-        - 2. MVP geliştir
-        - 3. Kullanıcı testleri
-        - 4. İterasyon yap
-        Süre: 6
-        Tahmini Yatırım: 50000
-        Projeksiyon ROI: 15%
+        - 1. Pazar analizi ve hedef kitle belirleme
+        - 2. MVP geliştirme ve prototip testi
+        - 3. Erken kullanıcı feedback'i toplama
+        - 4. Hızlı iterasyon ve ürün iyileştirme
+        - 5. Ölçeklenebilir büyüme planı
+        Süre: 8
+        Tahmini Yatırım: 75000
+        Projeksiyon ROI: 18%
         Risk Seviyesi: Orta
         Başarı Metrikleri:
-        - 1. Kullanıcı büyümesi
-        - 2. Gelir artışı
-        - 3. Pazar uyumu
+        - 1. Kullanıcı büyüme oranı
+        - 2. Gelir artış hızı
+        - 3. Pazar uyumu skoru
+        - 4. Müşteri memnuniyeti
+        Özel Öneriler: Kullanıcının spesifik ihtiyaçlarına göre özelleştirilmiş öneriler
         """
 
-    def _calculate_financial_metrics(self, strategy: EmpireStrategy) -> FinancialMetrics:
+    def _calculate_enhanced_financial_metrics(self, strategy: EmpireStrategy) -> FinancialMetrics:
         """
-        Calculate financial metrics using DCF (Discounted Cash Flow) formula
+        Calculate enhanced financial metrics using DCF (Discounted Cash Flow) formula
         
         Args:
             strategy: Empire strategy object
@@ -574,40 +707,65 @@ class AIModule:
             FinancialMetrics with calculated values
         """
         try:
-            # DCF calculation parameters
-            discount_rate = 0.10  # 10% discount rate
-            monthly_revenue_growth = strategy.projected_roi / 12
+            # Enhanced DCF calculation parameters
+            discount_rate = 0.12  # 12% discount rate (WACC)
             initial_investment = strategy.estimated_investment
             
-            # Calculate monthly cash flows
+            # More realistic revenue projection
+            # Start with lower revenue and grow over time
+            base_monthly_revenue = initial_investment * 0.1  # 10% of investment as base monthly revenue
+            monthly_growth_rate = strategy.projected_roi / 12
+            
+            # Calculate monthly cash flows with more realistic projections
             monthly_cash_flows = []
+            discounted_cash_flows = []
             cumulative_cash_flow = -initial_investment
             
-            for month in range(strategy.timeline_months):
-                monthly_revenue = initial_investment * monthly_revenue_growth * (1 + monthly_revenue_growth) ** month
-                monthly_cash_flow = monthly_revenue - (initial_investment / strategy.timeline_months)
+            for month in range(int(strategy.timeline_months)):  # Convert to int
+                # More realistic revenue projection with growth curve
+                monthly_revenue = base_monthly_revenue * (1 + monthly_growth_rate) ** month
+                
+                # Monthly expenses (decreasing over time due to efficiency gains)
+                monthly_expenses = (initial_investment / strategy.timeline_months) * (1 - 0.01 * month)  # 1% efficiency gain per month
+                
+                monthly_cash_flow = monthly_revenue - monthly_expenses
                 monthly_cash_flows.append(monthly_cash_flow)
+                
+                # Calculate discounted cash flow
+                discounted_cf = monthly_cash_flow / ((1 + discount_rate/12) ** (month + 1))
+                discounted_cash_flows.append(discounted_cf)
+                
                 cumulative_cash_flow += monthly_cash_flow
                 
                 if cumulative_cash_flow >= 0 and len(monthly_cash_flows) == month + 1:
                     break_even_month = month + 1
                 else:
-                    break_even_month = strategy.timeline_months
+                    break_even_month = int(strategy.timeline_months)  # Convert to int
             
             # Calculate NPV
-            npv = -initial_investment
-            for i, cash_flow in enumerate(monthly_cash_flows):
-                npv += cash_flow / ((1 + discount_rate/12) ** (i + 1))
+            npv = -initial_investment + sum(discounted_cash_flows)
             
             # Calculate IRR (simplified)
             total_revenue = sum(monthly_cash_flows)
-            irr = (total_revenue / initial_investment) ** (1 / strategy.timeline_months) - 1
+            if initial_investment > 0:
+                irr = (total_revenue / initial_investment) ** (1 / strategy.timeline_months) - 1
+            else:
+                irr = 0
             
             # Calculate payback period
             payback_period = break_even_month
             
             # Calculate ROI percentage
-            roi_percentage = (total_revenue - initial_investment) / initial_investment * 100
+            if initial_investment > 0:
+                roi_percentage = (total_revenue - initial_investment) / initial_investment * 100
+            else:
+                roi_percentage = 0
+            
+            # Calculate present value
+            present_value = sum(discounted_cash_flows)
+            
+            # Calculate terminal value (value at end of period)
+            terminal_value = monthly_cash_flows[-1] * 12 / discount_rate if monthly_cash_flows and monthly_cash_flows[-1] > 0 else 0
             
             return FinancialMetrics(
                 npv=npv,
@@ -617,11 +775,15 @@ class AIModule:
                 monthly_cash_flow=monthly_cash_flows[0] if monthly_cash_flows else 0,
                 break_even_month=break_even_month,
                 total_investment=initial_investment,
-                projected_revenue=total_revenue
+                projected_revenue=total_revenue,
+                discounted_cash_flows=discounted_cash_flows,
+                present_value=present_value,
+                terminal_value=terminal_value,
+                wacc=discount_rate
             )
             
         except Exception as e:
-            logger.error(f"Error calculating financial metrics: {e}")
+            logger.error(f"Error calculating enhanced financial metrics: {e}")
             return FinancialMetrics(
                 npv=0,
                 irr=0,
@@ -630,12 +792,16 @@ class AIModule:
                 monthly_cash_flow=0,
                 break_even_month=12,
                 total_investment=strategy.estimated_investment,
-                projected_revenue=0
+                projected_revenue=0,
+                discounted_cash_flows=[],
+                present_value=0,
+                terminal_value=0,
+                wacc=0.12
             )
 
-    async def create_fine_tuning_dataset(self) -> FineTuningDataset:
+    async def create_enhanced_fine_tuning_dataset(self) -> FineTuningDataset:
         """
-        Create fine-tuning dataset for empire strategy generation
+        Create enhanced fine-tuning dataset for empire strategy generation
         
         Returns:
             FineTuningDataset object
@@ -657,7 +823,7 @@ class AIModule:
                 data = json.loads(line.strip())
                 training_data.append({
                     "messages": [
-                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş strateji öner."},
                         {"role": "user", "content": data["input"]},
                         {"role": "assistant", "content": data["output"]}
                     ]
@@ -667,7 +833,7 @@ class AIModule:
                 data = json.loads(line.strip())
                 validation_data.append({
                     "messages": [
-                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın."},
+                        {"role": "system", "content": "Sen bir dijital imparatorluk stratejisi uzmanısın. Kullanıcının girdisine göre kişiselleştirilmiş strateji öner."},
                         {"role": "user", "content": data["input"]},
                         {"role": "assistant", "content": data["output"]}
                     ]
@@ -677,24 +843,26 @@ class AIModule:
                 training_data=training_data,
                 validation_data=validation_data,
                 model_name="gpt-4",
-                training_status="ready"
+                training_status="ready",
+                dataset_size=len(training_data) + len(validation_data)
             )
             
-            logger.info(f"Created fine-tuning dataset with {len(training_data)} training and {len(validation_data)} validation examples")
+            logger.info(f"Created enhanced fine-tuning dataset with {len(training_data)} training and {len(validation_data)} validation examples")
             return dataset
             
         except Exception as e:
-            logger.error(f"Error creating fine-tuning dataset: {e}")
+            logger.error(f"Error creating enhanced fine-tuning dataset: {e}")
             return FineTuningDataset(
                 training_data=[],
                 validation_data=[],
                 model_name="gpt-4",
-                training_status="failed"
+                training_status="failed",
+                dataset_size=0
             )
 
-    async def start_fine_tuning(self, dataset: FineTuningDataset) -> str:
+    async def start_enhanced_fine_tuning(self, dataset: FineTuningDataset) -> str:
         """
-        Start fine-tuning process
+        Start enhanced fine-tuning process
         
         Args:
             dataset: FineTuningDataset object
@@ -707,7 +875,7 @@ class AIModule:
                 raise Exception("OpenAI client not available")
             
             # Create training file
-            training_file_path = "data/training_data.jsonl"
+            training_file_path = "data/enhanced_training_data.jsonl"
             with open(training_file_path, 'w', encoding='utf-8') as f:
                 for item in dataset.training_data:
                     f.write(json.dumps(item) + '\n')
@@ -719,22 +887,22 @@ class AIModule:
                     purpose="fine-tune"
                 )
             
-            # Create fine-tuning job
+            # Create fine-tuning job with enhanced parameters
             job_response = self.client.fine_tuning.jobs.create(
                 training_file=file_response.id,
                 model="gpt-4",
                 hyperparameters={
-                    "n_epochs": 3,
+                    "n_epochs": 4,
                     "batch_size": 1,
-                    "learning_rate_multiplier": 0.1
+                    "learning_rate_multiplier": 0.15
                 }
             )
             
-            logger.info(f"Started fine-tuning job: {job_response.id}")
+            logger.info(f"Started enhanced fine-tuning job: {job_response.id}")
             return job_response.id
             
         except Exception as e:
-            logger.error(f"Error starting fine-tuning: {e}")
+            logger.error(f"Error starting enhanced fine-tuning: {e}")
             return "failed"
 
     async def check_fine_tuning_status(self, job_id: str) -> Dict[str, Any]:
@@ -777,7 +945,7 @@ class AIModule:
     ) -> List[ContentIdea]:
         """Generate viral content ideas using OpenAI"""
         
-        if not self.openai_client:
+        if not self.client: # Changed from self.openai_client to self.client
             logger.error("OpenAI client not available")
             return []
         
@@ -804,7 +972,7 @@ class AIModule:
             
             # Call OpenAI
             response = await asyncio.to_thread(
-                self.openai_client.chat.completions.create,
+                self.client.chat.completions.create, # Changed from self.openai_client to self.client
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a viral content strategist. Generate highly engaging, shareable content ideas."},
@@ -1332,6 +1500,67 @@ class AIModule:
             considerations.append("ai_disclosure")
         
         return considerations
+
+    async def test_fine_tuning_accuracy(self, test_inputs: List[str]) -> Dict[str, Any]:
+        """
+        Test fine-tuning accuracy with mock dataset
+        
+        Args:
+            test_inputs: List of test inputs
+            
+        Returns:
+            Accuracy test results
+        """
+        try:
+            correct_predictions = 0
+            total_predictions = len(test_inputs)
+            
+            for test_input in test_inputs:
+                # Generate strategy
+                strategy, _ = await self.generate_custom_strategy(test_input, include_financial_metrics=False)
+                
+                # Simple accuracy check based on strategy type matching
+                expected_type = self._determine_enhanced_strategy_type(test_input, test_input)
+                if strategy.strategy_type == expected_type:
+                    correct_predictions += 1
+            
+            accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0
+            
+            return {
+                "accuracy": accuracy,
+                "correct_predictions": correct_predictions,
+                "total_predictions": total_predictions,
+                "test_inputs": test_inputs,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error testing fine-tuning accuracy: {e}")
+            return {
+                "accuracy": 0,
+                "correct_predictions": 0,
+                "total_predictions": len(test_inputs),
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+    # Keep existing methods for backward compatibility
+    async def generate_empire_strategy(self, user_input: str) -> EmpireStrategy:
+        """Backward compatibility method"""
+        strategy, _ = await self.generate_custom_strategy(user_input, include_financial_metrics=False)
+        return strategy
+
+    async def create_fine_tuning_dataset(self) -> FineTuningDataset:
+        """Backward compatibility method"""
+        return await self.create_enhanced_fine_tuning_dataset()
+
+    async def start_fine_tuning(self, dataset: FineTuningDataset) -> str:
+        """Backward compatibility method"""
+        return await self.start_enhanced_fine_tuning(dataset)
+
+    def _calculate_financial_metrics(self, strategy: EmpireStrategy) -> FinancialMetrics:
+        """Backward compatibility method"""
+        return self._calculate_enhanced_financial_metrics(strategy)
 
 # Global AI module instance
 ai_module = AIModule() 

@@ -98,6 +98,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# CKEmpireMobile - React Native app
+CKEmpireMobile/
+
 # Environments
 .env
 .venv

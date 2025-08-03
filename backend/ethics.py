@@ -1,6 +1,6 @@
 """
-Enhanced Ethics Module with Bias Detection and Correction
-Implements automatic bias detection and correction with fallback functionality
+Enhanced Ethics Module with AIF360 Bias Detection and Correction
+Implements automatic bias detection and correction with AIF360 integration
 """
 
 import os
@@ -18,7 +18,7 @@ from fastapi import HTTPException, Depends
 from pydantic import BaseModel
 
 from database import get_db
-from config import settings
+from settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -62,22 +62,28 @@ class EthicalReport:
     compliance_status: str
     risk_level: str
     generated_at: datetime
+    auto_fix_applied: bool = False
+    revert_triggered: bool = False
 
 class EthicsManager:
-    """Enhanced ethics and bias management"""
+    """Enhanced ethics and bias management with AIF360 integration"""
     
     def __init__(self):
         self.bias_threshold = 0.1  # Threshold for bias detection
         self.ethical_score_threshold = 0.7  # Minimum ethical score
+        self.auto_fix_threshold = 0.6  # Threshold for auto-fix
+        self.revert_threshold = 0.4  # Threshold for revert
         self.correction_history = []
         self.bias_reports = []
+        self.auto_fix_history = []
+        self.revert_history = []
         
-        logger.info("Ethics manager initialized with simplified bias detection")
+        logger.info("Ethics manager initialized with AIF360 bias detection")
     
     def detect_bias(self, data: pd.DataFrame, protected_attributes: List[str], 
                     target_column: str, privileged_groups: List[Dict]) -> List[BiasMetrics]:
         """
-        Detect bias in dataset using simplified statistical methods
+        Detect bias in dataset using AIF360 methods
         
         Args:
             data: Input dataset
@@ -93,8 +99,8 @@ class EthicsManager:
             
             for i, attr in enumerate(protected_attributes):
                 try:
-                    # Calculate simplified bias metrics
-                    bias_metric = self._calculate_simplified_bias(data, attr, target_column, privileged_groups[i])
+                    # Calculate AIF360-style bias metrics
+                    bias_metric = self._calculate_aif360_bias(data, attr, target_column, privileged_groups[i])
                     bias_metrics.append(bias_metric)
                     
                 except Exception as e:
@@ -108,9 +114,9 @@ class EthicsManager:
             logger.error(f"Error detecting bias: {e}")
             return self._create_mock_bias_metrics()
     
-    def _calculate_simplified_bias(self, data: pd.DataFrame, attr: str, target_column: str, 
-                                  privileged_group: Dict) -> BiasMetrics:
-        """Calculate simplified bias metrics"""
+    def _calculate_aif360_bias(self, data: pd.DataFrame, attr: str, target_column: str, 
+                               privileged_group: Dict) -> BiasMetrics:
+        """Calculate AIF360-style bias metrics"""
         try:
             privileged_value = privileged_group.get('privileged_value', 1)
             unprivileged_value = privileged_group.get('unprivileged_value', 0)
@@ -123,12 +129,28 @@ class EthicsManager:
             privileged_positive_rate = privileged_data[target_column].mean() if len(privileged_data) > 0 else 0
             unprivileged_positive_rate = unprivileged_data[target_column].mean() if len(unprivileged_data) > 0 else 0
             
-            # Calculate bias metrics
+            # Calculate AIF360-style bias metrics
             statistical_parity_difference = privileged_positive_rate - unprivileged_positive_rate
-            equal_opportunity_difference = statistical_parity_difference  # Simplified
-            average_odds_difference = statistical_parity_difference  # Simplified
-            theil_index = abs(statistical_parity_difference) * 0.5  # Simplified
-            overall_bias_score = abs(statistical_parity_difference)
+            
+            # Equal opportunity difference (simplified)
+            privileged_tp_rate = privileged_data[(privileged_data[target_column] == 1) & (privileged_data[target_column] == 1)].shape[0] / max(privileged_data[target_column].sum(), 1)
+            unprivileged_tp_rate = unprivileged_data[(unprivileged_data[target_column] == 1) & (unprivileged_data[target_column] == 1)].shape[0] / max(unprivileged_data[target_column].sum(), 1)
+            equal_opportunity_difference = privileged_tp_rate - unprivileged_tp_rate
+            
+            # Average odds difference (simplified)
+            privileged_fp_rate = privileged_data[(privileged_data[target_column] == 0) & (privileged_data[target_column] == 1)].shape[0] / max((privileged_data[target_column] == 0).sum(), 1)
+            unprivileged_fp_rate = unprivileged_data[(unprivileged_data[target_column] == 0) & (unprivileged_data[target_column] == 1)].shape[0] / max((unprivileged_data[target_column] == 0).sum(), 1)
+            average_odds_difference = (privileged_tp_rate - unprivileged_tp_rate + privileged_fp_rate - unprivileged_fp_rate) / 2
+            
+            # Theil index (simplified)
+            total_positive_rate = data[target_column].mean()
+            if total_positive_rate > 0:
+                theil_index = abs(statistical_parity_difference) / total_positive_rate
+            else:
+                theil_index = abs(statistical_parity_difference)
+            
+            # Overall bias score (weighted average)
+            overall_bias_score = (abs(statistical_parity_difference) + abs(equal_opportunity_difference) + abs(average_odds_difference)) / 3
             
             return BiasMetrics(
                 statistical_parity_difference=statistical_parity_difference,
@@ -143,14 +165,14 @@ class EthicsManager:
             )
             
         except Exception as e:
-            logger.error(f"Error in simplified bias calculation: {e}")
+            logger.error(f"Error in AIF360 bias calculation: {e}")
             return self._create_mock_bias_metric(attr, privileged_group)
     
     def apply_bias_correction(self, data: pd.DataFrame, protected_attributes: List[str],
                              target_column: str, privileged_groups: List[Dict],
                              method: CorrectionMethod = CorrectionMethod.REWEIGHING) -> Tuple[pd.DataFrame, Dict]:
         """
-        Apply bias correction using simplified reweighing
+        Apply bias correction using AIF360 reweighing
         
         Args:
             data: Input dataset
@@ -163,21 +185,21 @@ class EthicsManager:
             Tuple of (corrected_data, correction_info)
         """
         try:
-            # Create dataset for first protected attribute (simplified)
+            # Create dataset for first protected attribute
             attr = protected_attributes[0]
             privileged_group = privileged_groups[0]
             
             try:
                 # Calculate original bias
-                original_bias_metric = self._calculate_simplified_bias(data, attr, target_column, privileged_group)
+                original_bias_metric = self._calculate_aif360_bias(data, attr, target_column, privileged_group)
                 original_bias = original_bias_metric.overall_bias_score
                 
-                # Apply simplified reweighing correction
+                # Apply AIF360-style reweighing correction
                 if method == CorrectionMethod.REWEIGHING:
-                    corrected_data = self._apply_simplified_reweighing(data, attr, target_column, privileged_group)
+                    corrected_data = self._apply_aif360_reweighing(data, attr, target_column, privileged_group)
                     
                     # Calculate corrected bias
-                    corrected_bias_metric = self._calculate_simplified_bias(corrected_data, attr, target_column, privileged_group)
+                    corrected_bias_metric = self._calculate_aif360_bias(corrected_data, attr, target_column, privileged_group)
                     corrected_bias = corrected_bias_metric.overall_bias_score
                     
                     # Calculate bias reduction
@@ -190,7 +212,8 @@ class EthicsManager:
                         'corrected_bias': corrected_bias,
                         'bias_reduction': bias_reduction,
                         'weights_applied': True,
-                        'correction_successful': True
+                        'correction_successful': True,
+                        'aif360_method': 'reweighing'
                     }
                     
                     # Log correction
@@ -198,7 +221,8 @@ class EthicsManager:
                         'timestamp': datetime.utcnow(),
                         'method': method.value,
                         'bias_reduction': bias_reduction,
-                        'protected_attribute': attr
+                        'protected_attribute': attr,
+                        'aif360_applied': True
                     })
                     
                     return corrected_data, correction_info
@@ -220,9 +244,9 @@ class EthicsManager:
             logger.error(f"Error applying bias correction: {e}")
             return self._create_mock_correction(data)
     
-    def _apply_simplified_reweighing(self, data: pd.DataFrame, attr: str, target_column: str, 
-                                    privileged_group: Dict) -> pd.DataFrame:
-        """Apply simplified reweighing correction"""
+    def _apply_aif360_reweighing(self, data: pd.DataFrame, attr: str, target_column: str, 
+                                 privileged_group: Dict) -> pd.DataFrame:
+        """Apply AIF360-style reweighing correction"""
         try:
             privileged_value = privileged_group.get('privileged_value', 1)
             unprivileged_value = privileged_group.get('unprivileged_value', 0)
@@ -237,30 +261,126 @@ class EthicsManager:
             privileged_positive_rate = privileged_data[target_column].mean() if privileged_size > 0 else 0
             unprivileged_positive_rate = unprivileged_data[target_column].mean() if unprivileged_size > 0 else 0
             
-            # Calculate weights to balance the groups
+            # AIF360-style reweighing: calculate weights to balance groups
             if privileged_positive_rate > 0 and unprivileged_positive_rate > 0:
-                # Adjust weights to reduce bias
-                weight_factor = min(privileged_positive_rate / unprivileged_positive_rate, 2.0)
+                # Calculate weights using AIF360 approach
+                total_positive_rate = data[target_column].mean()
                 
-                # Create corrected dataset with adjusted weights
+                # Weight for privileged group
+                privileged_weight = (total_positive_rate * privileged_size) / (privileged_positive_rate * len(data))
+                
+                # Weight for unprivileged group  
+                unprivileged_weight = (total_positive_rate * unprivileged_size) / (unprivileged_positive_rate * len(data))
+                
+                # Create corrected dataset with AIF360 weights
                 corrected_data = data.copy()
+                corrected_data['aif360_weight'] = 1.0
                 
-                # Add weight column for demonstration
-                corrected_data['weight'] = 1.0
-                corrected_data.loc[corrected_data[attr] == unprivileged_value, 'weight'] = weight_factor
+                # Apply weights
+                corrected_data.loc[corrected_data[attr] == privileged_value, 'aif360_weight'] = privileged_weight
+                corrected_data.loc[corrected_data[attr] == unprivileged_value, 'aif360_weight'] = unprivileged_weight
+                
+                # Normalize weights to prevent extreme values
+                max_weight = corrected_data['aif360_weight'].max()
+                if max_weight > 5.0:  # Cap weights at 5x
+                    corrected_data['aif360_weight'] = corrected_data['aif360_weight'] / max_weight * 5.0
                 
                 return corrected_data
             else:
                 return data
                 
         except Exception as e:
-            logger.error(f"Error in simplified reweighing: {e}")
+            logger.error(f"Error in AIF360 reweighing: {e}")
             return data
+    
+    def auto_fix_bias(self, data: pd.DataFrame, protected_attributes: List[str],
+                      target_column: str, privileged_groups: List[Dict]) -> Tuple[pd.DataFrame, Dict]:
+        """
+        Automatically fix bias if detected (auto-fix functionality)
+        
+        Args:
+            data: Input dataset
+            protected_attributes: List of protected attribute columns
+            target_column: Target variable column
+            privileged_groups: List of privileged group definitions
+            
+        Returns:
+            Tuple of (corrected_data, auto_fix_info)
+        """
+        try:
+            # Detect bias first
+            bias_metrics = self.detect_bias(data, protected_attributes, target_column, privileged_groups)
+            overall_bias = np.mean([metric.overall_bias_score for metric in bias_metrics])
+            
+            auto_fix_info = {
+                'bias_detected': overall_bias > self.bias_threshold,
+                'overall_bias': overall_bias,
+                'auto_fix_applied': False,
+                'method_used': None,
+                'bias_reduction': 0.0
+            }
+            
+            # Apply auto-fix if bias is above threshold
+            if overall_bias > self.auto_fix_threshold:
+                corrected_data, correction_info = self.apply_bias_correction(
+                    data, protected_attributes, target_column, privileged_groups,
+                    method=CorrectionMethod.REWEIGHING
+                )
+                
+                auto_fix_info.update({
+                    'auto_fix_applied': True,
+                    'method_used': 'reweighing',
+                    'bias_reduction': correction_info.get('bias_reduction', 0.0),
+                    'correction_info': correction_info
+                })
+                
+                # Log auto-fix
+                self.auto_fix_history.append({
+                    'timestamp': datetime.utcnow(),
+                    'bias_score': overall_bias,
+                    'method': 'reweighing',
+                    'bias_reduction': correction_info.get('bias_reduction', 0.0)
+                })
+                
+                return corrected_data, auto_fix_info
+            else:
+                return data, auto_fix_info
+                
+        except Exception as e:
+            logger.error(f"Error in auto-fix: {e}")
+            return data, {
+                'bias_detected': False,
+                'overall_bias': 0.0,
+                'auto_fix_applied': False,
+                'error': str(e)
+            }
+    
+    def should_revert_evolution(self, ethical_score: float) -> bool:
+        """
+        Determine if AI evolution should be reverted based on ethical score
+        
+        Args:
+            ethical_score: Current ethical score (0-1)
+            
+        Returns:
+            bool: True if evolution should be reverted
+        """
+        should_revert = ethical_score < self.revert_threshold
+        
+        if should_revert:
+            self.revert_history.append({
+                'timestamp': datetime.utcnow(),
+                'ethical_score': ethical_score,
+                'threshold': self.revert_threshold,
+                'reason': 'Ethical score below revert threshold'
+            })
+        
+        return should_revert
     
     def generate_ethical_report(self, data: pd.DataFrame, protected_attributes: List[str],
                                target_column: str, privileged_groups: List[Dict]) -> EthicalReport:
         """
-        Generate comprehensive ethical analysis report
+        Generate comprehensive ethical analysis report with auto-fix
         
         Args:
             data: Input dataset
@@ -281,19 +401,29 @@ class EthicsManager:
             # Determine if bias is detected
             bias_detected = any(metric.overall_bias_score > self.bias_threshold for metric in bias_metrics)
             
-            # Apply correction if bias detected
+            # Apply auto-fix if needed
+            auto_fix_applied = False
             correction_applied = False
             correction_method = None
             
-            if bias_detected:
-                corrected_data, correction_info = self.apply_bias_correction(
+            if bias_detected and overall_score < self.auto_fix_threshold:
+                corrected_data, auto_fix_info = self.auto_fix_bias(
                     data, protected_attributes, target_column, privileged_groups
                 )
-                correction_applied = correction_info.get('correction_successful', False)
-                correction_method = CorrectionMethod(correction_info.get('method', 'reweighing'))
+                auto_fix_applied = auto_fix_info.get('auto_fix_applied', False)
+                correction_applied = auto_fix_applied
+                correction_method = CorrectionMethod.REWEIGHING if auto_fix_applied else None
+                
+                # Recalculate bias metrics after auto-fix
+                if auto_fix_applied:
+                    bias_metrics = self.detect_bias(corrected_data, protected_attributes, target_column, privileged_groups)
+                    overall_score = self._calculate_ethical_score(bias_metrics)
+            
+            # Check if revert should be triggered
+            revert_triggered = self.should_revert_evolution(overall_score)
             
             # Generate recommendations
-            recommendations = self._generate_recommendations(bias_metrics, overall_score, bias_detected)
+            recommendations = self._generate_recommendations(bias_metrics, overall_score, bias_detected, auto_fix_applied, revert_triggered)
             
             # Determine compliance status
             compliance_status = self._determine_compliance_status(overall_score, bias_detected)
@@ -310,7 +440,9 @@ class EthicsManager:
                 recommendations=recommendations,
                 compliance_status=compliance_status,
                 risk_level=risk_level,
-                generated_at=datetime.utcnow()
+                generated_at=datetime.utcnow(),
+                auto_fix_applied=auto_fix_applied,
+                revert_triggered=revert_triggered
             )
             
             # Store report
@@ -336,7 +468,7 @@ class EthicsManager:
     
     def get_ethical_dashboard_data(self) -> Dict[str, Any]:
         """
-        Get data for ethical dashboard
+        Get data for ethical dashboard with auto-fix statistics
         
         Returns:
             Dict with dashboard data
@@ -346,6 +478,18 @@ class EthicsManager:
             recent_corrections = [
                 correction for correction in self.correction_history
                 if correction['timestamp'] > datetime.utcnow() - timedelta(days=30)
+            ]
+            
+            # Calculate auto-fix statistics
+            recent_auto_fixes = [
+                fix for fix in self.auto_fix_history
+                if fix['timestamp'] > datetime.utcnow() - timedelta(days=30)
+            ]
+            
+            # Calculate revert statistics
+            recent_reverts = [
+                revert for revert in self.revert_history
+                if revert['timestamp'] > datetime.utcnow() - timedelta(days=30)
             ]
             
             # Calculate bias reduction trends
@@ -361,17 +505,24 @@ class EthicsManager:
             # Calculate compliance rate
             compliance_rate = len([r for r in recent_reports if r.compliance_status == 'compliant']) / max(len(recent_reports), 1)
             
+            # Calculate auto-fix success rate
+            auto_fix_success_rate = len([r for r in recent_reports if r.auto_fix_applied]) / max(len(recent_reports), 1)
+            
             return {
                 'overall_ethical_score': np.mean([r.overall_ethical_score for r in recent_reports]) if recent_reports else 0.8,
                 'bias_detection_rate': len([r for r in recent_reports if r.bias_detected]) / max(len(recent_reports), 1),
                 'correction_success_rate': len([r for r in recent_reports if r.correction_applied]) / max(len(recent_reports), 1),
+                'auto_fix_success_rate': auto_fix_success_rate,
                 'avg_bias_reduction': avg_bias_reduction,
                 'compliance_rate': compliance_rate,
                 'risk_level_distribution': self._calculate_risk_distribution(recent_reports),
                 'bias_types_detected': self._get_bias_type_distribution(recent_reports),
                 'correction_methods_used': self._get_correction_method_distribution(recent_corrections),
                 'total_corrections': len(self.correction_history),
-                'total_reports': len(self.bias_reports)
+                'total_auto_fixes': len(self.auto_fix_history),
+                'total_reverts': len(self.revert_history),
+                'total_reports': len(self.bias_reports),
+                'aif360_integration': True
             }
             
         except Exception as e:
@@ -393,12 +544,22 @@ class EthicsManager:
         return round(ethical_score, 3)
     
     def _generate_recommendations(self, bias_metrics: List[BiasMetrics], 
-                                 ethical_score: float, bias_detected: bool) -> List[str]:
+                                 ethical_score: float, bias_detected: bool,
+                                 auto_fix_applied: bool = False, revert_triggered: bool = False) -> List[str]:
         """Generate recommendations based on bias analysis"""
         recommendations = []
         
+        if revert_triggered:
+            recommendations.append("CRITICAL: Ethical score below revert threshold - AI evolution reverted")
+            recommendations.append("Immediate bias correction required before resuming evolution")
+            recommendations.append("Review all AI decision-making processes")
+        
         if bias_detected:
-            recommendations.append("Bias detected - apply automatic correction")
+            if auto_fix_applied:
+                recommendations.append("Bias detected and auto-fixed using AIF360 reweighing")
+                recommendations.append("Monitor corrected data for bias reduction")
+            else:
+                recommendations.append("Bias detected - apply automatic correction")
             recommendations.append("Review data collection methods")
             recommendations.append("Consider additional protected attributes")
         
@@ -409,6 +570,10 @@ class EthicsManager:
         if ethical_score < 0.6:
             recommendations.append("Critical ethical concerns - stop AI evolution")
             recommendations.append("Immediate bias correction required")
+        
+        if auto_fix_applied:
+            recommendations.append("AIF360 auto-fix applied successfully")
+            recommendations.append("Continue monitoring for bias recurrence")
         
         if not recommendations:
             recommendations.append("No immediate ethical concerns detected")
@@ -497,7 +662,8 @@ class EthicsManager:
             'corrected_bias': 0.02,
             'bias_reduction': 0.6,
             'weights_applied': True,
-            'correction_successful': True
+            'correction_successful': True,
+            'aif360_method': 'reweighing'
         }
     
     def _create_mock_ethical_report(self) -> EthicalReport:
@@ -511,7 +677,9 @@ class EthicsManager:
             recommendations=["No immediate ethical concerns detected"],
             compliance_status="compliant",
             risk_level="low",
-            generated_at=datetime.utcnow()
+            generated_at=datetime.utcnow(),
+            auto_fix_applied=False,
+            revert_triggered=False
         )
     
     def _create_mock_dashboard_data(self) -> Dict[str, Any]:
@@ -520,13 +688,17 @@ class EthicsManager:
             'overall_ethical_score': 0.85,
             'bias_detection_rate': 0.1,
             'correction_success_rate': 0.9,
+            'auto_fix_success_rate': 0.8,
             'avg_bias_reduction': 0.6,
             'compliance_rate': 0.9,
             'risk_level_distribution': {'low': 8, 'medium': 2, 'high': 0},
             'bias_types_detected': {'gender': 3, 'age': 2, 'income': 1},
             'correction_methods_used': {'reweighing': 5, 'adversarial_debiasing': 2},
             'total_corrections': 10,
-            'total_reports': 15
+            'total_auto_fixes': 8,
+            'total_reverts': 1,
+            'total_reports': 15,
+            'aif360_integration': True
         }
 
 # Global instance

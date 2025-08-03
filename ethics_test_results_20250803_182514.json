@@ -1,0 +1,101 @@
+{
+  "timestamp": "2025-08-03T18:25:14.391262",
+  "total_tests": 18,
+  "successful_tests": 10,
+  "overall_success_rate": 0.5555555555555556,
+  "test_results": {
+    "bias_detection": {
+      "gender_hiring": {
+        "success": true,
+        "bias_detected": false,
+        "overall_bias": 0.07606369600375444,
+        "metrics_count": 1,
+        "protected_attributes": [
+          "gender"
+        ],
+        "target_column": "hired"
+      }
+    },
+    "bias_correction": {
+      "gender_hiring": {
+        "success": true,
+        "correction_successful": true,
+        "bias_reduction": 0,
+        "method": "reweighing",
+        "weights_applied": true,
+        "aif360_method": "reweighing"
+      }
+    },
+    "auto_fix": {
+      "gender_hiring": {
+        "success": true,
+        "auto_fix_applied": false,
+        "bias_detected": "False",
+        "bias_reduction": 0.0,
+        "method_used": null
+      }
+    },
+    "ethical_report": {
+      "gender_hiring": {
+        "success": true,
+        "ethical_score": 0.924,
+        "bias_detected": false,
+        "correction_applied": false,
+        "auto_fix_applied": false,
+        "revert_triggered": "False",
+        "compliance_status": "compliant",
+        "risk_level": "low",
+        "recommendations_count": 2
+      }
+    },
+    "revert_functionality": {
+      "score_0.3": {
+        "success": true,
+        "ethical_score": 0.3,
+        "should_revert": true,
+        "should_stop": true,
+        "revert_threshold": 0.4,
+        "stop_threshold": 0.7
+      },
+      "score_0.5": {
+        "success": true,
+        "ethical_score": 0.5,
+        "should_revert": false,
+        "should_stop": true,
+        "revert_threshold": 0.4,
+        "stop_threshold": 0.7
+      },
+      "score_0.7": {
+        "success": true,
+        "ethical_score": 0.7,
+        "should_revert": false,
+        "should_stop": false,
+        "revert_threshold": 0.4,
+        "stop_threshold": 0.7
+      },
+      "score_0.9": {
+        "success": true,
+        "ethical_score": 0.9,
+        "should_revert": false,
+        "should_stop": false,
+        "revert_threshold": 0.4,
+        "stop_threshold": 0.7
+      }
+    },
+    "dashboard_data": {
+      "success": true,
+      "overall_ethical_score": 0.924,
+      "bias_detection_rate": 0.0,
+      "correction_success_rate": 0.0,
+      "auto_fix_success_rate": 0.0,
+      "compliance_rate": 1.0,
+      "total_corrections": 1,
+      "total_auto_fixes": 0,
+      "total_reverts": 1,
+      "aif360_integration": true
+    }
+  },
+  "aif360_integration": true,
+  "auto_fix_enabled": true,
+  "revert_functionality": true
+}

@@ -14,7 +14,7 @@ load_dotenv()
 
 # Import your models here
 from database import Base, Project, Content, Revenue, EthicsLog, AILog, AuditLog
-from config import settings
+from settings import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

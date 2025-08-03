@@ -1,0 +1,135 @@
+[
+  {
+    "test_name": "dataset_creation",
+    "training_examples": 84,
+    "validation_examples": 21,
+    "total_examples": 105,
+    "training_status": "ready",
+    "model_name": "gpt-4",
+    "dataset_valid": true,
+    "success": true,
+    "timestamp": "2025-08-03T16:30:28.666510"
+  },
+  {
+    "test_name": "financial_calculations",
+    "npv": -65523.412134939776,
+    "irr": -0.07923611043524215,
+    "roi_percentage": -62.865349056860595,
+    "payback_period": 12,
+    "present_value": 34476.587865060224,
+    "terminal_value": 457734.40045323345,
+    "wacc": 0.12,
+    "discounted_cash_flows_count": 12,
+    "calculations_valid": false,
+    "success": false,
+    "timestamp": "2025-08-03T16:30:28.667084"
+  },
+  {
+    "test_name": "strategy_type_detection",
+    "total_tests": 8,
+    "passed_tests": 6,
+    "success_rate": 0.75,
+    "results": [
+      {
+        "input": "Düşük bütçe ile başla",
+        "expected": "lean_startup",
+        "detected": "lean_startup",
+        "match": true
+      },
+      {
+        "input": "Revenue hedefi $50K",
+        "expected": "scale_up",
+        "detected": "scale_up",
+        "match": true
+      },
+      {
+        "input": "Yüksek risk toleransı",
+        "expected": "innovation",
+        "detected": "lean_startup",
+        "match": false
+      },
+      {
+        "input": "Start with low budget",
+        "expected": "lean_startup",
+        "detected": "lean_startup",
+        "match": true
+      },
+      {
+        "input": "Technology focused",
+        "expected": "innovation",
+        "detected": "innovation",
+        "match": true
+      },
+      {
+        "input": "Cost optimization",
+        "expected": "cost_optimization",
+        "detected": "cost_optimization",
+        "match": true
+      },
+      {
+        "input": "Market expansion",
+        "expected": "diversification",
+        "detected": "scale_up",
+        "match": false
+      },
+      {
+        "input": "Acquisition strategy",
+        "expected": "acquisition",
+        "detected": "acquisition",
+        "match": true
+      }
+    ],
+    "success": false,
+    "timestamp": "2025-08-03T16:30:28.669841"
+  },
+  {
+    "test_name": "fallback_strategy_generation",
+    "total_tests": 5,
+    "passed_tests": 5,
+    "success_rate": 1.0,
+    "results": [
+      {
+        "input": "Düşük bütçe ile başla",
+        "strategy_title": "Fallback Strategy",
+        "strategy_type": "lean_startup",
+        "estimated_investment": 50000,
+        "projected_roi": 0.15,
+        "valid": true
+      },
+      {
+        "input": "Revenue hedefi $50K",
+        "strategy_title": "Fallback Strategy",
+        "strategy_type": "lean_startup",
+        "estimated_investment": 50000,
+        "projected_roi": 0.15,
+        "valid": true
+      },
+      {
+        "input": "Yüksek risk toleransı",
+        "strategy_title": "Fallback Strategy",
+        "strategy_type": "lean_startup",
+        "estimated_investment": 50000,
+        "projected_roi": 0.15,
+        "valid": true
+      },
+      {
+        "input": "Start with low budget",
+        "strategy_title": "Fallback Strategy",
+        "strategy_type": "lean_startup",
+        "estimated_investment": 50000,
+        "projected_roi": 0.15,
+        "valid": true
+      },
+      {
+        "input": "Technology focused",
+        "strategy_title": "Fallback Strategy",
+        "strategy_type": "lean_startup",
+        "estimated_investment": 50000,
+        "projected_roi": 0.15,
+        "valid": true
+      }
+    ],
+    "success": true,
+    "timestamp": "2025-08-03T16:30:28.671229"
+  }
+]

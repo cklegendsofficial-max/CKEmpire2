@@ -1,0 +1,81 @@
+{
+  "total_tests": 16,
+  "passed_tests": 0,
+  "failed_tests": 16,
+  "success_rate": 0.0,
+  "timestamp": "2025-08-03T18:05:38.986508",
+  "test_results": {
+    "subscription_endpoints": {
+      "pricing_plans": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/plans (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C6893BE00>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "subscription_status": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C68A35BD0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "freemium_features": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/freemium-features (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C68A36490>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "ab_test_variant": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/ab-test/pricing_page (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689EA520>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "ab_test_tracking": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/ab-test/pricing_page/track (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689EAC40>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "payment_simulation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/simulate-payment (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689F7410>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "subscription_creation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/subscribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C68A50C00>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      }
+    },
+    "freemium_model": {
+      "ai_requests": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/freemium-features/ai_requests (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C68A51480>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "projects": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/freemium-features/projects (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C68A516A0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "video_generation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/freemium-features/video_generation (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B7DF0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "nft_creation": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/freemium-features/nft_creation (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B7CE0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      }
+    },
+    "ab_testing": {
+      "pricing_page_variant": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/ab-test/pricing_page (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B79B0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "subscription_flow_variant": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/ab-test/subscription_flow (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B78A0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      }
+    },
+    "payment_simulation": {
+      "payment_9.99": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/simulate-payment (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B7790>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "payment_49.0": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/simulate-payment (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B7460>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      },
+      "payment_199.0": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/subscription/simulate-payment (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025C689B7020>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+      }
+    }
+  }
+}

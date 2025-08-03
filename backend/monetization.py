@@ -6,6 +6,8 @@ Handles Stripe subscriptions, freemium model, and financial metrics
 import os
 import json
 import logging
+import random
+import hashlib
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -27,7 +29,7 @@ from pydantic import BaseModel
 
 from database import get_db
 from database import User, Subscription as DBSubscription
-from config import settings
+from settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,31 @@ class FinancialMetrics:
     roi_percentage: float
     break_even_months: int
 
+@dataclass
+class ABTest:
+    """A/B test configuration"""
+    test_id: str
+    name: str
+    description: str
+    variant_a: Dict[str, Any]
+    variant_b: Dict[str, Any]
+    metric: str
+    traffic_split: float = 0.5
+    start_date: datetime = None
+    end_date: datetime = None
+    is_active: bool = True
+    results: Dict[str, Any] = None
+
+@dataclass
+class FreemiumFeature:
+    """Freemium feature configuration"""
+    feature_name: str
+    freemium_limit: int
+    premium_limit: int
+    enterprise_limit: int
+    description: str
+    upgrade_prompt: str
+
 class MonetizationManager:
     """Monetization and subscription management"""
     
@@ -73,6 +100,8 @@ class MonetizationManager:
         self.stripe = None
         self.pricing_plans = {}
         self.financial_metrics = {}
+        self.ab_tests = {}
+        self.freemium_features = {}
         
         if not STRIPE_AVAILABLE:
             logger.warning("Stripe not available. Using mock responses.")
@@ -84,6 +113,12 @@ class MonetizationManager:
         
         # Load pricing plans
         self._load_pricing_plans()
+        
+        # Load freemium features
+        self._load_freemium_features()
+        
+        # Initialize A/B tests
+        self._init_ab_tests()
         
         logger.info("Monetization manager initialized")
     
@@ -158,7 +193,109 @@ class MonetizationManager:
         
         logger.info(f"Loaded {len(self.pricing_plans)} pricing plans")
     
-    async def create_subscription(self, user_id: int, tier: SubscriptionTier, 
+    def _load_freemium_features(self):
+        """Load freemium feature configurations"""
+        self.freemium_features = {
+            'ai_requests': FreemiumFeature(
+                feature_name='ai_requests',
+                freemium_limit=10,
+                premium_limit=1000,
+                enterprise_limit=-1,  # Unlimited
+                description='AI-powered strategy generation',
+                upgrade_prompt='Upgrade to Premium for unlimited AI requests'
+            ),
+            'projects': FreemiumFeature(
+                feature_name='projects',
+                freemium_limit=5,
+                premium_limit=-1,  # Unlimited
+                enterprise_limit=-1,
+                description='Project management',
+                upgrade_prompt='Upgrade to Premium for unlimited projects'
+            ),
+            'video_generation': FreemiumFeature(
+                feature_name='video_generation',
+                freemium_limit=0,
+                premium_limit=10,
+                enterprise_limit=-1,
+                description='AI video generation',
+                upgrade_prompt='Upgrade to Premium for video generation'
+            ),
+            'nft_creation': FreemiumFeature(
+                feature_name='nft_creation',
+                freemium_limit=0,
+                premium_limit=5,
+                enterprise_limit=-1,
+                description='NFT creation and minting',
+                upgrade_prompt='Upgrade to Premium for NFT creation'
+            ),
+            'advanced_analytics': FreemiumFeature(
+                feature_name='advanced_analytics',
+                freemium_limit=0,
+                premium_limit=1,
+                enterprise_limit=1,
+                description='Advanced analytics and reporting',
+                upgrade_prompt='Upgrade to Premium for advanced analytics'
+            ),
+            'api_access': FreemiumFeature(
+                feature_name='api_access',
+                freemium_limit=0,
+                premium_limit=0,
+                enterprise_limit=1,
+                description='API access for integrations',
+                upgrade_prompt='Upgrade to Enterprise for API access'
+            )
+        }
+        
+        logger.info(f"Loaded {len(self.freemium_features)} freemium features")
+    
+    def _init_ab_tests(self):
+        """Initialize A/B tests"""
+        self.ab_tests = {
+            'pricing_page': ABTest(
+                test_id='pricing_page_v1',
+                name='Pricing Page Optimization',
+                description='Test different pricing page layouts',
+                variant_a={
+                    'layout': 'grid',
+                    'highlight_feature': 'ai_requests',
+                    'cta_text': 'Start Free Trial',
+                    'price_display': 'monthly'
+                },
+                variant_b={
+                    'layout': 'list',
+                    'highlight_feature': 'video_generation',
+                    'cta_text': 'Get Started Now',
+                    'price_display': 'yearly'
+                },
+                metric='conversion_rate',
+                start_date=datetime.utcnow(),
+                end_date=datetime.utcnow() + timedelta(days=30)
+            ),
+            'subscription_flow': ABTest(
+                test_id='subscription_flow_v1',
+                name='Subscription Flow Optimization',
+                description='Test different subscription flows',
+                variant_a={
+                    'steps': 3,
+                    'payment_methods': ['card'],
+                    'trial_days': 7,
+                    'upsell_position': 'after_payment'
+                },
+                variant_b={
+                    'steps': 2,
+                    'payment_methods': ['card', 'paypal'],
+                    'trial_days': 14,
+                    'upsell_position': 'before_payment'
+                },
+                metric='completion_rate',
+                start_date=datetime.utcnow(),
+                end_date=datetime.utcnow() + timedelta(days=30)
+            )
+        }
+        
+        logger.info(f"Initialized {len(self.ab_tests)} A/B tests")
+    
+    async def create_subscription(self, user_id: int, tier: SubscriptionTier,
                                 billing_cycle: BillingCycle, payment_method_id: str,
                                 db: Session) -> Dict[str, Any]:
         """
@@ -523,6 +660,213 @@ class MonetizationManager:
         except Exception as e:
             logger.error(f"Failed to check user limits: {e}")
             return False
+    
+    async def get_user_variant(self, user_id: int, test_name: str) -> Dict[str, Any]:
+        """
+        Get A/B test variant for user
+        
+        Args:
+            user_id: User ID
+            test_name: Name of the A/B test
+            
+        Returns:
+            Dict with variant information
+        """
+        try:
+            if test_name not in self.ab_tests:
+                return {'variant': 'control', 'test_active': False}
+            
+            test = self.ab_tests[test_name]
+            if not test.is_active:
+                return {'variant': 'control', 'test_active': False}
+            
+            # Deterministic variant assignment based on user ID
+            user_hash = hashlib.md5(str(user_id).encode()).hexdigest()
+            hash_int = int(user_hash[:8], 16)
+            
+            if hash_int % 100 < test.traffic_split * 100:
+                return {
+                    'variant': 'A',
+                    'test_active': True,
+                    'test_id': test.test_id,
+                    'variant_data': test.variant_a
+                }
+            else:
+                return {
+                    'variant': 'B',
+                    'test_active': True,
+                    'test_id': test.test_id,
+                    'variant_data': test.variant_b
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to get user variant: {e}")
+            return {'variant': 'control', 'test_active': False}
+    
+    async def track_ab_test_event(self, user_id: int, test_name: str, event: str, 
+                                 value: float = 1.0) -> bool:
+        """
+        Track A/B test event
+        
+        Args:
+            user_id: User ID
+            test_name: Name of the A/B test
+            event: Event type (e.g., 'conversion', 'click')
+            value: Event value
+            
+        Returns:
+            bool: True if tracked successfully
+        """
+        try:
+            if test_name not in self.ab_tests:
+                return False
+            
+            test = self.ab_tests[test_name]
+            if not test.is_active:
+                return False
+            
+            # In a real implementation, you'd store this in a database
+            # For now, we'll just log it
+            variant_info = await self.get_user_variant(user_id, test_name)
+            
+            logger.info(f"A/B Test Event - User: {user_id}, Test: {test_name}, "
+                       f"Variant: {variant_info['variant']}, Event: {event}, Value: {value}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to track A/B test event: {e}")
+            return False
+    
+    async def get_freemium_feature_info(self, feature_name: str, user_id: int, 
+                                       db: Session) -> Dict[str, Any]:
+        """
+        Get freemium feature information for user
+        
+        Args:
+            feature_name: Name of the feature
+            user_id: User ID
+            db: Database session
+            
+        Returns:
+            Dict with feature information
+        """
+        try:
+            if feature_name not in self.freemium_features:
+                return {'available': False, 'error': 'Feature not found'}
+            
+            feature = self.freemium_features[feature_name]
+            subscription = await self.get_subscription_status(user_id, db)
+            
+            # Determine user's tier
+            if not subscription['has_subscription']:
+                user_tier = 'freemium'
+                current_limit = feature.freemium_limit
+            else:
+                user_tier = subscription['tier']
+                if user_tier == 'premium':
+                    current_limit = feature.premium_limit
+                elif user_tier == 'enterprise':
+                    current_limit = feature.enterprise_limit
+                else:
+                    current_limit = feature.freemium_limit
+            
+            # Check if feature is available
+            available = current_limit != 0
+            
+            return {
+                'feature_name': feature.feature_name,
+                'description': feature.description,
+                'user_tier': user_tier,
+                'current_limit': current_limit,
+                'available': available,
+                'upgrade_prompt': feature.upgrade_prompt if not available else None,
+                'unlimited': current_limit == -1
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get freemium feature info: {e}")
+            return {'available': False, 'error': str(e)}
+    
+    async def get_all_freemium_features(self, user_id: int, db: Session) -> Dict[str, Any]:
+        """
+        Get all freemium features for user
+        
+        Args:
+            user_id: User ID
+            db: Database session
+            
+        Returns:
+            Dict with all features information
+        """
+        try:
+            features = {}
+            for feature_name in self.freemium_features.keys():
+                features[feature_name] = await self.get_freemium_feature_info(
+                    feature_name, user_id, db
+                )
+            
+            return {
+                'user_id': user_id,
+                'features': features,
+                'total_features': len(features),
+                'available_features': sum(1 for f in features.values() if f.get('available', False))
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get all freemium features: {e}")
+            return {'error': str(e)}
+    
+    async def simulate_payment_test(self, amount: float, currency: str = 'usd') -> Dict[str, Any]:
+        """
+        Simulate payment test for development
+        
+        Args:
+            amount: Payment amount
+            currency: Currency code
+            
+        Returns:
+            Dict with test payment information
+        """
+        try:
+            if not STRIPE_AVAILABLE:
+                # Mock payment simulation
+                return {
+                    'success': True,
+                    'payment_id': f'test_payment_{int(datetime.utcnow().timestamp())}',
+                    'amount': amount,
+                    'currency': currency,
+                    'status': 'succeeded',
+                    'test_mode': True,
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+            
+            # Real Stripe test payment
+            payment_intent = self.stripe.PaymentIntent.create(
+                amount=int(amount * 100),  # Convert to cents
+                currency=currency,
+                payment_method_types=['card'],
+                confirm=True,
+                return_url='https://ckempire.com/success'
+            )
+            
+            return {
+                'success': payment_intent.status == 'succeeded',
+                'payment_id': payment_intent.id,
+                'amount': amount,
+                'currency': currency,
+                'status': payment_intent.status,
+                'test_mode': True,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to simulate payment test: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'test_mode': True
+            }
 
 # Global instance
 monetization_manager = MonetizationManager() 

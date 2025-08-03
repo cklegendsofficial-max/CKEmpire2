@@ -12,6 +12,8 @@ import AI from './components/AI';
 import Ethics from './components/Ethics';
 import Performance from './components/Performance';
 import LogViewer from './components/LogViewer';
+import FinanceDashboard from './components/FinanceDashboard';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 // Context
 import { MetricsProvider } from './context/MetricsContext';
@@ -91,6 +93,8 @@ function App() {
                 <Route path="/ai" element={<AI />} />
                 <Route path="/ethics" element={<Ethics />} />
                 <Route path="/performance" element={<Performance />} />
+                <Route path="/finance" element={<FinanceDashboard />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
                 <Route path="/logs" element={<LogViewer />} />
               </Routes>
             </main>

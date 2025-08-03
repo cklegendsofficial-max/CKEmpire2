@@ -1,0 +1,332 @@
+{
+  "timestamp": "2025-08-03T18:42:04.028759",
+  "total_tests": 46,
+  "successful_tests": 38,
+  "overall_success_rate": 0.8260869565217391,
+  "test_results": {
+    "ai_video_prompt_generation": {
+      "zack_snyder_Epic battle between ": {
+        "success": true,
+        "prompt_length": 1898,
+        "style": "zack_snyder",
+        "theme": "Epic battle between light and darkness",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "action_Epic battle between ": {
+        "success": true,
+        "prompt_length": 1775,
+        "style": "action",
+        "theme": "Epic battle between light and darkness",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "dramatic_Epic battle between ": {
+        "success": true,
+        "prompt_length": 1778,
+        "style": "dramatic",
+        "theme": "Epic battle between light and darkness",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "sci_fi_Epic battle between ": {
+        "success": true,
+        "prompt_length": 1777,
+        "style": "sci_fi",
+        "theme": "Epic battle between light and darkness",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "zack_snyder_Futuristic cityscape": {
+        "success": true,
+        "prompt_length": 1897,
+        "style": "zack_snyder",
+        "theme": "Futuristic cityscape with flying cars",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "action_Futuristic cityscape": {
+        "success": true,
+        "prompt_length": 1774,
+        "style": "action",
+        "theme": "Futuristic cityscape with flying cars",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "dramatic_Futuristic cityscape": {
+        "success": true,
+        "prompt_length": 1777,
+        "style": "dramatic",
+        "theme": "Futuristic cityscape with flying cars",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "sci_fi_Futuristic cityscape": {
+        "success": true,
+        "prompt_length": 1776,
+        "style": "sci_fi",
+        "theme": "Futuristic cityscape with flying cars",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "zack_snyder_Emotional journey th": {
+        "success": true,
+        "prompt_length": 1890,
+        "style": "zack_snyder",
+        "theme": "Emotional journey through time",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "action_Emotional journey th": {
+        "success": true,
+        "prompt_length": 1767,
+        "style": "action",
+        "theme": "Emotional journey through time",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "dramatic_Emotional journey th": {
+        "success": true,
+        "prompt_length": 1770,
+        "style": "dramatic",
+        "theme": "Emotional journey through time",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "sci_fi_Emotional journey th": {
+        "success": true,
+        "prompt_length": 1769,
+        "style": "sci_fi",
+        "theme": "Emotional journey through time",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "zack_snyder_Cosmic exploration o": {
+        "success": true,
+        "prompt_length": 1898,
+        "style": "zack_snyder",
+        "theme": "Cosmic exploration of distant galaxies",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "action_Cosmic exploration o": {
+        "success": true,
+        "prompt_length": 1775,
+        "style": "action",
+        "theme": "Cosmic exploration of distant galaxies",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "dramatic_Cosmic exploration o": {
+        "success": true,
+        "prompt_length": 1778,
+        "style": "dramatic",
+        "theme": "Cosmic exploration of distant galaxies",
+        "ai_enhanced": true,
+        "minting_ready": true
+      },
+      "sci_fi_Cosmic exploration o": {
+        "success": true,
+        "prompt_length": 1777,
+        "style": "sci_fi",
+        "theme": "Cosmic exploration of distant galaxies",
+        "ai_enhanced": true,
+        "minting_ready": true
+      }
+    },
+    "enhanced_video_metadata": {
+      "zack_snyder": {
+        "success": true,
+        "production_id": "prod_20250803_214204_a2bf9574",
+        "ai_enhanced": true,
+        "minting_ready": true,
+        "rarity_level": "Legendary",
+        "base_price": 2.0,
+        "ai_model_version": "gpt-4-turbo"
+      },
+      "action": {
+        "success": true,
+        "production_id": "prod_20250803_214204_1c46df16",
+        "ai_enhanced": true,
+        "minting_ready": true,
+        "rarity_level": "Epic",
+        "base_price": 1.5,
+        "ai_model_version": "gpt-4-turbo"
+      },
+      "dramatic": {
+        "success": true,
+        "production_id": "prod_20250803_214204_3b0ff549",
+        "ai_enhanced": true,
+        "minting_ready": true,
+        "rarity_level": "Rare",
+        "base_price": 1.0,
+        "ai_model_version": "gpt-4-turbo"
+      },
+      "sci_fi": {
+        "success": true,
+        "production_id": "prod_20250803_214204_423c68b2",
+        "ai_enhanced": true,
+        "minting_ready": true,
+        "rarity_level": "Epic",
+        "base_price": 1.8,
+        "ai_model_version": "gpt-4-turbo"
+      }
+    },
+    "nft_metadata_optimization": {
+      "zack_snyder": {
+        "success": true,
+        "name": "AI-Enhanced AI-Enhanced Zack_Snyder Video",
+        "ai_generated": true,
+        "rarity_score": 0.8400000000000001,
+        "attributes_count": 13,
+        "blockchain_ready": true,
+        "ai_enhanced_attr": true
+      },
+      "action": {
+        "success": true,
+        "name": "AI-Enhanced AI-Enhanced Action Video",
+        "ai_generated": true,
+        "rarity_score": 0.8400000000000001,
+        "attributes_count": 13,
+        "blockchain_ready": true,
+        "ai_enhanced_attr": true
+      },
+      "dramatic": {
+        "success": true,
+        "name": "AI-Enhanced AI-Enhanced Dramatic Video",
+        "ai_generated": true,
+        "rarity_score": 0.8400000000000001,
+        "attributes_count": 13,
+        "blockchain_ready": true,
+        "ai_enhanced_attr": true
+      },
+      "sci_fi": {
+        "success": true,
+        "name": "AI-Enhanced AI-Enhanced Sci_Fi Video",
+        "ai_generated": true,
+        "rarity_score": 0.8400000000000001,
+        "attributes_count": 13,
+        "blockchain_ready": true,
+        "ai_enhanced_attr": true
+      }
+    },
+    "enhanced_pricing_prediction": {
+      "zack_snyder": {
+        "success": true,
+        "predicted_price": 7.41,
+        "confidence": 0.8,
+        "ml_model_version": "v2.1",
+        "training_data_points": 15000,
+        "market_volatility": 0.25,
+        "factors_count": 4,
+        "competitor_analysis": true
+      },
+      "action": {
+        "success": true,
+        "predicted_price": 4.0218750000000005,
+        "confidence": 0.8,
+        "ml_model_version": "v2.1",
+        "training_data_points": 15000,
+        "market_volatility": 0.25,
+        "factors_count": 4,
+        "competitor_analysis": true
+      },
+      "dramatic": {
+        "success": true,
+        "predicted_price": 4.0218750000000005,
+        "confidence": 0.8,
+        "ml_model_version": "v2.1",
+        "training_data_points": 15000,
+        "market_volatility": 0.25,
+        "factors_count": 4,
+        "competitor_analysis": true
+      },
+      "sci_fi": {
+        "success": true,
+        "predicted_price": 4.0218750000000005,
+        "confidence": 0.8,
+        "ml_model_version": "v2.1",
+        "training_data_points": 15000,
+        "market_volatility": 0.25,
+        "factors_count": 4,
+        "competitor_analysis": true
+      }
+    },
+    "enhanced_stripe_product_creation": {
+      "zack_snyder": {
+        "success": true,
+        "product_id": "prod_ai_ai-enhanced_zack_snyder_nft",
+        "price_usd": 5000.0,
+        "price_eth": 2.0,
+        "ai_enhanced": true,
+        "ml_model_version": "v2.1",
+        "confidence": 0.8,
+        "market_volatility": 0.25
+      },
+      "action": {
+        "success": true,
+        "product_id": "prod_ai_ai-enhanced_action_nft",
+        "price_usd": 3750.0,
+        "price_eth": 1.5,
+        "ai_enhanced": true,
+        "ml_model_version": "v2.1",
+        "confidence": 0.8,
+        "market_volatility": 0.25
+      },
+      "dramatic": {
+        "success": true,
+        "product_id": "prod_ai_ai-enhanced_dramatic_nft",
+        "price_usd": 3750.0,
+        "price_eth": 1.5,
+        "ai_enhanced": true,
+        "ml_model_version": "v2.1",
+        "confidence": 0.8,
+        "market_volatility": 0.25
+      },
+      "sci_fi": {
+        "success": true,
+        "product_id": "prod_ai_ai-enhanced_sci_fi_nft",
+        "price_usd": 3750.0,
+        "price_eth": 1.5,
+        "ai_enhanced": true,
+        "ml_model_version": "v2.1",
+        "confidence": 0.8,
+        "market_volatility": 0.25
+      }
+    },
+    "complete_workflow": {
+      "workflow_1": {
+        "success": false,
+        "error": "'NFTMetadata' object has no attribute 'get'"
+      },
+      "workflow_2": {
+        "success": false,
+        "error": "'NFTMetadata' object has no attribute 'get'"
+      },
+      "workflow_3": {
+        "success": false,
+        "error": "'NFTMetadata' object has no attribute 'get'"
+      },
+      "workflow_4": {
+        "success": false,
+        "error": "'NFTMetadata' object has no attribute 'get'"
+      }
+    },
+    "ai_minting_configuration": {
+      "success": true,
+      "model_version": "gpt-4-turbo",
+      "prompt_optimization": true,
+      "metadata_enhancement": true,
+      "rarity_calculation": true,
+      "market_analysis": true,
+      "blockchain_integration": true,
+      "minting_history_count": 4,
+      "video_styles_count": 4,
+      "ai_enhanced_styles": 4
+    }
+  },
+  "ai_minting_enabled": true,
+  "ml_model_version": "gpt-4-turbo",
+  "video_styles_count": 4,
+  "minting_history_count": 4
+}

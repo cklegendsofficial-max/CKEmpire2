@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-08-03T22:44:54.170998",
+  "total_tests": 9,
+  "passed_tests": 0,
+  "success_rate": 0.0,
+  "results": [
+    {
+      "test_name": "Health Check",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "ROI Calculation",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "CAC/LTV Calculation",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "Advanced CAC/LTV",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "DCF Model",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "Advanced DCF",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "Enhanced ROI",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "Financial Strategy",
+      "status": "FAILED"
+    },
+    {
+      "test_name": "Dashboard Graph",
+      "status": "FAILED"
+    }
+  ]
+}

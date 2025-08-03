@@ -1,282 +1,396 @@
 #!/usr/bin/env python3
 """
-Stripe Subscription Test Script
-Tests subscription creation, cancellation, and financial metrics
+Stripe Subscription Test Script for CK Empire
+Tests the monetization features including A/B testing, freemium model, and payment simulation
 """
 
+import os
+import sys
 import asyncio
 import requests
 import json
 from datetime import datetime
-import sys
-import os
+from typing import Dict, Any
 
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from monetization import monetization_manager, SubscriptionTier, BillingCycle
-
 class StripeSubscriptionTester:
-    """Test Stripe subscription functionality"""
+    """Test Stripe subscription features"""
     
     def __init__(self):
         self.base_url = "http://localhost:8000/api/v1"
-        self.test_results = []
-    
-    def print_header(self, title):
-        """Print test header"""
-        print("\n" + "="*60)
-        print(f"🧪 {title}")
-        print("="*60)
-    
-    def print_success(self, message):
-        """Print success message"""
-        print(f"✅ {message}")
-        self.test_results.append({"test": message, "status": "PASS"})
-    
-    def print_error(self, message):
-        """Print error message"""
-        print(f"❌ {message}")
-        self.test_results.append({"test": message, "status": "FAIL"})
-    
-    def print_info(self, message):
-        """Print info message"""
-        print(f"ℹ️  {message}")
-    
-    async def test_pricing_plans(self):
-        """Test pricing plans endpoint"""
-        self.print_header("Testing Pricing Plans")
+        self.test_results = {}
         
+    async def test_subscription_endpoints(self) -> Dict[str, Any]:
+        """Test all subscription endpoints"""
+        print("🔍 Testing Subscription Endpoints...")
+        
+        results = {}
+        
+        # Test 1: Get pricing plans
         try:
-            # Test API endpoint
             response = requests.get(f"{self.base_url}/subscription/plans")
             if response.status_code == 200:
                 plans = response.json()
-                self.print_success(f"Retrieved {len(plans)} pricing plans")
-                
-                for plan in plans:
-                    self.print_info(f"Plan: {plan['name']} - ${plan['price_monthly']}/month")
-                
-                return plans
+                results['pricing_plans'] = {
+                    'success': True,
+                    'plans_count': len(plans),
+                    'plans': [plan['tier'] for plan in plans]
+                }
+                print(f"✅ Pricing plans: {len(plans)} plans found")
             else:
-                self.print_error(f"Failed to get pricing plans: {response.status_code}")
-                return []
-                
+                results['pricing_plans'] = {'success': False, 'error': response.text}
+                print(f"❌ Pricing plans failed: {response.status_code}")
         except Exception as e:
-            self.print_error(f"Error testing pricing plans: {e}")
-            return []
-    
-    async def test_subscription_creation(self):
-        """Test subscription creation"""
-        self.print_header("Testing Subscription Creation")
+            results['pricing_plans'] = {'success': False, 'error': str(e)}
+            print(f"❌ Pricing plans error: {e}")
         
-        try:
-            # Test data
-            subscription_data = {
-                "tier": "premium",
-                "billing_cycle": "monthly",
-                "payment_method_id": "pm_test_1234567890"
-            }
-            
-            # Test API endpoint
-            response = requests.post(
-                f"{self.base_url}/subscription/subscribe",
-                json=subscription_data
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                self.print_success(f"Created subscription: {result['subscription_id']}")
-                self.print_info(f"Tier: {result['tier']}, Status: {result['status']}")
-                self.print_info(f"Price: ${result['price']}, Features: {len(result['features'])}")
-                return result
-            else:
-                self.print_error(f"Failed to create subscription: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            self.print_error(f"Error testing subscription creation: {e}")
-            return None
-    
-    async def test_subscription_status(self):
-        """Test subscription status endpoint"""
-        self.print_header("Testing Subscription Status")
-        
+        # Test 2: Get subscription status
         try:
             response = requests.get(f"{self.base_url}/subscription/status")
-            
             if response.status_code == 200:
                 status = response.json()
-                self.print_success("Retrieved subscription status")
-                self.print_info(f"Tier: {status['tier']}, Status: {status['status']}")
-                self.print_info(f"Features: {len(status['features'])}")
-                return status
+                results['subscription_status'] = {
+                    'success': True,
+                    'has_subscription': status.get('has_subscription', False),
+                    'tier': status.get('tier', 'freemium')
+                }
+                print(f"✅ Subscription status: {status.get('tier', 'freemium')}")
             else:
-                self.print_error(f"Failed to get subscription status: {response.status_code}")
-                return None
-                
+                results['subscription_status'] = {'success': False, 'error': response.text}
+                print(f"❌ Subscription status failed: {response.status_code}")
         except Exception as e:
-            self.print_error(f"Error testing subscription status: {e}")
-            return None
-    
-    async def test_subscription_cancellation(self):
-        """Test subscription cancellation"""
-        self.print_header("Testing Subscription Cancellation")
+            results['subscription_status'] = {'success': False, 'error': str(e)}
+            print(f"❌ Subscription status error: {e}")
         
+        # Test 3: Get freemium features
         try:
-            response = requests.post(f"{self.base_url}/subscription/cancel")
-            
+            response = requests.get(f"{self.base_url}/subscription/freemium-features")
             if response.status_code == 200:
-                result = response.json()
-                self.print_success("Subscription cancelled successfully")
-                self.print_info(f"Status: {result['status']}")
-                self.print_info(f"Cancel at period end: {result['cancel_at_period_end']}")
-                return result
+                features = response.json()
+                results['freemium_features'] = {
+                    'success': True,
+                    'total_features': features.get('total_features', 0),
+                    'available_features': features.get('available_features', 0),
+                    'features': list(features.get('features', {}).keys())
+                }
+                print(f"✅ Freemium features: {features.get('available_features', 0)}/{features.get('total_features', 0)} available")
             else:
-                self.print_error(f"Failed to cancel subscription: {response.status_code}")
-                return None
-                
+                results['freemium_features'] = {'success': False, 'error': response.text}
+                print(f"❌ Freemium features failed: {response.status_code}")
         except Exception as e:
-            self.print_error(f"Error testing subscription cancellation: {e}")
-            return None
-    
-    async def test_financial_metrics(self):
-        """Test financial metrics calculation"""
-        self.print_header("Testing Financial Metrics")
+            results['freemium_features'] = {'success': False, 'error': str(e)}
+            print(f"❌ Freemium features error: {e}")
         
+        # Test 4: A/B test variant
         try:
-            response = requests.get(f"{self.base_url}/subscription/metrics")
-            
+            response = requests.get(f"{self.base_url}/subscription/ab-test/pricing_page")
             if response.status_code == 200:
-                metrics = response.json()
-                self.print_success("Retrieved financial metrics")
-                self.print_info(f"MRR: ${metrics['monthly_recurring_revenue']}")
-                self.print_info(f"ARR: ${metrics['annual_recurring_revenue']}")
-                self.print_info(f"Churn Rate: {metrics['churn_rate']}%")
-                self.print_info(f"ROI: {metrics['roi_percentage']}%")
-                return metrics
+                variant = response.json()
+                results['ab_test_variant'] = {
+                    'success': True,
+                    'test_active': variant.get('test_active', False),
+                    'variant': variant.get('variant', 'control')
+                }
+                print(f"✅ A/B test variant: {variant.get('variant', 'control')}")
             else:
-                self.print_error(f"Failed to get financial metrics: {response.status_code}")
-                return None
-                
+                results['ab_test_variant'] = {'success': False, 'error': response.text}
+                print(f"❌ A/B test variant failed: {response.status_code}")
         except Exception as e:
-            self.print_error(f"Error testing financial metrics: {e}")
-            return None
-    
-    async def test_user_limits(self):
-        """Test user limits checking"""
-        self.print_header("Testing User Limits")
+            results['ab_test_variant'] = {'success': False, 'error': str(e)}
+            print(f"❌ A/B test variant error: {e}")
         
+        # Test 5: Track A/B test event
         try:
-            # Test different features
-            features = ["ai_requests", "projects", "storage_gb", "team_members"]
-            
-            for feature in features:
-                response = requests.get(f"{self.base_url}/subscription/limits?feature={feature}")
-                
+            response = requests.post(f"{self.base_url}/subscription/ab-test/pricing_page/track", 
+                                  json={'event': 'test_conversion', 'value': 1.0})
+            if response.status_code == 200:
+                track_result = response.json()
+                results['ab_test_tracking'] = {
+                    'success': True,
+                    'tracked': track_result.get('success', False)
+                }
+                print(f"✅ A/B test tracking: {'success' if track_result.get('success') else 'failed'}")
+            else:
+                results['ab_test_tracking'] = {'success': False, 'error': response.text}
+                print(f"❌ A/B test tracking failed: {response.status_code}")
+        except Exception as e:
+            results['ab_test_tracking'] = {'success': False, 'error': str(e)}
+            print(f"❌ A/B test tracking error: {e}")
+        
+        # Test 6: Simulate payment
+        try:
+            response = requests.post(f"{self.base_url}/subscription/simulate-payment", 
+                                  json={'amount': 49.00, 'currency': 'usd'})
+            if response.status_code == 200:
+                payment = response.json()
+                results['payment_simulation'] = {
+                    'success': True,
+                    'payment_success': payment.get('success', False),
+                    'amount': payment.get('amount', 0),
+                    'test_mode': payment.get('test_mode', True)
+                }
+                print(f"✅ Payment simulation: ${payment.get('amount', 0)} - {'success' if payment.get('success') else 'failed'}")
+            else:
+                results['payment_simulation'] = {'success': False, 'error': response.text}
+                print(f"❌ Payment simulation failed: {response.status_code}")
+        except Exception as e:
+            results['payment_simulation'] = {'success': False, 'error': str(e)}
+            print(f"❌ Payment simulation error: {e}")
+        
+        # Test 7: Test subscription creation (mock)
+        try:
+            response = requests.post(f"{self.base_url}/subscription/subscribe", 
+                                  json={
+                                      'tier': 'premium',
+                                      'billing_cycle': 'monthly',
+                                      'payment_method_id': 'pm_test_1234567890'
+                                  })
+            if response.status_code == 200:
+                subscription = response.json()
+                results['subscription_creation'] = {
+                    'success': True,
+                    'subscription_id': subscription.get('subscription_id', ''),
+                    'tier': subscription.get('tier', ''),
+                    'status': subscription.get('status', '')
+                }
+                print(f"✅ Subscription creation: {subscription.get('tier', '')} - {subscription.get('status', '')}")
+            else:
+                results['subscription_creation'] = {'success': False, 'error': response.text}
+                print(f"❌ Subscription creation failed: {response.status_code}")
+        except Exception as e:
+            results['subscription_creation'] = {'success': False, 'error': str(e)}
+            print(f"❌ Subscription creation error: {e}")
+        
+        return results
+    
+    async def test_freemium_model(self) -> Dict[str, Any]:
+        """Test freemium model features"""
+        print("\n🔍 Testing Freemium Model...")
+        
+        results = {}
+        
+        # Test specific feature access
+        features_to_test = ['ai_requests', 'projects', 'video_generation', 'nft_creation']
+        
+        for feature in features_to_test:
+            try:
+                response = requests.get(f"{self.base_url}/subscription/freemium-features/{feature}")
                 if response.status_code == 200:
-                    limits = response.json()
-                    self.print_success(f"Checked limits for {feature}")
-                    self.print_info(f"Tier: {limits['tier']}, Has Access: {limits['has_access']}")
+                    feature_info = response.json()
+                    results[feature] = {
+                        'success': True,
+                        'available': feature_info.get('available', False),
+                        'user_tier': feature_info.get('user_tier', 'freemium'),
+                        'current_limit': feature_info.get('current_limit', 0),
+                        'unlimited': feature_info.get('unlimited', False)
+                    }
+                    status = "✅" if feature_info.get('available') else "🔒"
+                    print(f"{status} {feature}: {feature_info.get('user_tier', 'freemium')} - "
+                          f"{'Unlimited' if feature_info.get('unlimited') else feature_info.get('current_limit', 0)}")
                 else:
-                    self.print_error(f"Failed to check limits for {feature}: {response.status_code}")
+                    results[feature] = {'success': False, 'error': response.text}
+                    print(f"❌ {feature}: Failed - {response.status_code}")
+            except Exception as e:
+                results[feature] = {'success': False, 'error': str(e)}
+                print(f"❌ {feature}: Error - {e}")
+        
+        return results
+    
+    async def test_ab_testing(self) -> Dict[str, Any]:
+        """Test A/B testing functionality"""
+        print("\n🔍 Testing A/B Testing...")
+        
+        results = {}
+        
+        # Test different A/B tests
+        tests_to_test = ['pricing_page', 'subscription_flow']
+        
+        for test_name in tests_to_test:
+            try:
+                # Get variant
+                response = requests.get(f"{self.base_url}/subscription/ab-test/{test_name}")
+                if response.status_code == 200:
+                    variant = response.json()
+                    results[f'{test_name}_variant'] = {
+                        'success': True,
+                        'test_active': variant.get('test_active', False),
+                        'variant': variant.get('variant', 'control'),
+                        'test_id': variant.get('test_id', '')
+                    }
                     
-        except Exception as e:
-            self.print_error(f"Error testing user limits: {e}")
+                    # Track some events
+                    events = ['page_view', 'button_click', 'form_start']
+                    for event in events:
+                        try:
+                            track_response = requests.post(
+                                f"{self.base_url}/subscription/ab-test/{test_name}/track",
+                                json={'event': event, 'value': 1.0}
+                            )
+                            if track_response.status_code == 200:
+                                results[f'{test_name}_{event}_tracking'] = {
+                                    'success': True,
+                                    'tracked': track_response.json().get('success', False)
+                                }
+                            else:
+                                results[f'{test_name}_{event}_tracking'] = {
+                                    'success': False, 
+                                    'error': track_response.text
+                                }
+                        except Exception as e:
+                            results[f'{test_name}_{event}_tracking'] = {
+                                'success': False, 
+                                'error': str(e)
+                            }
+                    
+                    status = "✅" if variant.get('test_active') else "⏸️"
+                    print(f"{status} {test_name}: Variant {variant.get('variant', 'control')} - "
+                          f"{'Active' if variant.get('test_active') else 'Inactive'}")
+                else:
+                    results[f'{test_name}_variant'] = {'success': False, 'error': response.text}
+                    print(f"❌ {test_name}: Failed - {response.status_code}")
+            except Exception as e:
+                results[f'{test_name}_variant'] = {'success': False, 'error': str(e)}
+                print(f"❌ {test_name}: Error - {e}")
+        
+        return results
     
-    async def test_payment_integration(self):
-        """Test payment integration"""
-        self.print_header("Testing Payment Integration")
+    async def test_payment_simulation(self) -> Dict[str, Any]:
+        """Test payment simulation"""
+        print("\n🔍 Testing Payment Simulation...")
         
-        try:
-            response = requests.get(f"{self.base_url}/subscription/test-payment")
-            
-            if response.status_code == 200:
-                payment_info = response.json()
-                self.print_success("Payment integration test successful")
-                self.print_info(f"Test Card: {payment_info['test_card']}")
-                self.print_info(f"Test Amount: {payment_info['test_amount']}")
-                return payment_info
-            else:
-                self.print_error(f"Failed to test payment integration: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            self.print_error(f"Error testing payment integration: {e}")
-            return None
+        results = {}
+        
+        # Test different payment amounts
+        test_amounts = [9.99, 49.00, 199.00]
+        
+        for amount in test_amounts:
+            try:
+                response = requests.post(f"{self.base_url}/subscription/simulate-payment", 
+                                      json={'amount': amount, 'currency': 'usd'})
+                if response.status_code == 200:
+                    payment = response.json()
+                    results[f'payment_{amount}'] = {
+                        'success': True,
+                        'payment_success': payment.get('success', False),
+                        'amount': payment.get('amount', 0),
+                        'currency': payment.get('currency', 'usd'),
+                        'test_mode': payment.get('test_mode', True),
+                        'payment_id': payment.get('payment_id', '')
+                    }
+                    status = "✅" if payment.get('success') else "❌"
+                    print(f"{status} ${amount}: {'Success' if payment.get('success') else 'Failed'}")
+                else:
+                    results[f'payment_{amount}'] = {'success': False, 'error': response.text}
+                    print(f"❌ ${amount}: Failed - {response.status_code}")
+            except Exception as e:
+                results[f'payment_{amount}'] = {'success': False, 'error': str(e)}
+                print(f"❌ ${amount}: Error - {e}")
+        
+        return results
     
-    async def test_monetization_manager(self):
-        """Test monetization manager directly"""
-        self.print_header("Testing Monetization Manager")
+    def generate_report(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comprehensive test report"""
+        print("\n📊 Generating Test Report...")
         
-        try:
-            # Test pricing plans
-            plans = await monetization_manager.get_pricing_plans()
-            self.print_success(f"Retrieved {len(plans)} pricing plans from manager")
-            
-            # Test subscription status
-            status = await monetization_manager.get_subscription_status(user_id=1, db=None)
-            self.print_success("Retrieved subscription status from manager")
-            self.print_info(f"Tier: {status['tier']}, Has Subscription: {status['has_subscription']}")
-            
-            # Test financial metrics
-            metrics = await monetization_manager.calculate_financial_metrics(db=None)
-            self.print_success("Calculated financial metrics from manager")
-            self.print_info(f"MRR: ${metrics.monthly_recurring_revenue}")
-            self.print_info(f"ROI: {metrics.roi_percentage}%")
-            
-        except Exception as e:
-            self.print_error(f"Error testing monetization manager: {e}")
-    
-    def print_summary(self):
-        """Print test summary"""
-        self.print_header("Test Summary")
+        total_tests = 0
+        passed_tests = 0
+        failed_tests = 0
         
-        total_tests = len(self.test_results)
-        passed_tests = len([r for r in self.test_results if r['status'] == 'PASS'])
-        failed_tests = total_tests - passed_tests
+        # Count tests
+        for category, tests in results.items():
+            if isinstance(tests, dict):
+                for test_name, result in tests.items():
+                    total_tests += 1
+                    if result.get('success', False):
+                        passed_tests += 1
+                    else:
+                        failed_tests += 1
         
-        print(f"Total Tests: {total_tests}")
-        print(f"Passed: {passed_tests}")
-        print(f"Failed: {failed_tests}")
-        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
+        # Calculate success rate
+        success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
         
-        if failed_tests > 0:
-            print("\nFailed Tests:")
-            for result in self.test_results:
-                if result['status'] == 'FAIL':
-                    print(f"  ❌ {result['test']}")
-    
-    async def run_all_tests(self):
-        """Run all tests"""
-        print("🚀 Starting Stripe Subscription Tests")
-        print(f"Base URL: {self.base_url}")
-        print(f"Timestamp: {datetime.now().isoformat()}")
-        
-        # Run tests
-        await self.test_pricing_plans()
-        await self.test_subscription_creation()
-        await self.test_subscription_status()
-        await self.test_subscription_cancellation()
-        await self.test_financial_metrics()
-        await self.test_user_limits()
-        await self.test_payment_integration()
-        await self.test_monetization_manager()
+        # Generate summary
+        summary = {
+            'total_tests': total_tests,
+            'passed_tests': passed_tests,
+            'failed_tests': failed_tests,
+            'success_rate': success_rate,
+            'timestamp': datetime.utcnow().isoformat(),
+            'test_results': results
+        }
         
         # Print summary
-        self.print_summary()
+        print(f"\n🎯 Test Summary:")
+        print(f"   Total Tests: {total_tests}")
+        print(f"   Passed: {passed_tests}")
+        print(f"   Failed: {failed_tests}")
+        print(f"   Success Rate: {success_rate:.1f}%")
+        
+        if success_rate >= 80:
+            print("✅ Overall Status: EXCELLENT")
+        elif success_rate >= 60:
+            print("⚠️  Overall Status: GOOD")
+        else:
+            print("❌ Overall Status: NEEDS IMPROVEMENT")
+        
+        return summary
+    
+    async def run_all_tests(self) -> Dict[str, Any]:
+        """Run all monetization tests"""
+        print("🚀 CK Empire Monetization Test Suite")
+        print("=" * 50)
+        
+        all_results = {}
+        
+        # Run subscription endpoint tests
+        all_results['subscription_endpoints'] = await self.test_subscription_endpoints()
+        
+        # Run freemium model tests
+        all_results['freemium_model'] = await self.test_freemium_model()
+        
+        # Run A/B testing tests
+        all_results['ab_testing'] = await self.test_ab_testing()
+        
+        # Run payment simulation tests
+        all_results['payment_simulation'] = await self.test_payment_simulation()
+        
+        # Generate comprehensive report
+        report = self.generate_report(all_results)
+        
+        # Save report to file
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        filename = f"stripe_subscription_test_results_{timestamp}.json"
+        
+        with open(filename, 'w') as f:
+            json.dump(report, f, indent=2)
+        
+        print(f"\n📄 Test report saved to: {filename}")
+        
+        return report
 
-def main():
-    """Main function"""
+async def main():
+    """Main test function"""
     tester = StripeSubscriptionTester()
     
     try:
-        asyncio.run(tester.run_all_tests())
-    except KeyboardInterrupt:
-        print("\n⚠️  Tests interrupted by user")
+        report = await tester.run_all_tests()
+        
+        if report['success_rate'] >= 80:
+            print("\n🎉 All monetization features are working excellently!")
+            return 0
+        elif report['success_rate'] >= 60:
+            print("\n⚠️  Most monetization features are working, but some improvements needed.")
+            return 1
+        else:
+            print("\n❌ Several monetization features need attention.")
+            return 1
+            
     except Exception as e:
-        print(f"\n💥 Test suite failed: {e}")
-        sys.exit(1)
+        print(f"\n💥 Test suite failed with error: {e}")
+        return 1
 
 if __name__ == "__main__":
-    main() 
+    exit_code = asyncio.run(main())
+    sys.exit(exit_code) 

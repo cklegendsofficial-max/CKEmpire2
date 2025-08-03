@@ -42,13 +42,55 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter()
 
+@router.post("/ai/custom-strategy", response_model=EmpireStrategyResponse)
+async def generate_custom_strategy(
+    request: EmpireStrategyRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate personalized custom empire strategy based on user input with enhanced DCF calculations
+    
+    - **user_input**: User's strategy requirements (e.g., "Revenue hedefi $20K, AI öneri ver")
+    - **include_financial_metrics**: Whether to include enhanced DCF calculations
+    """
+    try:
+        logger.info(f"Generating custom empire strategy for input: {request.user_input}")
+        
+        # Generate strategy using enhanced AI module
+        strategy, financial_metrics = await ai_module.generate_custom_strategy(
+            request.user_input, 
+            include_financial_metrics=request.include_financial_metrics
+        )
+        
+        # Convert to response format
+        response = EmpireStrategyResponse(
+            strategy_type=strategy.strategy_type.value,
+            title=strategy.title,
+            description=strategy.description,
+            key_actions=strategy.key_actions,
+            timeline_months=strategy.timeline_months,
+            estimated_investment=strategy.estimated_investment,
+            projected_roi=strategy.projected_roi,
+            risk_level=strategy.risk_level,
+            success_metrics=strategy.success_metrics,
+            created_at=strategy.created_at,
+            financial_metrics=financial_metrics
+        )
+        
+        logger.info(f"✅ Generated custom empire strategy: {strategy.title}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to generate custom empire strategy: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate custom empire strategy: {str(e)}")
+
 @router.post("/ai/empire-strategy", response_model=EmpireStrategyResponse)
 async def generate_empire_strategy(
     request: EmpireStrategyRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Generate personalized empire strategy based on user input
+    Generate personalized empire strategy based on user input (legacy endpoint)
     
     - **user_input**: User's strategy requirements (e.g., "Revenue hedefi $20K, AI öneri ver")
     - **include_financial_metrics**: Whether to include DCF calculations
@@ -89,15 +131,15 @@ async def generate_empire_strategy(
 @router.post("/ai/fine-tuning/create-dataset", response_model=FineTuningResponse)
 async def create_fine_tuning_dataset():
     """
-    Create fine-tuning dataset for empire strategy generation
+    Create enhanced fine-tuning dataset for empire strategy generation
     
-    Creates a dataset with 100+ examples for training the AI model
+    Creates a dataset with 100+ diverse examples for training the AI model
     """
     try:
-        logger.info("Creating fine-tuning dataset")
+        logger.info("Creating enhanced fine-tuning dataset")
         
-        # Create dataset using AI module
-        dataset = await ai_module.create_fine_tuning_dataset()
+        # Create dataset using enhanced AI module
+        dataset = await ai_module.create_enhanced_fine_tuning_dataset()
         
         response = FineTuningResponse(
             training_examples=len(dataset.training_data),
@@ -107,7 +149,7 @@ async def create_fine_tuning_dataset():
             created_at=dataset.created_at
         )
         
-        logger.info(f"✅ Created fine-tuning dataset with {len(dataset.training_data)} training examples")
+        logger.info(f"✅ Created enhanced fine-tuning dataset with {len(dataset.training_data)} training examples")
         return response
         
     except Exception as e:
@@ -119,19 +161,19 @@ async def start_fine_tuning(
     request: FineTuningRequest
 ):
     """
-    Start fine-tuning process for empire strategy generation
+    Start enhanced fine-tuning process for empire strategy generation
     
     - **model_name**: Base model to fine-tune (default: gpt-4)
-    - **epochs**: Number of training epochs (default: 3)
+    - **epochs**: Number of training epochs (default: 4)
     """
     try:
-        logger.info("Starting fine-tuning process")
+        logger.info("Starting enhanced fine-tuning process")
         
         # Create dataset first
-        dataset = await ai_module.create_fine_tuning_dataset()
+        dataset = await ai_module.create_enhanced_fine_tuning_dataset()
         
         # Start fine-tuning
-        job_id = await ai_module.start_fine_tuning(dataset)
+        job_id = await ai_module.start_enhanced_fine_tuning(dataset)
         
         response = FineTuningStatusResponse(
             job_id=job_id,
@@ -141,12 +183,46 @@ async def start_fine_tuning(
             created_at=datetime.utcnow()
         )
         
-        logger.info(f"✅ Started fine-tuning job: {job_id}")
+        logger.info(f"✅ Started enhanced fine-tuning job: {job_id}")
         return response
         
     except Exception as e:
         logger.error(f"❌ Failed to start fine-tuning: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to start fine-tuning: {str(e)}")
+
+@router.post("/ai/fine-tuning/test-accuracy", response_model=Dict[str, Any])
+async def test_fine_tuning_accuracy():
+    """
+    Test fine-tuning accuracy with mock dataset
+    
+    Returns accuracy metrics and test results
+    """
+    try:
+        logger.info("Testing fine-tuning accuracy")
+        
+        # Test inputs for accuracy evaluation
+        test_inputs = [
+            "Düşük bütçe ile başla",
+            "Revenue hedefi $50K",
+            "Yüksek risk toleransı",
+            "Hızlı büyüme istiyorum",
+            "Maliyet optimizasyonu",
+            "Yeni pazarlara açıl",
+            "Teknoloji odaklı",
+            "Konsolide et",
+            "Sürdürülebilir büyüme",
+            "Kriz yönetimi"
+        ]
+        
+        # Test accuracy
+        accuracy_results = await ai_module.test_fine_tuning_accuracy(test_inputs)
+        
+        logger.info(f"✅ Fine-tuning accuracy test completed: {accuracy_results['accuracy']:.2%}")
+        return accuracy_results
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to test fine-tuning accuracy: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to test fine-tuning accuracy: {str(e)}")
 
 @router.get("/ai/fine-tuning/status/{job_id}", response_model=FineTuningStatusResponse)
 async def check_fine_tuning_status(job_id: str):
@@ -165,7 +241,7 @@ async def check_fine_tuning_status(job_id: str):
             job_id=job_id,
             status=status_info.get("status", "unknown"),
             model_name=status_info.get("model", ""),
-            epochs=3,  # Default value
+            epochs=4,  # Default value for enhanced fine-tuning
             created_at=datetime.utcnow(),
             finished_at=status_info.get("finished_at"),
             trained_tokens=status_info.get("trained_tokens", 0)

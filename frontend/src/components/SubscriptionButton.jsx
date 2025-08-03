@@ -9,10 +9,14 @@ const SubscriptionButton = ({ userTier = 'freemium', onSubscriptionChange }) => 
     const [showPricingModal, setShowPricingModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [billingCycle, setBillingCycle] = useState('monthly');
+    const [abTestVariant, setAbTestVariant] = useState(null);
+    const [freemiumFeatures, setFreemiumFeatures] = useState({});
 
     useEffect(() => {
         fetchSubscriptionStatus();
         fetchPricingPlans();
+        fetchAbTestVariant();
+        fetchFreemiumFeatures();
     }, []);
 
     const fetchSubscriptionStatus = async () => {
@@ -33,9 +37,35 @@ const SubscriptionButton = ({ userTier = 'freemium', onSubscriptionChange }) => 
         }
     };
 
+    const fetchAbTestVariant = async () => {
+        try {
+            const response = await axios.get('/api/v1/subscription/ab-test/pricing_page');
+            setAbTestVariant(response.data);
+        } catch (error) {
+            console.error('Failed to fetch A/B test variant:', error);
+        }
+    };
+
+    const fetchFreemiumFeatures = async () => {
+        try {
+            const response = await axios.get('/api/v1/subscription/freemium-features');
+            setFreemiumFeatures(response.data);
+        } catch (error) {
+            console.error('Failed to fetch freemium features:', error);
+        }
+    };
+
     const handleSubscribe = async (plan) => {
         setLoading(true);
         try {
+            // Track A/B test conversion event
+            if (abTestVariant?.test_active) {
+                await axios.post(`/api/v1/subscription/ab-test/pricing_page/track`, {
+                    event: 'conversion',
+                    value: 1.0
+                });
+            }
+
             // In a real app, you would integrate with Stripe Elements
             // For now, we'll use a mock payment method
             const mockPaymentMethod = 'pm_test_1234567890';
@@ -226,6 +256,47 @@ const SubscriptionButton = ({ userTier = 'freemium', onSubscriptionChange }) => 
                             <li key={index}>✓ {feature}</li>
                         ))}
                     </ul>
+                </div>
+            )}
+
+            {/* Freemium Features Display */}
+            {freemiumFeatures.features && (
+                <div className="freemium-features">
+                    <h4>Feature Access:</h4>
+                    <div className="features-grid">
+                        {Object.entries(freemiumFeatures.features).map(([featureName, feature]) => (
+                            <div key={featureName} className={`feature-item ${feature.available ? 'available' : 'locked'}`}>
+                                <div className="feature-header">
+                                    <h5>{featureName.replace('_', ' ').toUpperCase()}</h5>
+                                    <span className={`status ${feature.available ? 'available' : 'locked'}`}>
+                                        {feature.available ? '✓ Available' : '🔒 Locked'}
+                                    </span>
+                                </div>
+                                <p className="feature-description">{feature.description}</p>
+                                <div className="feature-limits">
+                                    <span>Limit: {feature.unlimited ? 'Unlimited' : feature.current_limit}</span>
+                                </div>
+                                {!feature.available && feature.upgrade_prompt && (
+                                    <div className="upgrade-prompt">
+                                        <p>{feature.upgrade_prompt}</p>
+                                        <button 
+                                            className="btn-upgrade-feature"
+                                            onClick={() => setShowPricingModal(true)}
+                                        >
+                                            Upgrade Now
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* A/B Test Info (for debugging) */}
+            {abTestVariant?.test_active && (
+                <div className="ab-test-info">
+                    <small>🧪 A/B Test Active: Variant {abTestVariant.variant}</small>
                 </div>
             )}
         </div>

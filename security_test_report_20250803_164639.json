@@ -1,0 +1,185 @@
+{
+  "test_timestamp": "2025-08-03T16:45:26.481241",
+  "duration_seconds": 73.395259,
+  "overall_security_score": 0.0,
+  "total_tests": 18,
+  "passed_tests": 0,
+  "failed_tests": 18,
+  "test_results": {
+    "authentication": {
+      "tests": [
+        {
+          "test": "User registration: testuser",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/register (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B697369010>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "User registration: admin",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/register (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B697375810>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "User login: testuser",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/login (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B697375D10>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "User login: admin",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/login (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B69735D0F0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "OAuth2 providers endpoint",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/providers (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B69735D480>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 5,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 5
+    },
+    "vault_integration": {
+      "tests": [
+        {
+          "test": "Vault health check",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B697325D90>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "Secret storage",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/vault/store (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CA580>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "Secret listing",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/vault/list (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CA140>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 3,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 3
+    },
+    "rate_limiting": {
+      "tests": [
+        {
+          "test": "Rate limit stats",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/rate-limit/stats (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972C8F30>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "IP blacklisting",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/rate-limit/blacklist/192.168.1.100 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CA9C0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "Suspicious activity report",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/rate-limit/suspicious-activity (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CABE0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 3,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 3
+    },
+    "security_scanning": {
+      "tests": [
+        {
+          "test": "Security scan",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/scan (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CAE00>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "OWASP checklist",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/owasp-checklist (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CB020>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 2,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 2
+    },
+    "penetration_testing": {
+      "tests": [
+        {
+          "test": "Penetration test",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/penetration-test (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CB240>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 1,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 1
+    },
+    "owasp_compliance": {
+      "tests": [
+        {
+          "test": "Security headers",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/test/headers (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CB570>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "API security",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/security/test/api-security (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CB680>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 2,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 2
+    },
+    "api_security": {
+      "tests": [
+        {
+          "test": "Rate limiting",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/projects (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CB9B0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        },
+        {
+          "test": "Authentication required",
+          "status": "ERROR",
+          "details": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/auth/me (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001B6972CBAC0>: Failed to establish a new connection: [WinError 10061] Hedef makine etkin olarak reddetti\u011finden ba\u011flant\u0131 kurulamad\u0131'))"
+        }
+      ],
+      "total_tests": 2,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "error_tests": 2
+    }
+  },
+  "recommendations": [
+    "Add security scanning to CI/CD pipeline",
+    "Ensure JWT tokens are properly validated",
+    "Implement proper secret rotation",
+    "Implement proper error handling",
+    "Implement proper IP blacklisting/whitelisting",
+    "Implement logging and monitoring",
+    "Use security headers",
+    "Follow OWASP Top 10 guidelines",
+    "Review security scanning implementation",
+    "Implement regular security scans",
+    "Ensure Vault service is properly configured",
+    "Implement missing security headers",
+    "Implement rate limiting",
+    "Add audit logging for secret access",
+    "Regular security audits and penetration testing",
+    "Review secret management implementation",
+    "Review API security configuration",
+    "Keep all dependencies updated",
+    "Add multi-factor authentication",
+    "Implement proper OAuth2 flow",
+    "Configure appropriate rate limits for different endpoints",
+    "Use HTTPS for all communications",
+    "Review and fix authentication implementation",
+    "Configure ZAP properly for automated scanning",
+    "Add suspicious activity detection",
+    "Review rate limiting configuration",
+    "Conduct regular security audits"
+  ]
+}

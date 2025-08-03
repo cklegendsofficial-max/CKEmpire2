@@ -1,409 +1,424 @@
+#!/usr/bin/env python3
 """
-Manual test script for AI module functionality
-Demonstrates content generation, video production, NFT automation, and AGI evolution
+Test script for AI module with GPT fine-tuning and accuracy testing
+Tests the enhanced AI module with mock dataset and accuracy assertions
 """
 
 import asyncio
 import json
+import logging
 from datetime import datetime
 from typing import List, Dict, Any
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import AI module
-from backend.ai import AIModule, ContentType, VideoStyle, NFTStatus
-from backend.models import (
-    ContentIdeaRequest, VideoRequest, NFTRequest, DecisionRequest
-)
+try:
+    from backend.ai import ai_module
+    from backend.models import EmpireStrategyRequest, FinancialMetricsResponse
+except ImportError as e:
+    logger.error(f"Failed to import AI module: {e}")
+    exit(1)
 
-
-async def test_ai_module():
-    """Test the AI module with various functionalities"""
+class AITestSuite:
+    """Comprehensive test suite for AI module"""
     
-    print("🤖 Testing CK Empire Builder AI Module")
-    print("=" * 50)
-    
-    # Initialize AI module
-    ai_module = AIModule()
-    
-    # Test 1: Content Generation
-    print("\n📝 Test 1: Content Generation")
-    print("-" * 30)
-    
-    try:
-        ideas = await ai_module.generate_viral_content_ideas(
-            topic="AI technology trends",
-            count=3,
-            content_type=ContentType.ARTICLE
-        )
+    def __init__(self):
+        self.test_results = []
+        self.accuracy_threshold = 0.7  # 70% accuracy threshold
         
-        print(f"✅ Generated {len(ideas)} content ideas:")
-        for i, idea in enumerate(ideas, 1):
-            print(f"  {i}. {idea.title}")
-            print(f"     Description: {idea.description[:100]}...")
-            print(f"     Type: {idea.content_type.value}")
-            print(f"     Target Audience: {idea.target_audience}")
-            print(f"     Viral Potential: {idea.viral_potential:.2f}")
-            print(f"     Estimated Revenue: ${idea.estimated_revenue}")
-            print(f"     Keywords: {', '.join(idea.keywords)}")
-            print(f"     Hashtags: {', '.join(idea.hashtags)}")
-            print()
+    async def test_custom_strategy_generation(self) -> Dict[str, Any]:
+        """Test custom strategy generation with various inputs"""
+        logger.info("🧪 Testing custom strategy generation...")
         
-    except Exception as e:
-        print(f"❌ Content generation failed: {e}")
-    
-    # Test 2: Video Generation
-    print("\n🎬 Test 2: Video Generation")
-    print("-" * 30)
-    
-    try:
-        video_script = """
-        Welcome to the future of AI technology. In this groundbreaking video,
-        we explore the revolutionary developments that are reshaping our world.
-        From machine learning to neural networks, discover how artificial intelligence
-        is transforming industries and creating unprecedented opportunities.
-        """
-        
-        video_project = await ai_module.generate_video(
-            script=video_script,
-            style=VideoStyle.ZACK_SNYDER,
-            duration=60
-        )
-        
-        if video_project:
-            print(f"✅ Generated video: {video_project.title}")
-            print(f"   Style: {video_project.style.value}")
-            print(f"   Duration: {video_project.duration} seconds")
-            print(f"   Resolution: {video_project.resolution}")
-            print(f"   Output Path: {video_project.output_path}")
-            print(f"   Status: {video_project.status}")
-            print(f"   Script Preview: {video_project.script[:100]}...")
-        else:
-            print("❌ Video generation failed")
-            
-    except Exception as e:
-        print(f"❌ Video generation failed: {e}")
-    
-    # Test 3: NFT Creation
-    print("\n🖼️  Test 3: NFT Creation")
-    print("-" * 30)
-    
-    try:
-        nft_project = await ai_module.create_nft(
-            name="CK Empire Digital Art #001",
-            description="A unique digital artwork representing the future of AI and creativity",
-            image_path="sample_nft.jpg",
-            price_eth=0.5,
-            collection="CK Empire Collection"
-        )
-        
-        if nft_project:
-            print(f"✅ Created NFT: {nft_project.name}")
-            print(f"   Description: {nft_project.description}")
-            print(f"   Price: {nft_project.price_eth} ETH (${nft_project.price_usd})")
-            print(f"   Collection: {nft_project.collection}")
-            print(f"   Status: {nft_project.status.value}")
-            print(f"   Token ID: {nft_project.token_id}")
-            if nft_project.transaction_hash:
-                print(f"   Transaction Hash: {nft_project.transaction_hash}")
-            print(f"   Metadata: {json.dumps(nft_project.metadata, indent=2)}")
-        else:
-            print("❌ NFT creation failed")
-            
-    except Exception as e:
-        print(f"❌ NFT creation failed: {e}")
-    
-    # Test 4: AGI State and Evolution
-    print("\n🧠 Test 4: AGI State and Evolution")
-    print("-" * 30)
-    
-    try:
-        # Get initial AGI state
-        initial_state = ai_module.get_agi_state()
-        print(f"Initial AGI State:")
-        print(f"   Consciousness Score: {initial_state.consciousness_score:.3f}")
-        print(f"   Decision Capability: {initial_state.decision_capability:.3f}")
-        print(f"   Learning Rate: {initial_state.learning_rate:.3f}")
-        print(f"   Creativity Level: {initial_state.creativity_level:.3f}")
-        print(f"   Ethical Awareness: {initial_state.ethical_awareness:.3f}")
-        print(f"   Evolution Count: {initial_state.evolution_count}")
-        print(f"   Last Evolution: {initial_state.last_evolution}")
-        
-        # Evolve AGI consciousness
-        print("\n🔄 Evolving AGI consciousness...")
-        ai_module._evolve_agi_consciousness("content_generation", 2)
-        ai_module._evolve_agi_consciousness("video_generation", 1)
-        ai_module._evolve_agi_consciousness("nft_creation", 1)
-        
-        # Get evolved AGI state
-        evolved_state = ai_module.get_agi_state()
-        print(f"\nEvolved AGI State:")
-        print(f"   Consciousness Score: {evolved_state.consciousness_score:.3f}")
-        print(f"   Decision Capability: {evolved_state.decision_capability:.3f}")
-        print(f"   Learning Rate: {evolved_state.learning_rate:.3f}")
-        print(f"   Creativity Level: {evolved_state.creativity_level:.3f}")
-        print(f"   Ethical Awareness: {evolved_state.ethical_awareness:.3f}")
-        print(f"   Evolution Count: {evolved_state.evolution_count}")
-        print(f"   Last Evolution: {evolved_state.last_evolution}")
-        
-        # Calculate improvements
-        consciousness_improvement = evolved_state.consciousness_score - initial_state.consciousness_score
-        print(f"\n📈 Improvements:")
-        print(f"   Consciousness: +{consciousness_improvement:.3f}")
-        print(f"   Total Evolutions: {evolved_state.evolution_count}")
-        
-    except Exception as e:
-        print(f"❌ AGI state test failed: {e}")
-    
-    # Test 5: External Decision Tree
-    print("\n🎯 Test 5: External Decision Tree")
-    print("-" * 30)
-    
-    try:
-        # Test different scenarios
-        scenarios = [
+        test_cases = [
             {
-                "name": "Tech Content for LinkedIn",
-                "context": {
-                    "target_audience": "tech",
-                    "platform": "linkedin",
-                    "content_type": "article",
-                    "budget": "medium",
-                    "timeline": "normal"
-                }
+                "input": "Düşük bütçe ile başla",
+                "expected_type": "lean_startup",
+                "description": "Turkish lean startup request"
             },
             {
-                "name": "Viral Video for TikTok",
-                "context": {
-                    "target_audience": "general",
-                    "platform": "tiktok",
-                    "content_type": "video",
-                    "mood": "entertaining",
-                    "budget": "low",
-                    "timeline": "urgent"
-                }
+                "input": "Revenue hedefi $50K",
+                "expected_type": "scale_up", 
+                "description": "Turkish revenue target request"
             },
             {
-                "name": "Legendary NFT Collection",
-                "context": {
-                    "rarity": "legendary",
-                    "market_trend": "bull",
-                    "budget": "high",
-                    "timeline": "long"
-                }
+                "input": "Yüksek risk toleransı",
+                "expected_type": "innovation",
+                "description": "Turkish high risk tolerance request"
+            },
+            {
+                "input": "Start with low budget",
+                "expected_type": "lean_startup",
+                "description": "English lean startup request"
+            },
+            {
+                "input": "Technology focused growth",
+                "expected_type": "innovation",
+                "description": "English technology focus request"
+            },
+            {
+                "input": "Cost optimization needed",
+                "expected_type": "cost_optimization",
+                "description": "English cost optimization request"
             }
         ]
         
-        for scenario in scenarios:
-            print(f"\n📊 Scenario: {scenario['name']}")
-            decisions = ai_module.external_decision_tree(scenario['context'])
-            
-            print(f"   Content Strategy: {decisions['content_strategy']}")
-            print(f"   Video Style: {decisions['video_style'].value}")
-            print(f"   NFT Pricing: {decisions['nft_pricing']} ETH")
-            print(f"   Marketing Approach: {decisions['marketing_approach']}")
-            print(f"   Ethical Considerations: {', '.join(decisions['ethical_considerations'])}")
+        results = []
+        for i, test_case in enumerate(test_cases):
+            try:
+                # Generate strategy
+                strategy, financial_metrics = await ai_module.generate_custom_strategy(
+                    test_case["input"], 
+                    include_financial_metrics=True
+                )
+                
+                # Check if strategy type matches expected
+                type_match = strategy.strategy_type.value == test_case["expected_type"]
+                
+                # Validate financial metrics
+                metrics_valid = self._validate_financial_metrics(financial_metrics)
+                
+                result = {
+                    "test_case": i + 1,
+                    "input": test_case["input"],
+                    "expected_type": test_case["expected_type"],
+                    "actual_type": strategy.strategy_type.value,
+                    "type_match": type_match,
+                    "metrics_valid": metrics_valid,
+                    "strategy_title": strategy.title,
+                    "estimated_investment": strategy.estimated_investment,
+                    "projected_roi": strategy.projected_roi,
+                    "success": type_match and metrics_valid
+                }
+                
+                results.append(result)
+                logger.info(f"✅ Test case {i+1}: {test_case['description']} - {'PASS' if result['success'] else 'FAIL'}")
+                
+            except Exception as e:
+                logger.error(f"❌ Test case {i+1} failed: {e}")
+                results.append({
+                    "test_case": i + 1,
+                    "input": test_case["input"],
+                    "error": str(e),
+                    "success": False
+                })
         
-    except Exception as e:
-        print(f"❌ Decision tree test failed: {e}")
+        return {
+            "test_name": "custom_strategy_generation",
+            "total_tests": len(test_cases),
+            "passed_tests": sum(1 for r in results if r.get("success", False)),
+            "results": results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
     
-    # Test 6: Health Check
-    print("\n🏥 Test 6: AI Module Health Check")
-    print("-" * 30)
+    def _validate_financial_metrics(self, metrics: FinancialMetricsResponse) -> bool:
+        """Validate financial metrics are reasonable"""
+        if not metrics:
+            return False
+        
+        try:
+            # Check NPV is reasonable
+            if metrics.npv < -1000000 or metrics.npv > 10000000:
+                return False
+            
+            # Check ROI is reasonable (0-100%)
+            if metrics.roi_percentage < 0 or metrics.roi_percentage > 100:
+                return False
+            
+            # Check payback period is reasonable (1-60 months)
+            if metrics.payback_period < 1 or metrics.payback_period > 60:
+                return False
+            
+            # Check investment amount is reasonable
+            if metrics.total_investment < 1000 or metrics.total_investment > 10000000:
+                return False
+            
+            return True
+            
+        except Exception:
+            return False
     
-    try:
-        health_status = {
-            "openai_available": ai_module.openai_client is not None,
-            "stripe_available": ai_module.stripe_client is not None,
-            "web3_available": ai_module.web3 is not None,
-            "opencv_available": hasattr(ai_module, '_generate_frames_from_script'),
-            "agi_consciousness": ai_module.get_agi_state().consciousness_score
+    async def test_fine_tuning_accuracy(self) -> Dict[str, Any]:
+        """Test fine-tuning accuracy with mock dataset"""
+        logger.info("🧪 Testing fine-tuning accuracy...")
+        
+        # Test inputs for accuracy evaluation
+        test_inputs = [
+            "Düşük bütçe ile başla",
+            "Revenue hedefi $50K", 
+            "Yüksek risk toleransı",
+            "Hızlı büyüme istiyorum",
+            "Maliyet optimizasyonu",
+            "Yeni pazarlara açıl",
+            "Teknoloji odaklı",
+            "Konsolide et",
+            "Sürdürülebilir büyüme",
+            "Kriz yönetimi",
+            "Start with low budget",
+            "Technology focused",
+            "Cost optimization",
+            "Market expansion",
+            "Innovation strategy"
+        ]
+        
+        try:
+            # Test accuracy
+            accuracy_results = await ai_module.test_fine_tuning_accuracy(test_inputs)
+            
+            # Assert accuracy meets threshold
+            accuracy_meets_threshold = accuracy_results["accuracy"] >= self.accuracy_threshold
+            
+            result = {
+                "test_name": "fine_tuning_accuracy",
+                "accuracy": accuracy_results["accuracy"],
+                "accuracy_percentage": f"{accuracy_results['accuracy']:.2%}",
+                "correct_predictions": accuracy_results["correct_predictions"],
+                "total_predictions": accuracy_results["total_predictions"],
+                "threshold": self.accuracy_threshold,
+                "threshold_percentage": f"{self.accuracy_threshold:.2%}",
+                "meets_threshold": accuracy_meets_threshold,
+                "test_inputs": test_inputs,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            logger.info(f"✅ Accuracy test completed: {result['accuracy_percentage']} (Threshold: {result['threshold_percentage']})")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Accuracy test failed: {e}")
+            return {
+                "test_name": "fine_tuning_accuracy",
+                "error": str(e),
+                "success": False,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    
+    async def test_dataset_creation(self) -> Dict[str, Any]:
+        """Test enhanced dataset creation"""
+        logger.info("🧪 Testing enhanced dataset creation...")
+        
+        try:
+            # Create enhanced dataset
+            dataset = await ai_module.create_enhanced_fine_tuning_dataset()
+            
+            # Validate dataset
+            dataset_valid = (
+                len(dataset.training_data) > 0 and
+                len(dataset.validation_data) > 0 and
+                dataset.dataset_size > 0 and
+                dataset.training_status == "ready"
+            )
+            
+            result = {
+                "test_name": "dataset_creation",
+                "training_examples": len(dataset.training_data),
+                "validation_examples": len(dataset.validation_data),
+                "total_examples": dataset.dataset_size,
+                "training_status": dataset.training_status,
+                "model_name": dataset.model_name,
+                "dataset_valid": dataset_valid,
+                "success": dataset_valid,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            logger.info(f"✅ Dataset creation test completed: {result['total_examples']} total examples")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Dataset creation test failed: {e}")
+            return {
+                "test_name": "dataset_creation",
+                "error": str(e),
+                "success": False,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    
+    async def test_financial_calculations(self) -> Dict[str, Any]:
+        """Test enhanced financial calculations with DCF"""
+        logger.info("🧪 Testing enhanced financial calculations...")
+        
+        # Create a test strategy
+        from backend.ai import EmpireStrategy, StrategyType
+        
+        test_strategy = EmpireStrategy(
+            strategy_type=StrategyType.LEAN_STARTUP,
+            title="Test Strategy",
+            description="Test strategy for financial calculations",
+            key_actions=["Action 1", "Action 2", "Action 3"],
+            timeline_months=12,
+            estimated_investment=100000,
+            projected_roi=0.20,
+            risk_level="Medium",
+            success_metrics=["Metric 1", "Metric 2"]
+        )
+        
+        try:
+            # Calculate financial metrics
+            financial_metrics = ai_module._calculate_enhanced_financial_metrics(test_strategy)
+            
+            # Validate calculations
+            calculations_valid = self._validate_enhanced_financial_metrics(financial_metrics)
+            
+            result = {
+                "test_name": "financial_calculations",
+                "npv": financial_metrics.npv,
+                "irr": financial_metrics.irr,
+                "roi_percentage": financial_metrics.roi_percentage,
+                "payback_period": financial_metrics.payback_period,
+                "present_value": financial_metrics.present_value,
+                "terminal_value": financial_metrics.terminal_value,
+                "wacc": financial_metrics.wacc,
+                "discounted_cash_flows_count": len(financial_metrics.discounted_cash_flows),
+                "calculations_valid": calculations_valid,
+                "success": calculations_valid,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            logger.info(f"✅ Financial calculations test completed: NPV=${financial_metrics.npv:,.2f}, ROI={financial_metrics.roi_percentage:.1f}%")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Financial calculations test failed: {e}")
+            return {
+                "test_name": "financial_calculations",
+                "error": str(e),
+                "success": False,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    
+    def _validate_enhanced_financial_metrics(self, metrics: FinancialMetricsResponse) -> bool:
+        """Validate enhanced financial metrics"""
+        try:
+            # Check all required fields are present
+            required_fields = [
+                'npv', 'irr', 'roi_percentage', 'payback_period',
+                'present_value', 'terminal_value', 'wacc',
+                'discounted_cash_flows'
+            ]
+            
+            for field in required_fields:
+                if not hasattr(metrics, field):
+                    return False
+            
+            # Check values are reasonable
+            if metrics.npv < -1000000 or metrics.npv > 10000000:
+                return False
+            
+            if metrics.roi_percentage < 0 or metrics.roi_percentage > 100:
+                return False
+            
+            if metrics.payback_period < 1 or metrics.payback_period > 60:
+                return False
+            
+            if metrics.wacc < 0.05 or metrics.wacc > 0.25:
+                return False
+            
+            if len(metrics.discounted_cash_flows) == 0:
+                return False
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    async def run_all_tests(self) -> Dict[str, Any]:
+        """Run all tests and return comprehensive results"""
+        logger.info("🚀 Starting comprehensive AI module test suite...")
+        
+        tests = [
+            self.test_custom_strategy_generation(),
+            self.test_fine_tuning_accuracy(),
+            self.test_dataset_creation(),
+            self.test_financial_calculations()
+        ]
+        
+        results = []
+        for test in tests:
+            result = await test
+            results.append(result)
+            self.test_results.append(result)
+        
+        # Calculate overall success
+        total_tests = len(results)
+        passed_tests = sum(1 for r in results if r.get("success", False))
+        overall_success = passed_tests / total_tests if total_tests > 0 else 0
+        
+        summary = {
+            "test_suite": "AI Module Comprehensive Test",
+            "total_tests": total_tests,
+            "passed_tests": passed_tests,
+            "failed_tests": total_tests - passed_tests,
+            "overall_success_rate": overall_success,
+            "overall_success_percentage": f"{overall_success:.2%}",
+            "accuracy_threshold": self.accuracy_threshold,
+            "results": results,
+            "timestamp": datetime.utcnow().isoformat()
         }
         
-        print("Health Status:")
-        for service, status in health_status.items():
-            status_icon = "✅" if status else "❌"
-            print(f"   {status_icon} {service}: {status}")
-        
-        # Overall health
-        healthy_services = sum(1 for status in health_status.values() if status)
-        total_services = len(health_status)
-        health_percentage = (healthy_services / total_services) * 100
-        
-        print(f"\nOverall Health: {health_percentage:.1f}% ({healthy_services}/{total_services} services)")
-        
-        if health_percentage >= 80:
-            print("🎉 AI module is healthy and ready for production!")
-        elif health_percentage >= 60:
-            print("⚠️  AI module has limited functionality but can operate")
-        else:
-            print("🚨 AI module has significant issues and needs attention")
-            
-    except Exception as e:
-        print(f"❌ Health check failed: {e}")
-
-
-async def test_api_endpoints():
-    """Test AI module API endpoints"""
+        logger.info(f"🎯 Test suite completed: {summary['overall_success_percentage']} success rate")
+        return summary
     
-    print("\n🌐 Test 7: API Endpoints")
-    print("-" * 30)
-    
-    try:
-        from fastapi.testclient import TestClient
-        from backend.main import app
-        
-        client = TestClient(app)
-        
-        # Test content ideas endpoint
-        print("📝 Testing /api/v1/ai/ideas endpoint...")
-        response = client.post("/api/v1/ai/ideas", json={
-            "topic": "Blockchain technology",
-            "count": 2,
-            "content_type": "video"
-        })
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Generated {len(data)} content ideas")
-            for idea in data:
-                print(f"      - {idea['title']}")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test video generation endpoint
-        print("\n🎬 Testing /api/v1/video/generate endpoint...")
-        response = client.post("/api/v1/video/generate", json={
-            "script": "A brief introduction to blockchain technology and its applications.",
-            "style": "zack_snyder",
-            "duration": 30
-        })
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Generated video: {data['title']}")
-            print(f"      Style: {data['style']}")
-            print(f"      Duration: {data['duration']} seconds")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test NFT minting endpoint
-        print("\n🖼️  Testing /api/v1/nft/mint endpoint...")
-        response = client.post("/api/v1/nft/mint", json={
-            "name": "Test NFT via API",
-            "description": "Test NFT created through API endpoint",
-            "image_path": "test_image.jpg",
-            "price_eth": 0.1,
-            "collection": "Test Collection"
-        })
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Created NFT: {data['name']}")
-            print(f"      Status: {data['status']}")
-            print(f"      Token ID: {data['token_id']}")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test AGI state endpoint
-        print("\n🧠 Testing /api/v1/ai/agi-state endpoint...")
-        response = client.get("/api/v1/ai/agi-state")
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ AGI State retrieved:")
-            print(f"      Consciousness: {data['consciousness_score']:.3f}")
-            print(f"      Evolution Count: {data['evolution_count']}")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test decision endpoint
-        print("\n🎯 Testing /api/v1/ai/decide endpoint...")
-        response = client.post("/api/v1/ai/decide", json={
-            "context": {
-                "target_audience": "business",
-                "platform": "youtube",
-                "content_type": "educational",
-                "budget": "high"
-            }
-        })
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Decision made:")
-            print(f"      Content Strategy: {data['decisions']['content_strategy']}")
-            print(f"      Video Style: {data['decisions']['video_style']}")
-            print(f"      Marketing Approach: {data['decisions']['marketing_approach']}")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test health endpoint
-        print("\n🏥 Testing /api/v1/ai/health endpoint...")
-        response = client.get("/api/v1/ai/health")
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Health check completed: {data['message']}")
-        else:
-            print(f"   ❌ Failed with status {response.status_code}")
-        
-        # Test utility endpoints
-        print("\n🔧 Testing utility endpoints...")
-        
-        # Content types
-        response = client.get("/api/v1/ai/content-types")
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Content Types: {', '.join(data)}")
-        
-        # Video styles
-        response = client.get("/api/v1/ai/video-styles")
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ Video Styles: {', '.join(data)}")
-        
-        # NFT statuses
-        response = client.get("/api/v1/ai/nft-statuses")
-        if response.status_code == 200:
-            data = response.json()
-            print(f"   ✅ NFT Statuses: {', '.join(data)}")
-            
-    except Exception as e:
-        print(f"❌ API endpoint tests failed: {e}")
-
+    def save_results(self, filename: str = "ai_test_results.json"):
+        """Save test results to file"""
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(self.test_results, f, indent=2, ensure_ascii=False, default=str)
+            logger.info(f"💾 Test results saved to {filename}")
+        except Exception as e:
+            logger.error(f"❌ Failed to save test results: {e}")
 
 async def main():
     """Main test function"""
+    logger.info("🤖 CK Empire AI Module Test Suite")
+    logger.info("=" * 50)
     
-    print("🚀 Starting CK Empire Builder AI Module Tests")
-    print("=" * 60)
+    # Create test suite
+    test_suite = AITestSuite()
     
-    # Test AI module functionality
-    await test_ai_module()
+    # Run all tests
+    summary = await test_suite.run_all_tests()
     
-    # Test API endpoints
-    await test_api_endpoints()
+    # Print summary
+    print("\n" + "=" * 50)
+    print("📊 TEST SUMMARY")
+    print("=" * 50)
+    print(f"Total Tests: {summary['total_tests']}")
+    print(f"Passed: {summary['passed_tests']}")
+    print(f"Failed: {summary['failed_tests']}")
+    print(f"Success Rate: {summary['overall_success_percentage']}")
+    print(f"Accuracy Threshold: {summary['accuracy_threshold']:.2%}")
     
-    print("\n" + "=" * 60)
-    print("🎉 AI Module Testing Completed!")
-    print("=" * 60)
+    # Print individual test results
+    print("\n📋 INDIVIDUAL TEST RESULTS")
+    print("-" * 50)
+    for result in summary['results']:
+        test_name = result.get('test_name', 'Unknown')
+        success = result.get('success', False)
+        status = "✅ PASS" if success else "❌ FAIL"
+        
+        if 'accuracy' in result:
+            print(f"{test_name}: {status} (Accuracy: {result['accuracy']:.2%})")
+        elif 'total_examples' in result:
+            print(f"{test_name}: {status} (Examples: {result['total_examples']})")
+        elif 'npv' in result:
+            print(f"{test_name}: {status} (NPV: ${result['npv']:,.2f})")
+        else:
+            print(f"{test_name}: {status}")
     
-    # Summary
-    print("\n📊 Test Summary:")
-    print("   ✅ Content Generation: OpenAI integration with fallback")
-    print("   ✅ Video Production: Zack Snyder style with OpenCV")
-    print("   ✅ NFT Automation: Blockchain integration with Stripe")
-    print("   ✅ AGI Evolution: Consciousness tracking and decision making")
-    print("   ✅ API Endpoints: RESTful API for all AI features")
-    print("   ✅ Error Handling: Graceful fallbacks and error management")
-    print("   ✅ Health Monitoring: Comprehensive health checks")
+    # Save results
+    test_suite.save_results()
     
-    print("\n🔮 Next Steps:")
-    print("   1. Configure OpenAI API key for full content generation")
-    print("   2. Set up Ethereum RPC for real NFT minting")
-    print("   3. Configure Stripe for payment processing")
-    print("   4. Install OpenCV for video generation")
-    print("   5. Deploy to production with proper security")
-
+    # Assert overall success
+    if summary['overall_success_rate'] < 0.8:  # 80% success threshold
+        logger.error("❌ Test suite failed: Success rate below 80%")
+        return False
+    else:
+        logger.info("✅ Test suite passed: Success rate above 80%")
+        return True
 
 if __name__ == "__main__":
-    # Run the tests
-    asyncio.run(main()) 
+    success = asyncio.run(main())
+    exit(0 if success else 1) 

@@ -97,6 +97,164 @@ class ABTestResult:
     p_value: float
     sample_size: int
 
+@dataclass
+class CACLTVCalculation:
+    """CAC/LTV calculation model"""
+    customer_acquisition_cost: float
+    customer_lifetime_value: float
+    average_order_value: Optional[float] = None
+    purchase_frequency: Optional[float] = None
+    customer_lifespan: Optional[float] = None
+    marketing_spend: Optional[float] = None
+    new_customers: Optional[int] = None
+    
+    def calculate_ltv_cac_ratio(self) -> float:
+        """Calculate LTV/CAC ratio"""
+        if self.customer_acquisition_cost == 0:
+            return 0.0
+        return self.customer_lifetime_value / self.customer_acquisition_cost
+    
+    def calculate_payback_period(self) -> float:
+        """Calculate CAC payback period in months"""
+        if self.customer_lifetime_value == 0:
+            return float('inf')
+        
+        # Assuming monthly revenue from LTV
+        monthly_revenue = self.customer_lifetime_value / 12  # Simplified
+        if monthly_revenue == 0:
+            return float('inf')
+        
+        return self.customer_acquisition_cost / monthly_revenue
+    
+    def get_profitability_score(self) -> str:
+        """Get profitability assessment based on LTV/CAC ratio"""
+        ratio = self.calculate_ltv_cac_ratio()
+        
+        if ratio >= 3.0:
+            return "Excellent"
+        elif ratio >= 2.0:
+            return "Good"
+        elif ratio >= 1.5:
+            return "Acceptable"
+        elif ratio >= 1.0:
+            return "Marginal"
+        else:
+            return "Poor"
+    
+    def generate_recommendations(self) -> List[str]:
+        """Generate strategic recommendations based on CAC/LTV analysis"""
+        recommendations = []
+        ratio = self.calculate_ltv_cac_ratio()
+        
+        if ratio < 1.0:
+            recommendations.append("Critical: LTV is lower than CAC - immediate action required")
+            recommendations.append("Consider reducing customer acquisition costs")
+            recommendations.append("Focus on increasing customer lifetime value")
+        elif ratio < 1.5:
+            recommendations.append("Improve customer retention strategies")
+            recommendations.append("Optimize marketing channels for better CAC")
+            recommendations.append("Consider upselling and cross-selling opportunities")
+        elif ratio < 2.0:
+            recommendations.append("Good foundation - focus on scaling efficiently")
+            recommendations.append("Test new acquisition channels")
+            recommendations.append("Implement customer success programs")
+        elif ratio < 3.0:
+            recommendations.append("Strong performance - consider aggressive growth")
+            recommendations.append("Expand to new markets or segments")
+            recommendations.append("Invest in customer experience improvements")
+        else:
+            recommendations.append("Excellent performance - scale rapidly")
+            recommendations.append("Consider premium pricing strategies")
+            recommendations.append("Explore new product/service offerings")
+        
+        return recommendations
+
+@dataclass
+class FinancialStrategy:
+    """Financial strategy model"""
+    current_revenue: float
+    target_revenue: float
+    current_cac: float
+    current_ltv: float
+    available_budget: float
+    growth_timeline: int  # months
+    
+    def calculate_growth_requirements(self) -> Dict[str, Any]:
+        """Calculate growth requirements and strategy"""
+        revenue_gap = self.target_revenue - self.current_revenue
+        current_ltv_cac_ratio = self.current_ltv / self.current_cac if self.current_cac > 0 else 0
+        
+        # Calculate required new customers
+        if self.current_ltv > 0:
+            required_new_customers = int(revenue_gap / self.current_ltv)
+        else:
+            required_new_customers = 0
+        
+        # Calculate required investment
+        required_investment = required_new_customers * self.current_cac
+        
+        # Calculate expected ROI
+        expected_roi = ((self.target_revenue - self.current_revenue) / required_investment * 100) if required_investment > 0 else 0
+        
+        # Risk assessment
+        risk_level = self._assess_risk(required_investment, current_ltv_cac_ratio)
+        
+        # Growth strategy recommendation
+        growth_strategy = self._recommend_growth_strategy(required_investment, current_ltv_cac_ratio)
+        
+        return {
+            "required_new_customers": required_new_customers,
+            "required_investment": required_investment,
+            "expected_roi": expected_roi,
+            "risk_level": risk_level,
+            "growth_strategy": growth_strategy,
+            "revenue_gap": revenue_gap,
+            "current_ltv_cac_ratio": current_ltv_cac_ratio
+        }
+    
+    def _assess_risk(self, required_investment: float, ltv_cac_ratio: float) -> str:
+        """Assess risk level"""
+        if required_investment > self.available_budget * 2:
+            return "High"
+        elif required_investment > self.available_budget:
+            return "Medium"
+        elif ltv_cac_ratio < 1.5:
+            return "Medium"
+        else:
+            return "Low"
+    
+    def _recommend_growth_strategy(self, required_investment: float, ltv_cac_ratio: float) -> str:
+        """Recommend growth strategy"""
+        if required_investment > self.available_budget * 2:
+            return "Conservative - Focus on organic growth and efficiency improvements"
+        elif required_investment > self.available_budget:
+            return "Balanced - Mix of organic and paid growth with careful monitoring"
+        elif ltv_cac_ratio >= 3.0:
+            return "Aggressive - Scale rapidly with confidence in unit economics"
+        elif ltv_cac_ratio >= 2.0:
+            return "Moderate - Steady growth with optimization focus"
+        else:
+            return "Optimization - Focus on improving unit economics before scaling"
+    
+    def generate_timeline_breakdown(self) -> List[Dict[str, Any]]:
+        """Generate timeline breakdown for growth"""
+        timeline = []
+        monthly_growth = (self.target_revenue - self.current_revenue) / self.growth_timeline
+        
+        for month in range(1, self.growth_timeline + 1):
+            projected_revenue = self.current_revenue + (monthly_growth * month)
+            projected_customers = int(projected_revenue / self.current_ltv) if self.current_ltv > 0 else 0
+            
+            timeline.append({
+                "month": month,
+                "projected_revenue": projected_revenue,
+                "projected_customers": projected_customers,
+                "cumulative_investment": projected_customers * self.current_cac,
+                "monthly_growth_rate": (monthly_growth / self.current_revenue * 100) if self.current_revenue > 0 else 0
+            })
+        
+        return timeline
+
 class FinanceManager:
     """Manages financial calculations and analysis"""
     
@@ -105,6 +263,8 @@ class FinanceManager:
         self.roi_calculations = {}
         self.ab_tests = {}
         self.financial_metrics = {}
+        self.cac_ltv_calculations = {}
+        self.strategies = {}
         
         # Default parameters
         self.default_discount_rate = 0.10  # 10%
@@ -383,6 +543,288 @@ class FinanceManager:
             recommendations.append("Long payback period - High risk")
         
         return recommendations
+
+    def calculate_cac_ltv(self, 
+                          customer_acquisition_cost: float,
+                          customer_lifetime_value: float,
+                          average_order_value: Optional[float] = None,
+                          purchase_frequency: Optional[float] = None,
+                          customer_lifespan: Optional[float] = None,
+                          marketing_spend: Optional[float] = None,
+                          new_customers: Optional[int] = None) -> CACLTVCalculation:
+        """Calculate CAC/LTV metrics"""
+        
+        # Calculate LTV if not provided
+        if customer_lifetime_value == 0 and average_order_value and purchase_frequency and customer_lifespan:
+            customer_lifetime_value = average_order_value * purchase_frequency * customer_lifespan
+        
+        # Calculate CAC if not provided
+        if customer_acquisition_cost == 0 and marketing_spend and new_customers:
+            customer_acquisition_cost = marketing_spend / new_customers if new_customers > 0 else 0
+        
+        cac_ltv_calc = CACLTVCalculation(
+            customer_acquisition_cost=customer_acquisition_cost,
+            customer_lifetime_value=customer_lifetime_value,
+            average_order_value=average_order_value,
+            purchase_frequency=purchase_frequency,
+            customer_lifespan=customer_lifespan,
+            marketing_spend=marketing_spend,
+            new_customers=new_customers
+        )
+        
+        calc_id = f"cac_ltv_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.cac_ltv_calculations[calc_id] = cac_ltv_calc
+        
+        return cac_ltv_calc
+    
+    def calculate_enhanced_roi(self, 
+                              target_amount: float,
+                              initial_investment: float = None,
+                              time_period: float = 1.0,
+                              customer_acquisition_cost: float = None,
+                              customer_lifetime_value: float = None,
+                              marketing_spend: float = None,
+                              new_customers: int = None) -> Dict[str, Any]:
+        """Calculate enhanced ROI with CAC/LTV analysis"""
+        
+        # Basic ROI calculation
+        roi_calc = self.calculate_roi_for_target(target_amount, initial_investment, time_period)
+        
+        # CAC/LTV analysis if provided
+        cac_ltv_analysis = None
+        if customer_acquisition_cost and customer_lifetime_value:
+            cac_ltv_analysis = self.calculate_cac_ltv(
+                customer_acquisition_cost=customer_acquisition_cost,
+                customer_lifetime_value=customer_lifetime_value,
+                marketing_spend=marketing_spend,
+                new_customers=new_customers
+            )
+        
+        # Strategy recommendations
+        strategy_recommendations = self._generate_enhanced_recommendations(roi_calc, cac_ltv_analysis)
+        
+        # Risk assessment
+        risk_assessment = self._assess_enhanced_risk(roi_calc, cac_ltv_analysis)
+        
+        return {
+            "roi_calculation": roi_calc,
+            "cac_ltv_analysis": cac_ltv_analysis,
+            "strategy_recommendations": strategy_recommendations,
+            "risk_assessment": risk_assessment
+        }
+    
+    def generate_financial_strategy(self,
+                                   current_revenue: float,
+                                   target_revenue: float,
+                                   current_cac: float,
+                                   current_ltv: float,
+                                   available_budget: float,
+                                   growth_timeline: int = 12) -> FinancialStrategy:
+        """Generate comprehensive financial strategy"""
+        
+        strategy = FinancialStrategy(
+            current_revenue=current_revenue,
+            target_revenue=target_revenue,
+            current_cac=current_cac,
+            current_ltv=current_ltv,
+            available_budget=available_budget,
+            growth_timeline=growth_timeline
+        )
+        
+        strategy_id = f"strategy_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.strategies[strategy_id] = strategy
+        
+        return strategy
+    
+    def generate_dashboard_graph_data(self, 
+                                     graph_type: str,
+                                     time_period: str = "12m",
+                                     include_projections: bool = True) -> Dict[str, Any]:
+        """Generate dashboard graph data"""
+        
+        if graph_type == "roi_trend":
+            return self._generate_roi_trend_data(time_period, include_projections)
+        elif graph_type == "cac_ltv":
+            return self._generate_cac_ltv_data(time_period, include_projections)
+        elif graph_type == "revenue_forecast":
+            return self._generate_revenue_forecast_data(time_period, include_projections)
+        else:
+            raise ValueError(f"Unknown graph type: {graph_type}")
+    
+    def _generate_roi_trend_data(self, time_period: str, include_projections: bool) -> Dict[str, Any]:
+        """Generate ROI trend data for dashboard"""
+        data_points = []
+        
+        # Historical data (mock)
+        for i in range(6):
+            data_points.append({
+                "month": f"Month {i+1}",
+                "roi_percentage": 15 + (i * 2) + (i * 0.5),  # Increasing trend
+                "investment": 10000 + (i * 1000),
+                "return": 11500 + (i * 1500)
+            })
+        
+        if include_projections:
+            for i in range(6, 12):
+                data_points.append({
+                    "month": f"Month {i+1}",
+                    "roi_percentage": 25 + (i * 1.5),
+                    "investment": 16000 + (i * 1200),
+                    "return": 20000 + (i * 2000),
+                    "projected": True
+                })
+        
+        return {
+            "graph_type": "roi_trend",
+            "data_points": data_points,
+            "summary_metrics": {
+                "average_roi": sum([p["roi_percentage"] for p in data_points]) / len(data_points),
+                "total_investment": sum([p["investment"] for p in data_points]),
+                "total_return": sum([p["return"] for p in data_points])
+            },
+            "trend_analysis": "ROI showing positive trend with consistent growth",
+            "recommendations": [
+                "Continue current investment strategy",
+                "Monitor for diminishing returns",
+                "Consider scaling successful channels"
+            ]
+        }
+    
+    def _generate_cac_ltv_data(self, time_period: str, include_projections: bool) -> Dict[str, Any]:
+        """Generate CAC/LTV data for dashboard"""
+        data_points = []
+        
+        # Historical data (mock)
+        for i in range(6):
+            data_points.append({
+                "month": f"Month {i+1}",
+                "cac": 50 + (i * 2),
+                "ltv": 200 + (i * 15),
+                "ltv_cac_ratio": (200 + (i * 15)) / (50 + (i * 2)),
+                "customers_acquired": 100 + (i * 10)
+            })
+        
+        if include_projections:
+            for i in range(6, 12):
+                data_points.append({
+                    "month": f"Month {i+1}",
+                    "cac": 62 + (i * 1.5),
+                    "ltv": 290 + (i * 12),
+                    "ltv_cac_ratio": (290 + (i * 12)) / (62 + (i * 1.5)),
+                    "customers_acquired": 160 + (i * 8),
+                    "projected": True
+                })
+        
+        return {
+            "graph_type": "cac_ltv",
+            "data_points": data_points,
+            "summary_metrics": {
+                "average_cac": sum([p["cac"] for p in data_points]) / len(data_points),
+                "average_ltv": sum([p["ltv"] for p in data_points]) / len(data_points),
+                "average_ltv_cac_ratio": sum([p["ltv_cac_ratio"] for p in data_points]) / len(data_points)
+            },
+            "trend_analysis": "LTV/CAC ratio improving, indicating better unit economics",
+            "recommendations": [
+                "LTV growing faster than CAC - good sign",
+                "Consider increasing acquisition spend",
+                "Focus on customer retention to improve LTV"
+            ]
+        }
+    
+    def _generate_revenue_forecast_data(self, time_period: str, include_projections: bool) -> Dict[str, Any]:
+        """Generate revenue forecast data for dashboard"""
+        data_points = []
+        
+        # Historical data (mock)
+        for i in range(6):
+            data_points.append({
+                "month": f"Month {i+1}",
+                "revenue": 50000 + (i * 5000),
+                "growth_rate": 10 + (i * 0.5),
+                "customers": 500 + (i * 50)
+            })
+        
+        if include_projections:
+            for i in range(6, 12):
+                data_points.append({
+                    "month": f"Month {i+1}",
+                    "revenue": 80000 + (i * 6000),
+                    "growth_rate": 13 + (i * 0.3),
+                    "customers": 800 + (i * 40),
+                    "projected": True
+                })
+        
+        return {
+            "graph_type": "revenue_forecast",
+            "data_points": data_points,
+            "summary_metrics": {
+                "total_revenue": sum([p["revenue"] for p in data_points]),
+                "average_growth_rate": sum([p["growth_rate"] for p in data_points]) / len(data_points),
+                "total_customers": sum([p["customers"] for p in data_points])
+            },
+            "trend_analysis": "Revenue showing strong growth with increasing customer base",
+            "recommendations": [
+                "Revenue growth is healthy and sustainable",
+                "Consider expanding to new markets",
+                "Invest in customer success to maintain growth"
+            ]
+        }
+    
+    def _generate_enhanced_recommendations(self, 
+                                         roi_calc: ROICalculation,
+                                         cac_ltv_analysis: CACLTVCalculation = None) -> List[str]:
+        """Generate enhanced recommendations combining ROI and CAC/LTV"""
+        recommendations = []
+        
+        # ROI-based recommendations
+        roi_percentage = roi_calc.calculate_roi()
+        if roi_percentage > 100:
+            recommendations.append("Excellent ROI - Consider scaling up investment")
+        elif roi_percentage > 50:
+            recommendations.append("Good ROI - Proceed with caution")
+        elif roi_percentage > 20:
+            recommendations.append("Moderate ROI - Review cost structure")
+        else:
+            recommendations.append("Low ROI - Reconsider investment strategy")
+        
+        # CAC/LTV-based recommendations
+        if cac_ltv_analysis:
+            ltv_cac_ratio = cac_ltv_analysis.calculate_ltv_cac_ratio()
+            if ltv_cac_ratio >= 3.0:
+                recommendations.append("Strong unit economics - scale aggressively")
+            elif ltv_cac_ratio >= 2.0:
+                recommendations.append("Good unit economics - steady growth")
+            elif ltv_cac_ratio >= 1.5:
+                recommendations.append("Acceptable unit economics - optimize before scaling")
+            else:
+                recommendations.append("Poor unit economics - focus on improvement")
+        
+        return recommendations
+    
+    def _assess_enhanced_risk(self, 
+                             roi_calc: ROICalculation,
+                             cac_ltv_analysis: CACLTVCalculation = None) -> str:
+        """Assess risk level based on ROI and CAC/LTV"""
+        roi_percentage = roi_calc.calculate_roi()
+        
+        if cac_ltv_analysis:
+            ltv_cac_ratio = cac_ltv_analysis.calculate_ltv_cac_ratio()
+            
+            if roi_percentage < 20 or ltv_cac_ratio < 1.0:
+                return "High Risk"
+            elif roi_percentage < 50 or ltv_cac_ratio < 1.5:
+                return "Medium Risk"
+            elif roi_percentage >= 100 and ltv_cac_ratio >= 3.0:
+                return "Low Risk"
+            else:
+                return "Moderate Risk"
+        else:
+            if roi_percentage < 20:
+                return "High Risk"
+            elif roi_percentage < 50:
+                return "Medium Risk"
+            else:
+                return "Low Risk"
 
 # Global instance
 finance_manager = FinanceManager() 

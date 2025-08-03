@@ -1,0 +1,330 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "CK Empire Performance Overview",
+    "tags": ["ckempire", "performance", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"ckempire-backend\"}",
+            "legendFormat": "Backend"
+          },
+          {
+            "expr": "up{job=\"ckempire-frontend\"}",
+            "legendFormat": "Frontend"
+          },
+          {
+            "expr": "up{job=\"postgres\"}",
+            "legendFormat": "PostgreSQL"
+          },
+          {
+            "expr": "up{job=\"redis\"}",
+            "legendFormat": "Redis"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx errors"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx errors"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Cache Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total[5m])",
+            "legendFormat": "Redis Cache Hits"
+          },
+          {
+            "expr": "rate(cache_misses_total[5m])",
+            "legendFormat": "Redis Cache Misses"
+          },
+          {
+            "expr": "rate(lru_cache_hits_total[5m])",
+            "legendFormat": "LRU Cache Hits"
+          },
+          {
+            "expr": "rate(lru_cache_misses_total[5m])",
+            "legendFormat": "LRU Cache Misses"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Cache Hit Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) * 100",
+            "legendFormat": "Redis Hit Rate %"
+          },
+          {
+            "expr": "rate(lru_cache_hits_total[5m]) / (rate(lru_cache_hits_total[5m]) + rate(lru_cache_misses_total[5m])) * 100",
+            "legendFormat": "LRU Hit Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "green", "value": 80}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Redis Cluster Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "redis_up",
+            "legendFormat": "Redis Cluster Health"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 8,
+        "title": "HPA Scaling",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "kube_horizontalpodautoscaler_status_current_replicas",
+            "legendFormat": "Current Replicas"
+          },
+          {
+            "expr": "kube_horizontalpodautoscaler_spec_target_metric",
+            "legendFormat": "Target Metric"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "CPU Utilization",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{container=~\"ckempire.*\"}[5m]) * 100",
+            "legendFormat": "{{container}} CPU %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "red", "value": 80}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+      },
+      {
+        "id": 10,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{container=~\"ckempire.*\"} / 1024 / 1024",
+            "legendFormat": "{{container}} Memory (MB)"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      },
+      {
+        "id": 11,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(db_queries_total[5m])",
+            "legendFormat": "DB queries/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
+      },
+      {
+        "id": 12,
+        "title": "AI Service Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ai_requests_total[5m])",
+            "legendFormat": "AI requests/sec"
+          },
+          {
+            "expr": "rate(ai_processing_duration_seconds_sum[5m]) / rate(ai_processing_duration_seconds_count[5m])",
+            "legendFormat": "Avg processing time"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+      },
+      {
+        "id": 13,
+        "title": "Business Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "consciousness_score",
+            "legendFormat": "Consciousness Score"
+          },
+          {
+            "expr": "total_revenue",
+            "legendFormat": "Total Revenue"
+          },
+          {
+            "expr": "active_agents",
+            "legendFormat": "Active Agents"
+          },
+          {
+            "expr": "total_projects",
+            "legendFormat": "Total Projects"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 48}
+      },
+      {
+        "id": 14,
+        "title": "Performance Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "performance_alerts_total",
+            "legendFormat": "Performance Alerts"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 56}
+      },
+      {
+        "id": 15,
+        "title": "Load Test Results",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(locust_requests_total[5m])",
+            "legendFormat": "Load Test Requests/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(locust_response_time_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile response time"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 56}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(kube_deployment_status_replicas[5m]) > 0",
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "titleFormat": "Deployment Update",
+          "textFormat": "{{pod}} replicas changed"
+        },
+        {
+          "name": "HPA Scaling",
+          "datasource": "Prometheus",
+          "expr": "changes(kube_horizontalpodautoscaler_status_current_replicas[5m]) > 0",
+          "iconColor": "rgba(255, 165, 0, 1)",
+          "titleFormat": "HPA Scaling Event",
+          "textFormat": "{{hpa}} scaled to {{value}} replicas"
+        }
+      ]
+    }
+  }
+} 

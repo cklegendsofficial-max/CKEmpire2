@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -41,6 +41,44 @@ class StrategyType(str, Enum):
     ACQUISITION = "acquisition"
     INNOVATION = "innovation"
     COST_OPTIMIZATION = "cost_optimization"
+
+# Authentication Models
+class UserBase(BaseModel):
+    """Base user model"""
+    username: str = Field(..., min_length=3, max_length=50, description="Username")
+    email: EmailStr = Field(..., description="User email")
+    full_name: Optional[str] = Field(None, max_length=100, description="Full name")
+    is_active: bool = Field(True, description="Whether user is active")
+
+class UserCreate(UserBase):
+    """Create user model"""
+    password: str = Field(..., min_length=8, description="User password")
+
+class UserResponse(UserBase):
+    """User response model"""
+    id: int
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    oauth_provider: Optional[str] = None
+    oauth_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+class TokenResponse(BaseModel):
+    """JWT token response"""
+    access_token: str = Field(..., description="JWT access token")
+    refresh_token: str = Field(..., description="JWT refresh token")
+    token_type: str = Field("bearer", description="Token type")
+    expires_in: int = Field(..., description="Token expiration in seconds")
+
+class OAuth2TokenResponse(TokenResponse):
+    """OAuth2 token response"""
+    provider: str = Field(..., description="OAuth2 provider")
+    user: UserResponse = Field(..., description="User information")
 
 # Base Models
 class ProjectBase(BaseModel):
@@ -183,300 +221,6 @@ class AIResponse(BaseModel):
     timestamp: datetime
 
 # Ethics Models
-class EthicsRequest(BaseModel):
-    """Ethics check request"""
-    content: str = Field(..., min_length=1, description="Content to check")
-    content_id: Optional[int] = Field(None, description="Content ID for tracking")
-    user_id: Optional[int] = Field(None, description="User ID")
-
-class EthicsResponse(BaseModel):
-    """Ethics check response"""
-    bias_score: float = Field(..., ge=0, le=1, description="Bias detection score")
-    fairness_score: float = Field(..., ge=0, le=1, description="Fairness score")
-    bias_detected: bool = Field(..., description="Whether bias was detected")
-    bias_types: List[str] = Field(..., description="Types of bias detected")
-    content_status: str = Field(..., description="Content status after analysis")
-    recommendations: List[str] = Field(..., description="Recommendations for improvement")
-    confidence_score: float = Field(..., ge=0, le=1, description="Confidence in analysis")
-    flagged_keywords: List[str] = Field(..., description="Flagged sensitive keywords")
-    sensitive_topics: List[str] = Field(..., description="Sensitive topics identified")
-    analysis_timestamp: datetime = Field(..., description="Analysis timestamp")
-    is_approved: bool = Field(..., description="Whether content is approved")
-
-# Response Models
-class ErrorResponse(BaseModel):
-    """Error response model"""
-    error: str
-    detail: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class SuccessResponse(BaseModel):
-    """Success response model"""
-    message: str
-    data: Optional[dict] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-# Validators
-@validator('name')
-def validate_project_name(cls, v):
-    """Validate project name"""
-    if not v.strip():
-        raise ValueError('Project name cannot be empty')
-    return v.strip()
-
-@validator('title')
-def validate_content_title(cls, v):
-    """Validate content title"""
-    if not v.strip():
-        raise ValueError('Content title cannot be empty')
-    return v.strip()
-
-@validator('content_data')
-def validate_content_data(cls, v):
-    """Validate content data"""
-    if not v.strip():
-        raise ValueError('Content data cannot be empty')
-    return v.strip()
-
-@validator('amount')
-def validate_amount(cls, v):
-    """Validate amount"""
-    if v < 0:
-        raise ValueError('Amount cannot be negative')
-    return v
-
-class Config:
-    """Pydantic config"""
-    json_encoders = {
-        datetime: lambda v: v.isoformat()
-    }
-    schema_extra = {
-        "example": {
-            "name": "Sample Project",
-            "description": "A sample project description",
-            "status": "active",
-            "budget": 10000.0,
-            "revenue": 5000.0
-        }
-    }
-
-# AI Content Generation Models
-class ContentIdeaRequest(BaseModel):
-    """Content idea generation request"""
-    topic: str = Field(..., min_length=1, description="Topic for content generation")
-    count: int = Field(5, ge=1, le=20, description="Number of ideas to generate")
-    content_type: Optional[str] = Field(None, description="Specific content type")
-
-class ContentIdeaResponse(BaseModel):
-    """Content idea response"""
-    title: str = Field(..., description="Content title")
-    description: str = Field(..., description="Content description")
-    content_type: str = Field(..., description="Content type")
-    target_audience: str = Field(..., description="Target audience")
-    viral_potential: float = Field(..., ge=0, le=1, description="Viral potential score")
-    estimated_revenue: float = Field(..., ge=0, description="Estimated revenue potential")
-    keywords: List[str] = Field(..., description="SEO keywords")
-    hashtags: List[str] = Field(..., description="Trending hashtags")
-    ai_generated: bool = Field(True, description="Whether AI generated")
-    created_at: datetime = Field(..., description="Creation timestamp")
-
-class VideoRequest(BaseModel):
-    """Video generation request"""
-    script: str = Field(..., min_length=10, description="Video script/content")
-    style: str = Field("zack_snyder", description="Video style")
-    duration: int = Field(60, ge=10, le=3600, description="Video duration in seconds")
-
-class VideoResponse(BaseModel):
-    """Video generation response"""
-    title: str = Field(..., description="Video title")
-    script: str = Field(..., description="Video script")
-    style: str = Field(..., description="Applied video style")
-    duration: int = Field(..., description="Video duration")
-    resolution: str = Field(..., description="Video resolution")
-    output_path: str = Field(..., description="Output file path")
-    status: str = Field(..., description="Generation status")
-    created_at: datetime = Field(..., description="Creation timestamp")
-
-class NFTRequest(BaseModel):
-    """NFT creation request"""
-    name: str = Field(..., min_length=1, description="NFT name")
-    description: str = Field(..., min_length=1, description="NFT description")
-    image_path: str = Field(..., description="Path to NFT image")
-    price_eth: float = Field(..., ge=0.001, description="Price in ETH")
-    collection: str = Field("CK Empire", description="NFT collection")
-
-class NFTResponse(BaseModel):
-    """NFT creation response"""
-    name: str = Field(..., description="NFT name")
-    description: str = Field(..., description="NFT description")
-    image_path: str = Field(..., description="Image path")
-    price_eth: float = Field(..., description="Price in ETH")
-    price_usd: float = Field(..., description="Price in USD")
-    collection: str = Field(..., description="NFT collection")
-    status: str = Field(..., description="NFT status")
-    token_id: Optional[str] = Field(None, description="Blockchain token ID")
-    transaction_hash: Optional[str] = Field(None, description="Transaction hash")
-    metadata: Dict[str, Any] = Field(..., description="NFT metadata")
-    created_at: datetime = Field(..., description="Creation timestamp")
-
-class AGIStateResponse(BaseModel):
-    """AGI consciousness state response"""
-    consciousness_score: float = Field(..., ge=0, le=1, description="Consciousness level")
-    decision_capability: float = Field(..., ge=0, le=1, description="Decision making capability")
-    learning_rate: float = Field(..., ge=0, le=1, description="Learning rate")
-    creativity_level: float = Field(..., ge=0, le=1, description="Creativity level")
-    ethical_awareness: float = Field(..., ge=0, le=1, description="Ethical awareness")
-    last_evolution: datetime = Field(..., description="Last evolution timestamp")
-    evolution_count: int = Field(..., ge=0, description="Total evolution count")
-
-class DecisionRequest(BaseModel):
-    """AGI decision request"""
-    context: Dict[str, Any] = Field(..., description="Context for decision making")
-
-class DecisionResponse(BaseModel):
-    """AGI decision response"""
-    decisions: Dict[str, Any] = Field(..., description="Made decisions")
-    agi_state: AGIStateResponse = Field(..., description="Current AGI state")
-    timestamp: datetime = Field(..., description="Decision timestamp")
-
-# Empire Strategy Models
-class EmpireStrategyRequest(BaseModel):
-    """Empire strategy generation request"""
-    user_input: str = Field(..., min_length=1, description="User's strategy requirements")
-    include_financial_metrics: bool = Field(True, description="Whether to include DCF calculations")
-
-class FinancialMetricsResponse(BaseModel):
-    """Financial metrics response"""
-    npv: float = Field(..., description="Net Present Value")
-    irr: float = Field(..., description="Internal Rate of Return")
-    payback_period: float = Field(..., description="Payback period in months")
-    roi_percentage: float = Field(..., description="ROI percentage")
-    monthly_cash_flow: float = Field(..., description="Monthly cash flow")
-    break_even_month: int = Field(..., description="Break-even month")
-    total_investment: float = Field(..., description="Total investment required")
-    projected_revenue: float = Field(..., description="Projected total revenue")
-
-class EmpireStrategyResponse(BaseModel):
-    """Empire strategy response"""
-    strategy_type: str = Field(..., description="Strategy type")
-    title: str = Field(..., description="Strategy title")
-    description: str = Field(..., description="Strategy description")
-    key_actions: List[str] = Field(..., description="Key actions to take")
-    timeline_months: int = Field(..., description="Timeline in months")
-    estimated_investment: float = Field(..., description="Estimated investment required")
-    projected_roi: float = Field(..., description="Projected ROI")
-    risk_level: str = Field(..., description="Risk level")
-    success_metrics: List[str] = Field(..., description="Success metrics")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    financial_metrics: Optional[FinancialMetricsResponse] = Field(None, description="Financial analysis")
-
-# Fine-tuning Models
-class FineTuningRequest(BaseModel):
-    """Fine-tuning request"""
-    model_name: str = Field("gpt-4", description="Base model to fine-tune")
-    epochs: int = Field(3, ge=1, le=10, description="Number of training epochs")
-
-class FineTuningResponse(BaseModel):
-    """Fine-tuning response"""
-    training_examples: int = Field(..., description="Number of training examples")
-    validation_examples: int = Field(..., description="Number of validation examples")
-    model_name: str = Field(..., description="Model name")
-    training_status: str = Field(..., description="Training status")
-    created_at: datetime = Field(..., description="Creation timestamp")
-
-class FineTuningStatusResponse(BaseModel):
-    """Fine-tuning status response"""
-    job_id: str = Field(..., description="Fine-tuning job ID")
-    status: str = Field(..., description="Job status")
-    model_name: str = Field(..., description="Model name")
-    epochs: int = Field(..., description="Number of epochs")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    finished_at: Optional[datetime] = Field(None, description="Completion timestamp")
-    trained_tokens: int = Field(0, description="Number of tokens trained")
-
-# Subscription Models
-class SubscriptionTier(str, Enum):
-    """Subscription tier enum"""
-    FREEMIUM = "freemium"
-    PREMIUM = "premium"
-    ENTERPRISE = "enterprise"
-
-class BillingCycle(str, Enum):
-    """Billing cycle enum"""
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
-
-class SubscriptionStatus(str, Enum):
-    """Subscription status enum"""
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    TRIALING = "trialing"
-    PAST_DUE = "past_due"
-    CANCELED = "canceled"
-    UNPAID = "unpaid"
-
-class SubscriptionRequest(BaseModel):
-    """Subscription creation request"""
-    tier: SubscriptionTier = Field(..., description="Subscription tier")
-    billing_cycle: BillingCycle = Field(..., description="Billing cycle")
-    payment_method_id: str = Field(..., description="Stripe payment method ID")
-
-class SubscriptionResponse(BaseModel):
-    """Subscription response"""
-    subscription_id: str = Field(..., description="Stripe subscription ID")
-    tier: str = Field(..., description="Subscription tier")
-    status: str = Field(..., description="Subscription status")
-    billing_cycle: str = Field(..., description="Billing cycle")
-    price: float = Field(..., description="Subscription price")
-    features: List[str] = Field(..., description="Available features")
-    limits: Dict[str, int] = Field(..., description="Usage limits")
-    current_period_start: Optional[str] = Field(None, description="Current period start")
-    current_period_end: Optional[str] = Field(None, description="Current period end")
-    cancel_at_period_end: bool = Field(False, description="Whether subscription will cancel at period end")
-
-class SubscriptionCancelResponse(BaseModel):
-    """Subscription cancellation response"""
-    subscription_id: str = Field(..., description="Stripe subscription ID")
-    status: str = Field(..., description="Subscription status")
-    cancel_at_period_end: bool = Field(..., description="Whether subscription will cancel at period end")
-    current_period_end: str = Field(..., description="Current period end date")
-
-class PricingPlanResponse(BaseModel):
-    """Pricing plan response"""
-    tier: str = Field(..., description="Plan tier")
-    name: str = Field(..., description="Plan name")
-    price_monthly: float = Field(..., description="Monthly price")
-    price_yearly: float = Field(..., description="Yearly price")
-    features: List[str] = Field(..., description="Plan features")
-    limits: Dict[str, int] = Field(..., description="Usage limits")
-    stripe_price_id_monthly: str = Field(..., description="Stripe monthly price ID")
-    stripe_price_id_yearly: str = Field(..., description="Stripe yearly price ID")
-
-class FinancialMetricsResponse(BaseModel):
-    """Financial metrics response"""
-    monthly_recurring_revenue: float = Field(..., description="Monthly Recurring Revenue")
-    annual_recurring_revenue: float = Field(..., description="Annual Recurring Revenue")
-    customer_acquisition_cost: float = Field(..., description="Customer Acquisition Cost")
-    lifetime_value: float = Field(..., description="Customer Lifetime Value")
-    churn_rate: float = Field(..., description="Churn rate percentage")
-    revenue_growth_rate: float = Field(..., description="Revenue growth rate percentage")
-    roi_percentage: float = Field(..., description="Return on Investment percentage")
-    break_even_months: int = Field(..., description="Break-even months")
-    total_customers: int = Field(..., description="Total active customers")
-    total_revenue: float = Field(..., description="Total revenue")
-    average_revenue_per_user: float = Field(..., description="Average Revenue Per User")
-    calculated_at: datetime = Field(..., description="Calculation timestamp")
-
-class UserLimitsResponse(BaseModel):
-    """User limits response"""
-    user_id: int = Field(..., description="User ID")
-    tier: str = Field(..., description="Current subscription tier")
-    features: List[str] = Field(..., description="Available features")
-    limits: Dict[str, int] = Field(..., description="Usage limits")
-    usage: Dict[str, int] = Field(..., description="Current usage")
-    has_access: bool = Field(..., description="Whether user has access to features")
-
-# Ethics Models
 class BiasType(str, Enum):
     """Bias types enum"""
     GENDER = "gender"
@@ -539,7 +283,7 @@ class BiasCorrectionResponse(BaseModel):
     correction_info: Dict[str, Any] = Field(..., description="Additional correction information")
 
 class EthicalReportResponse(BaseModel):
-    """Ethical report response"""
+    """Ethical report response with auto-fix and revert"""
     bias_metrics: List[BiasMetricsResponse] = Field(..., description="Bias metrics")
     overall_ethical_score: float = Field(..., description="Overall ethical score (0-1)")
     bias_detected: bool = Field(..., description="Whether bias was detected")
@@ -550,76 +294,145 @@ class EthicalReportResponse(BaseModel):
     risk_level: str = Field(..., description="Risk level")
     generated_at: datetime = Field(..., description="Report generation timestamp")
     should_stop_evolution: bool = Field(..., description="Whether AI evolution should be stopped")
+    auto_fix_applied: bool = Field(False, description="Whether auto-fix was applied")
+    revert_triggered: bool = Field(False, description="Whether revert was triggered")
 
 class EthicsDashboardResponse(BaseModel):
-    """Ethics dashboard response"""
+    """Ethics dashboard response with auto-fix statistics"""
     overall_ethical_score: float = Field(..., description="Overall ethical score")
     bias_detection_rate: float = Field(..., description="Bias detection rate")
     correction_success_rate: float = Field(..., description="Correction success rate")
+    auto_fix_success_rate: float = Field(..., description="Auto-fix success rate")
     avg_bias_reduction: float = Field(..., description="Average bias reduction")
     compliance_rate: float = Field(..., description="Compliance rate")
     risk_level_distribution: Dict[str, int] = Field(..., description="Risk level distribution")
     bias_types_detected: Dict[str, int] = Field(..., description="Bias types detected")
     correction_methods_used: Dict[str, int] = Field(..., description="Correction methods used")
     total_corrections: int = Field(..., description="Total corrections applied")
+    total_auto_fixes: int = Field(..., description="Total auto-fixes applied")
+    total_reverts: int = Field(..., description="Total reverts triggered")
     total_reports: int = Field(..., description="Total reports generated")
+    aif360_integration: bool = Field(True, description="Whether AIF360 is integrated")
     last_updated: datetime = Field(..., description="Last update timestamp")
+
+class AutoFixStatusResponse(BaseModel):
+    """Auto-fix status response"""
+    auto_fix_enabled: bool = Field(..., description="Whether auto-fix is enabled")
+    auto_fix_threshold: float = Field(..., description="Auto-fix threshold")
+    revert_threshold: float = Field(..., description="Revert threshold")
+    recent_auto_fixes: int = Field(..., description="Number of recent auto-fixes")
+    recent_reverts: int = Field(..., description="Number of recent reverts")
+    total_auto_fixes: int = Field(..., description="Total auto-fixes")
+    total_reverts: int = Field(..., description="Total reverts")
+    aif360_integration: bool = Field(True, description="Whether AIF360 is integrated")
+    last_auto_fix: Optional[Dict[str, Any]] = Field(None, description="Last auto-fix details")
+    last_revert: Optional[Dict[str, Any]] = Field(None, description="Last revert details")
 
 # Video/NFT Models
 class VideoProductionRequest(BaseModel):
-    """Video production request"""
+    """Enhanced video production request with AI minting"""
     theme: str = Field(..., min_length=1, description="Video theme/concept")
     duration: int = Field(60, ge=10, le=3600, description="Video duration in seconds")
-    style: str = Field("zack_snyder", description="Video style (zack_snyder, action, dramatic)")
+    style: str = Field("zack_snyder", description="Video style (zack_snyder, action, dramatic, sci_fi)")
+    ai_enhanced: bool = Field(True, description="Enable AI enhancement")
+    blockchain_ready: bool = Field(True, description="Prepare for blockchain minting")
 
 class VideoProductionResponse(BaseModel):
-    """Video production response"""
+    """Enhanced video production response with AI minting data"""
     production_id: str = Field(..., description="Production ID")
-    video_prompt: str = Field(..., description="Generated video prompt")
-    video_metadata: Dict[str, Any] = Field(..., description="Video metadata")
-    nft_metadata: Dict[str, Any] = Field(..., description="NFT metadata")
-    pricing_prediction: Dict[str, Any] = Field(..., description="Pricing prediction")
-    stripe_product: Dict[str, Any] = Field(..., description="Stripe product info")
+    video_prompt: str = Field(..., description="Generated AI video prompt")
+    video_metadata: Dict[str, Any] = Field(..., description="Enhanced video metadata")
+    nft_metadata: Dict[str, Any] = Field(..., description="AI-optimized NFT metadata")
+    pricing_prediction: Dict[str, Any] = Field(..., description="ML-powered pricing prediction")
+    stripe_product: Dict[str, Any] = Field(..., description="Enhanced Stripe product info")
+    ai_minting_config: Dict[str, Any] = Field(..., description="AI minting configuration")
+    minting_history_count: int = Field(..., description="Total minting history count")
     status: str = Field(..., description="Production status")
     created_at: str = Field(..., description="Creation timestamp")
 
 class NFTGenerationRequest(BaseModel):
-    """NFT generation request"""
+    """Enhanced NFT generation request with AI optimization"""
     video_metadata: Dict[str, Any] = Field(..., description="Video metadata")
-    collection_name: str = Field("CKEmpire Videos", description="NFT collection name")
+    collection_name: str = Field("CKEmpire AI Videos", description="NFT collection name")
+    ai_enhanced: bool = Field(True, description="Enable AI enhancement")
+    blockchain_metadata: Optional[Dict[str, Any]] = Field(None, description="Blockchain metadata")
 
 class NFTGenerationResponse(BaseModel):
-    """NFT generation response"""
-    nft_metadata: Dict[str, Any] = Field(..., description="NFT metadata")
-    pricing_prediction: Dict[str, Any] = Field(..., description="Pricing prediction")
-    stripe_product: Dict[str, Any] = Field(..., description="Stripe product info")
+    """Enhanced NFT generation response with AI optimization"""
+    nft_metadata: Dict[str, Any] = Field(..., description="AI-optimized NFT metadata")
+    pricing_prediction: Dict[str, Any] = Field(..., description="ML-powered pricing prediction")
+    stripe_product: Dict[str, Any] = Field(..., description="Enhanced Stripe product info")
+    rarity_score: float = Field(..., description="Calculated rarity score")
+    ai_enhanced: bool = Field(..., description="Whether AI enhancement was applied")
+    blockchain_ready: bool = Field(..., description="Whether ready for blockchain minting")
     status: str = Field(..., description="Generation status")
     created_at: str = Field(..., description="Creation timestamp")
 
 class PricingPredictionRequest(BaseModel):
-    """Pricing prediction request"""
+    """Enhanced pricing prediction request with ML model"""
     nft_metadata: Dict[str, Any] = Field(..., description="NFT metadata")
     market_data: Optional[Dict[str, Any]] = Field(None, description="Market data")
+    ml_model_version: str = Field("v2.1", description="ML model version")
+    include_competitor_analysis: bool = Field(True, description="Include competitor analysis")
 
 class PricingPredictionResponse(BaseModel):
-    """Pricing prediction response"""
+    """Enhanced pricing prediction response with ML insights"""
     predicted_price: float = Field(..., description="Predicted price in ETH")
     confidence: float = Field(..., ge=0, le=1, description="Prediction confidence")
     factors: List[str] = Field(..., description="Pricing factors")
-    market_analysis: Dict[str, Any] = Field(..., description="Market analysis")
+    market_analysis: Dict[str, Any] = Field(..., description="Enhanced market analysis")
     recommendation: str = Field(..., description="Pricing recommendation")
+    ml_model_version: str = Field(..., description="ML model version used")
+    training_data_points: int = Field(..., description="Training data points")
+    market_volatility: float = Field(..., description="Market volatility score")
+    competitor_analysis: Dict[str, Any] = Field(..., description="Competitor analysis")
     status: str = Field(..., description="Prediction status")
 
 class VideoStyleResponse(BaseModel):
-    """Video styles response"""
+    """Enhanced video styles response with AI minting info"""
     styles: Dict[str, Dict[str, Any]] = Field(..., description="Available video styles")
     total_styles: int = Field(..., description="Total number of styles")
+    ai_enhanced_styles: int = Field(..., description="Number of AI-enhanced styles")
+    blockchain_ready_styles: int = Field(..., description="Number of blockchain-ready styles")
 
 class NFTMetadataResponse(BaseModel):
-    """NFT metadata response"""
+    """Enhanced NFT metadata response with AI optimization"""
     production_id: str = Field(..., description="Production ID")
-    metadata: Dict[str, Any] = Field(..., description="NFT metadata")
+    metadata: Dict[str, Any] = Field(..., description="AI-optimized NFT metadata")
+    rarity_score: float = Field(..., description="Calculated rarity score")
+    ai_enhanced: bool = Field(..., description="Whether AI enhancement was applied")
+    blockchain_metadata: Dict[str, Any] = Field(..., description="Blockchain metadata")
+    market_analysis: Dict[str, Any] = Field(..., description="Market analysis")
     status: str = Field(..., description="Metadata status")
+
+class AIMintingConfigResponse(BaseModel):
+    """AI minting configuration response"""
+    model_version: str = Field(..., description="AI model version")
+    prompt_optimization: bool = Field(..., description="Enable prompt optimization")
+    metadata_enhancement: bool = Field(..., description="Enable metadata enhancement")
+    rarity_calculation: bool = Field(..., description="Enable rarity calculation")
+    market_analysis: bool = Field(..., description="Enable market analysis")
+    blockchain_integration: bool = Field(..., description="Enable blockchain integration")
+    minting_history_count: int = Field(..., description="Total minting history count")
+
+class NFTMintingRequest(BaseModel):
+    """NFT minting request with AI optimization"""
+    production_id: str = Field(..., description="Production ID")
+    blockchain: str = Field("Ethereum", description="Target blockchain")
+    gas_limit: Optional[int] = Field(None, description="Gas limit for minting")
+    auto_price: bool = Field(True, description="Use AI-predicted price")
+
+class NFTMintingResponse(BaseModel):
+    """NFT minting response with blockchain data"""
+    production_id: str = Field(..., description="Production ID")
+    transaction_hash: Optional[str] = Field(None, description="Blockchain transaction hash")
+    token_id: Optional[str] = Field(None, description="Minted token ID")
+    contract_address: Optional[str] = Field(None, description="Smart contract address")
+    gas_used: Optional[int] = Field(None, description="Gas used for minting")
+    minting_cost: Optional[float] = Field(None, description="Minting cost in ETH")
+    status: str = Field(..., description="Minting status")
+    blockchain_metadata: Dict[str, Any] = Field(..., description="Blockchain metadata")
+    created_at: str = Field(..., description="Minting timestamp")
 
 # Finance Models
 class ROICalculationRequest(BaseModel):
@@ -638,6 +451,89 @@ class ROICalculationResponse(BaseModel):
     time_period: float = Field(..., description="Time period in years")
     target_amount: float = Field(..., description="Target amount")
     status: str = Field(..., description="Calculation status")
+
+# Enhanced Finance Models for CAC/LTV
+class CACLTVRequest(BaseModel):
+    """CAC/LTV calculation request"""
+    customer_acquisition_cost: float = Field(..., gt=0, description="Customer acquisition cost")
+    customer_lifetime_value: float = Field(..., gt=0, description="Customer lifetime value")
+    average_order_value: Optional[float] = Field(None, gt=0, description="Average order value")
+    purchase_frequency: Optional[float] = Field(None, gt=0, description="Purchase frequency per year")
+    customer_lifespan: Optional[float] = Field(None, gt=0, description="Customer lifespan in years")
+    marketing_spend: Optional[float] = Field(None, gt=0, description="Total marketing spend")
+    new_customers: Optional[int] = Field(None, gt=0, description="Number of new customers")
+
+class CACLTVResponse(BaseModel):
+    """CAC/LTV calculation response"""
+    cac: float = Field(..., description="Customer Acquisition Cost")
+    ltv: float = Field(..., description="Customer Lifetime Value")
+    ltv_cac_ratio: float = Field(..., description="LTV/CAC ratio")
+    payback_period: float = Field(..., description="CAC payback period in months")
+    profitability_score: str = Field(..., description="Profitability assessment")
+    recommendations: List[str] = Field(..., description="Strategic recommendations")
+    calculated_ltv: float = Field(..., description="Calculated LTV from inputs")
+    calculated_cac: float = Field(..., description="Calculated CAC from inputs")
+    status: str = Field(..., description="Calculation status")
+
+class EnhancedROIRequest(BaseModel):
+    """Enhanced ROI calculation request with CAC/LTV"""
+    target_amount: float = Field(..., gt=0, description="Target amount to achieve")
+    initial_investment: Optional[float] = Field(None, gt=0, description="Initial investment amount")
+    time_period: float = Field(1.0, gt=0, description="Time period in years")
+    customer_acquisition_cost: Optional[float] = Field(None, gt=0, description="Customer acquisition cost")
+    customer_lifetime_value: Optional[float] = Field(None, gt=0, description="Customer lifetime value")
+    marketing_spend: Optional[float] = Field(None, gt=0, description="Marketing spend")
+    new_customers: Optional[int] = Field(None, gt=0, description="Number of new customers")
+
+class EnhancedROIResponse(BaseModel):
+    """Enhanced ROI calculation response with CAC/LTV analysis"""
+    roi_percentage: float = Field(..., description="ROI percentage")
+    annualized_roi: float = Field(..., description="Annualized ROI percentage")
+    payback_period: float = Field(..., description="Payback period in years")
+    initial_investment: float = Field(..., description="Initial investment amount")
+    total_return: float = Field(..., description="Total return amount")
+    time_period: float = Field(..., description="Time period in years")
+    target_amount: float = Field(..., description="Target amount")
+    cac_ltv_analysis: Optional[CACLTVResponse] = Field(None, description="CAC/LTV analysis")
+    strategy_recommendations: List[str] = Field(..., description="Strategy recommendations")
+    risk_assessment: str = Field(..., description="Risk assessment")
+    status: str = Field(..., description="Calculation status")
+
+class FinancialStrategyRequest(BaseModel):
+    """Financial strategy request"""
+    current_revenue: float = Field(..., gt=0, description="Current revenue")
+    target_revenue: float = Field(..., gt=0, description="Target revenue")
+    current_cac: float = Field(..., gt=0, description="Current customer acquisition cost")
+    current_ltv: float = Field(..., gt=0, description="Current customer lifetime value")
+    available_budget: float = Field(..., gt=0, description="Available budget for growth")
+    growth_timeline: int = Field(12, gt=0, description="Growth timeline in months")
+
+class FinancialStrategyResponse(BaseModel):
+    """Financial strategy response"""
+    recommended_investment: float = Field(..., description="Recommended investment amount")
+    expected_new_customers: int = Field(..., description="Expected new customers")
+    projected_revenue: float = Field(..., description="Projected revenue")
+    expected_roi: float = Field(..., description="Expected ROI percentage")
+    risk_level: str = Field(..., description="Risk level assessment")
+    growth_strategy: str = Field(..., description="Recommended growth strategy")
+    timeline_breakdown: List[Dict[str, Any]] = Field(..., description="Timeline breakdown")
+    key_metrics: Dict[str, float] = Field(..., description="Key performance metrics")
+    status: str = Field(..., description="Strategy status")
+
+class DashboardGraphRequest(BaseModel):
+    """Dashboard graph data request"""
+    graph_type: str = Field(..., description="Type of graph (roi_trend, cac_ltv, revenue_forecast)")
+    time_period: str = Field("12m", description="Time period (3m, 6m, 12m, 24m)")
+    include_projections: bool = Field(True, description="Include future projections")
+
+class DashboardGraphResponse(BaseModel):
+    """Dashboard graph data response"""
+    graph_type: str = Field(..., description="Type of graph")
+    data_points: List[Dict[str, Any]] = Field(..., description="Graph data points")
+    summary_metrics: Dict[str, float] = Field(..., description="Summary metrics")
+    trend_analysis: str = Field(..., description="Trend analysis")
+    recommendations: List[str] = Field(..., description="Graph-based recommendations")
+    status: str = Field(..., description="Graph status")
 
 class DCFModelRequest(BaseModel):
     """DCF model request"""
@@ -782,43 +678,168 @@ class AnalyticsReportResponse(BaseModel):
 
 class GADataRequest(BaseModel):
     """Google Analytics data integration request"""
-    ga_data: Dict[str, Any] = Field(..., description="Google Analytics data")
+    property_id: str = Field(..., description="Google Analytics property ID")
+    start_date: str = Field(..., description="Start date for data range")
+    end_date: str = Field(..., description="End date for data range")
+    metrics: List[str] = Field(..., description="Metrics to retrieve")
 
 class GADataResponse(BaseModel):
     """Google Analytics data response"""
-    page_views: int = Field(..., description="Total page views")
-    unique_visitors: int = Field(..., description="Unique visitors")
-    bounce_rate: float = Field(..., description="Bounce rate")
-    avg_session_duration: float = Field(..., description="Average session duration")
-    conversion_rate: float = Field(..., description="Conversion rate")
-    revenue: float = Field(..., description="Revenue")
-    top_pages: List[str] = Field(..., description="Top pages")
-    traffic_sources: Dict[str, Any] = Field(..., description="Traffic sources")
-    device_categories: Dict[str, Any] = Field(..., description="Device categories")
-    timestamp: str = Field(..., description="Integration timestamp")
+    property_id: str = Field(..., description="Google Analytics property ID")
+    start_date: str = Field(..., description="Start date for data range")
+    end_date: str = Field(..., description="End date for data range")
+    metrics: Dict[str, Any] = Field(..., description="Google Analytics metrics data")
     status: str = Field(..., description="Integration status")
 
 class DecisionRequest(BaseModel):
     """Data-driven decision request"""
-    decision_type: str = Field(..., description="Type of decision (pricing, marketing, product, user_experience)")
+    category: str = Field(..., description="Category of decision (pricing, marketing, product, user_experience)")
     data: Dict[str, Any] = Field(..., description="Data for decision making")
+    confidence_threshold: float = Field(0.95, ge=0, le=1, description="Confidence threshold for decision")
 
 class DecisionResponse(BaseModel):
     """Data-driven decision response"""
-    decision_type: str = Field(..., description="Type of decision made")
-    recommendations: List[str] = Field(..., description="Decision recommendations")
+    category: str = Field(..., description="Category of decision made")
+    decision: str = Field(..., description="Decision made")
     confidence: float = Field(..., ge=0, le=1, description="Confidence level")
-    expected_impact: str = Field(..., description="Expected impact")
-    timestamp: str = Field(..., description="Decision timestamp")
+    reasoning: List[str] = Field(..., description="Decision reasoning")
+    data_points: int = Field(..., description="Number of data points used")
     status: str = Field(..., description="Decision status")
 
 class AnalyticsDashboardResponse(BaseModel):
     """Analytics dashboard response"""
     summary: Dict[str, Any] = Field(..., description="Analytics summary")
-    recent_ab_tests: int = Field(..., description="Number of recent A/B tests")
-    total_ab_tests: int = Field(..., description="Total number of A/B tests")
-    ga_integrated: bool = Field(..., description="Whether GA is integrated")
-    user_metrics_count: int = Field(..., description="Number of user metrics")
-    reports_count: int = Field(..., description="Number of reports")
-    timestamp: str = Field(..., description="Dashboard timestamp")
+    user_metrics: List[Dict[str, Any]] = Field(..., description="User metrics data")
+    ab_test_results: List[Dict[str, Any]] = Field(..., description="A/B test results")
+    top_pages: List[str] = Field(..., description="Top performing pages")
+    revenue_trends: List[float] = Field(..., description="Revenue trends data")
+    conversion_funnel: List[int] = Field(..., description="Conversion funnel data")
     status: str = Field(..., description="Dashboard status")
+
+class SuccessResponse(BaseModel):
+    """Success response model"""
+    success: bool = True
+    message: str
+    data: Optional[Dict[str, Any]] = None
+
+class ErrorResponse(BaseModel):
+    """Error response model"""
+    success: bool = False
+    message: str
+    error_code: Optional[str] = None
+
+class ContentIdeaRequest(BaseModel):
+    """Content idea generation request"""
+    topic: str = Field(..., description="Content topic")
+    content_type: str = Field(..., description="Type of content")
+    target_audience: str = Field(..., description="Target audience")
+    tone: str = Field(..., description="Content tone")
+    length: str = Field(..., description="Content length")
+
+class ContentIdeaResponse(BaseModel):
+    """Content idea generation response"""
+    ideas: List[str] = Field(..., description="Generated content ideas")
+    ai_model: str = Field(..., description="AI model used")
+    timestamp: str = Field(..., description="Generation timestamp")
+    status: str = Field(..., description="Generation status")
+
+class VideoRequest(BaseModel):
+    """Video production request"""
+    script: str = Field(..., description="Video script/content")
+    style: str = Field(..., description="Video style (zack_snyder, cinematic, documentary, viral, corporate)")
+    duration: int = Field(..., description="Video duration in seconds")
+
+class VideoResponse(BaseModel):
+    """Video production response"""
+    title: str = Field(..., description="Video title")
+    script: str = Field(..., description="Video script/content")
+    style: str = Field(..., description="Video style")
+    duration: int = Field(..., description="Video duration in seconds")
+    resolution: Optional[str] = Field(None, description="Video resolution")
+    output_path: Optional[str] = Field(None, description="Output file path")
+    status: str = Field(..., description="Video generation status")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+
+class NFTRequest(BaseModel):
+    """NFT minting request"""
+    name: str = Field(..., description="NFT name")
+    description: str = Field(..., description="NFT description")
+    image_path: str = Field(..., description="Path to NFT image")
+    price_eth: float = Field(..., description="Price in ETH")
+    collection: str = Field(..., description="NFT collection name")
+
+class NFTResponse(BaseModel):
+    """NFT minting response"""
+    name: str = Field(..., description="NFT name")
+    description: str = Field(..., description="NFT description")
+    image_path: str = Field(..., description="NFT image path")
+    price_eth: float = Field(..., description="Price in ETH")
+    price_usd: Optional[float] = Field(None, description="Price in USD")
+    collection: str = Field(..., description="NFT collection name")
+    status: str = Field(..., description="Minting status")
+    token_id: Optional[str] = Field(None, description="Token ID")
+    transaction_hash: Optional[str] = Field(None, description="Transaction hash")
+    metadata: Optional[dict] = Field(None, description="NFT metadata")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+
+class AGIStateResponse(BaseModel):
+    """AGI state response"""
+    consciousness_score: float = Field(..., description="Consciousness score")
+    decision_capability: float = Field(..., description="Decision capability")
+    learning_rate: float = Field(..., description="Learning rate")
+    creativity_level: float = Field(..., description="Creativity level")
+    ethical_awareness: float = Field(..., description="Ethical awareness")
+    last_evolution: Optional[str] = Field(None, description="Last evolution timestamp")
+    evolution_count: int = Field(..., description="Number of evolutions")
+
+class EmpireStrategyRequest(BaseModel):
+    """Empire strategy request"""
+    user_input: str = Field(..., description="User's strategy requirements")
+    include_financial_metrics: Optional[bool] = Field(False, description="Include enhanced DCF calculations")
+
+class EmpireStrategyResponse(BaseModel):
+    """Empire strategy response"""
+    strategy_type: str = Field(..., description="Type of strategy")
+    title: str = Field(..., description="Strategy title")
+    description: str = Field(..., description="Strategy description")
+    key_actions: list = Field(..., description="Key actions for the strategy")
+    timeline_months: int = Field(..., description="Timeline in months")
+    estimated_investment: float = Field(..., description="Estimated investment")
+    projected_roi: float = Field(..., description="Projected ROI")
+    risk_level: str = Field(..., description="Risk level")
+    success_metrics: list = Field(..., description="Success metrics")
+    created_at: str = Field(..., description="Creation timestamp")
+    financial_metrics: Optional[dict] = Field(None, description="Financial metrics (optional)")
+
+class FinancialMetricsResponse(BaseModel):
+    """Financial metrics response"""
+    npv: Optional[float] = Field(None, description="Net Present Value")
+    irr: Optional[float] = Field(None, description="Internal Rate of Return")
+    roi: Optional[float] = Field(None, description="Return on Investment")
+    payback_period: Optional[float] = Field(None, description="Payback period")
+    break_even_point: Optional[float] = Field(None, description="Break-even point")
+    ltv_cac_ratio: Optional[float] = Field(None, description="LTV/CAC ratio")
+    risk_level: Optional[str] = Field(None, description="Risk level")
+    summary: Optional[str] = Field(None, description="Summary of financial metrics")
+
+class FineTuningRequest(BaseModel):
+    """Fine-tuning request"""
+    dataset_id: str = Field(..., description="Dataset ID for fine-tuning")
+    epochs: int = Field(5, description="Number of epochs")
+    learning_rate: float = Field(0.001, description="Learning rate")
+
+class FineTuningResponse(BaseModel):
+    """Fine-tuning response"""
+    job_id: str = Field(..., description="Fine-tuning job ID")
+    status: str = Field(..., description="Job status")
+    started_at: Optional[str] = Field(None, description="Start time")
+    finished_at: Optional[str] = Field(None, description="Finish time")
+
+class FineTuningStatusResponse(BaseModel):
+    """Fine-tuning status response"""
+    job_id: str = Field(..., description="Fine-tuning job ID")
+    status: str = Field(..., description="Job status")
+    progress: Optional[float] = Field(None, description="Progress (0-1)")
+    started_at: Optional[str] = Field(None, description="Start time")
+    finished_at: Optional[str] = Field(None, description="Finish time")
+    metrics: Optional[dict] = Field(None, description="Training metrics")
