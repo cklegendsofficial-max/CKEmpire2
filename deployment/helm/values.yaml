@@ -1,0 +1,565 @@
+# CK Empire Helm Chart Values
+# Default configuration for production deployment
+
+# Global settings
+global:
+  environment: production
+  domain: ckempire.com
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image settings
+image:
+  repository: ckempire
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# Backend API settings
+backend:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: ckempire/backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  env:
+    - name: ENVIRONMENT
+      value: "production"
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: database-url
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: redis-url
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: secret-key
+    - name: OPENAI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: openai-api-key
+    - name: SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+  
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - host: api.ckempire.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-api-tls
+        hosts:
+          - api.ckempire.com
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Frontend settings
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ckempire/frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  
+  env:
+    - name: REACT_APP_API_URL
+      value: "https://api.ckempire.com"
+    - name: REACT_APP_ENVIRONMENT
+      value: "production"
+    - name: REACT_APP_SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: ckempire-secrets
+          key: sentry-dsn
+  
+  service:
+    type: ClusterIP
+    port: 80
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - host: ckempire.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-frontend-tls
+        hosts:
+          - ckempire.com
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# PostgreSQL Database
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "15-alpine"
+  
+  auth:
+    postgresPassword: "ckempire_password"
+    database: "ckempire"
+    username: "ckempire_user"
+    password: "ckempire_password"
+  
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 20Gi
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    
+    service:
+      type: ClusterIP
+      port: 5432
+
+# Redis Cache
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7-alpine"
+  
+  auth:
+    enabled: false
+  
+  master:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    service:
+      type: ClusterIP
+      port: 6379
+
+# Monitoring Stack
+monitoring:
+  enabled: true
+  
+  # Prometheus
+  prometheus:
+    enabled: true
+    image:
+      repository: prom/prometheus
+      tag: "latest"
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    service:
+      type: ClusterIP
+      port: 9090
+  
+  # Grafana
+  grafana:
+    enabled: true
+    image:
+      repository: grafana/grafana
+      tag: "latest"
+    
+    adminPassword: "admin"
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 5Gi
+    
+    service:
+      type: ClusterIP
+      port: 3000
+    
+    ingress:
+      enabled: true
+      className: "nginx"
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      hosts:
+        - host: grafana.ckempire.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: ckempire-grafana-tls
+          hosts:
+            - grafana.ckempire.com
+  
+  # Alertmanager
+  alertmanager:
+    enabled: true
+    image:
+      repository: prom/alertmanager
+      tag: "latest"
+    
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 2Gi
+    
+    service:
+      type: ClusterIP
+      port: 9093
+
+# Elasticsearch
+elasticsearch:
+  enabled: true
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "8.11.0"
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 20Gi
+  
+  service:
+    type: ClusterIP
+    port: 9200
+
+# Kibana
+kibana:
+  enabled: true
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: "8.11.0"
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  
+  service:
+    type: ClusterIP
+    port: 5601
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: kibana.ckempire.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ckempire-kibana-tls
+        hosts:
+          - kibana.ckempire.com
+
+# Celery Workers
+celery:
+  enabled: true
+  worker:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: ckempire/backend
+      tag: "1.0.0"
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    env:
+      - name: ENVIRONMENT
+        value: "production"
+      - name: DATABASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: database-url
+      - name: REDIS_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+      - name: CELERY_BROKER_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+      - name: CELERY_RESULT_BACKEND
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+  
+  beat:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ckempire/backend
+      tag: "1.0.0"
+    
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    env:
+      - name: ENVIRONMENT
+        value: "production"
+      - name: DATABASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: database-url
+      - name: REDIS_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+      - name: CELERY_BROKER_URL
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+      - name: CELERY_RESULT_BACKEND
+        valueFrom:
+          secretKeyRef:
+            name: ckempire-secrets
+            key: redis-url
+
+# Secrets
+secrets:
+  enabled: true
+  databaseUrl: "postgresql://ckempire_user:ckempire_password@ckempire-postgresql:5432/ckempire"
+  redisUrl: "redis://ckempire-redis-master:6379"
+  secretKey: "your-super-secret-key-change-in-production"
+  openaiApiKey: "your-openai-api-key"
+  sentryDsn: "your-sentry-dsn"
+
+# Network Policies
+networkPolicies:
+  enabled: true
+  
+  # Backend network policy
+  backend:
+    enabled: true
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: ingress-nginx
+        ports:
+          - port: 8000
+            protocol: TCP
+    egress:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                name: ckempire
+        ports:
+          - port: 5432
+            protocol: TCP
+          - port: 6379
+            protocol: TCP
+          - port: 9200
+            protocol: TCP
+  
+  # Frontend network policy
+  frontend:
+    enabled: true
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: ingress-nginx
+        ports:
+          - port: 80
+            protocol: TCP
+    egress:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                name: ckempire
+        ports:
+          - port: 8000
+            protocol: TCP
+
+# Pod Disruption Budgets
+podDisruptionBudgets:
+  enabled: true
+  
+  backend:
+    enabled: true
+    minAvailable: 2
+  
+  frontend:
+    enabled: true
+    minAvailable: 1
+  
+  postgresql:
+    enabled: true
+    minAvailable: 1
+  
+  redis:
+    enabled: true
+    minAvailable: 1
+
+# Horizontal Pod Autoscalers
+horizontalPodAutoscalers:
+  enabled: true
+  
+  backend:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  frontend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Service Accounts
+serviceAccounts:
+  enabled: true
+  
+  backend:
+    enabled: true
+    create: true
+    name: "ckempire-backend"
+    annotations: {}
+  
+  frontend:
+    enabled: true
+    create: true
+    name: "ckempire-frontend"
+    annotations: {}
+  
+  celery:
+    enabled: true
+    create: true
+    name: "ckempire-celery"
+    annotations: {}
+
+# RBAC
+rbac:
+  enabled: true
+  
+  create: true
+  rules: [] 

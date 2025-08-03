@@ -177,16 +177,22 @@ class AIResponse(BaseModel):
 class EthicsRequest(BaseModel):
     """Ethics check request"""
     content: str = Field(..., min_length=1, description="Content to check")
-    action: str = Field(..., description="Action being performed")
-    user_id: Optional[int] = None
+    content_id: Optional[int] = Field(None, description="Content ID for tracking")
+    user_id: Optional[int] = Field(None, description="User ID")
 
 class EthicsResponse(BaseModel):
     """Ethics check response"""
     bias_score: float = Field(..., ge=0, le=1, description="Bias detection score")
-    risk_level: RiskLevel
-    recommendations: List[str]
-    is_approved: bool
-    timestamp: datetime
+    fairness_score: float = Field(..., ge=0, le=1, description="Fairness score")
+    bias_detected: bool = Field(..., description="Whether bias was detected")
+    bias_types: List[str] = Field(..., description="Types of bias detected")
+    content_status: str = Field(..., description="Content status after analysis")
+    recommendations: List[str] = Field(..., description="Recommendations for improvement")
+    confidence_score: float = Field(..., ge=0, le=1, description="Confidence in analysis")
+    flagged_keywords: List[str] = Field(..., description="Flagged sensitive keywords")
+    sensitive_topics: List[str] = Field(..., description="Sensitive topics identified")
+    analysis_timestamp: datetime = Field(..., description="Analysis timestamp")
+    is_approved: bool = Field(..., description="Whether content is approved")
 
 # Error Models
 class ErrorResponse(BaseModel):
@@ -245,3 +251,82 @@ class Config:
             "revenue": 5000.0
         }
     } 
+
+# AI Models
+class ContentIdeaRequest(BaseModel):
+    """Content idea generation request"""
+    topic: str = Field(..., min_length=1, description="Topic for content generation")
+    count: int = Field(5, ge=1, le=20, description="Number of ideas to generate")
+    content_type: Optional[str] = Field(None, description="Specific content type")
+
+class ContentIdeaResponse(BaseModel):
+    """Content idea response"""
+    title: str = Field(..., description="Content title")
+    description: str = Field(..., description="Content description")
+    content_type: str = Field(..., description="Content type")
+    target_audience: str = Field(..., description="Target audience")
+    viral_potential: float = Field(..., ge=0, le=1, description="Viral potential score")
+    estimated_revenue: float = Field(..., ge=0, description="Estimated revenue potential")
+    keywords: List[str] = Field(..., description="SEO keywords")
+    hashtags: List[str] = Field(..., description="Trending hashtags")
+    ai_generated: bool = Field(True, description="Whether AI generated")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+class VideoRequest(BaseModel):
+    """Video generation request"""
+    script: str = Field(..., min_length=10, description="Video script/content")
+    style: str = Field("zack_snyder", description="Video style")
+    duration: int = Field(60, ge=10, le=3600, description="Video duration in seconds")
+
+class VideoResponse(BaseModel):
+    """Video generation response"""
+    title: str = Field(..., description="Video title")
+    script: str = Field(..., description="Video script")
+    style: str = Field(..., description="Applied video style")
+    duration: int = Field(..., description="Video duration")
+    resolution: str = Field(..., description="Video resolution")
+    output_path: str = Field(..., description="Output file path")
+    status: str = Field(..., description="Generation status")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+class NFTRequest(BaseModel):
+    """NFT creation request"""
+    name: str = Field(..., min_length=1, description="NFT name")
+    description: str = Field(..., min_length=1, description="NFT description")
+    image_path: str = Field(..., description="Path to NFT image")
+    price_eth: float = Field(..., ge=0.001, description="Price in ETH")
+    collection: str = Field("CK Empire", description="NFT collection")
+
+class NFTResponse(BaseModel):
+    """NFT creation response"""
+    name: str = Field(..., description="NFT name")
+    description: str = Field(..., description="NFT description")
+    image_path: str = Field(..., description="Image path")
+    price_eth: float = Field(..., description="Price in ETH")
+    price_usd: float = Field(..., description="Price in USD")
+    collection: str = Field(..., description="NFT collection")
+    status: str = Field(..., description="NFT status")
+    token_id: Optional[str] = Field(None, description="Blockchain token ID")
+    transaction_hash: Optional[str] = Field(None, description="Transaction hash")
+    metadata: Dict[str, Any] = Field(..., description="NFT metadata")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+class AGIStateResponse(BaseModel):
+    """AGI consciousness state response"""
+    consciousness_score: float = Field(..., ge=0, le=1, description="Consciousness level")
+    decision_capability: float = Field(..., ge=0, le=1, description="Decision making capability")
+    learning_rate: float = Field(..., ge=0, le=1, description="Learning rate")
+    creativity_level: float = Field(..., ge=0, le=1, description="Creativity level")
+    ethical_awareness: float = Field(..., ge=0, le=1, description="Ethical awareness")
+    last_evolution: datetime = Field(..., description="Last evolution timestamp")
+    evolution_count: int = Field(..., ge=0, description="Total evolution count")
+
+class DecisionRequest(BaseModel):
+    """AGI decision request"""
+    context: Dict[str, Any] = Field(..., description="Context for decision making")
+
+class DecisionResponse(BaseModel):
+    """AGI decision response"""
+    decisions: Dict[str, Any] = Field(..., description="Made decisions")
+    agi_state: AGIStateResponse = Field(..., description="Current AGI state")
+    timestamp: datetime = Field(..., description="Decision timestamp") 

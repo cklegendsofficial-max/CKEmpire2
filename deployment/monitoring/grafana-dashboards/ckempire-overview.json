@@ -1,0 +1,185 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "CK Empire Overview",
+    "tags": ["ckempire", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"ckempire-backend\"}",
+            "legendFormat": "Backend"
+          },
+          {
+            "expr": "up{job=\"ckempire-frontend\"}",
+            "legendFormat": "Frontend"
+          },
+          {
+            "expr": "up{job=\"postgres\"}",
+            "legendFormat": "PostgreSQL"
+          },
+          {
+            "expr": "up{job=\"redis\"}",
+            "legendFormat": "Redis"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx errors"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx errors"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "AI Service Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ai_requests_total[5m])",
+            "legendFormat": "AI requests"
+          },
+          {
+            "expr": "rate(ai_processing_duration_seconds_sum[5m]) / rate(ai_processing_duration_seconds_count[5m])",
+            "legendFormat": "Avg processing time"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(db_queries_total[5m])",
+            "legendFormat": "DB queries"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Business Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "consciousness_score",
+            "legendFormat": "Consciousness Score"
+          },
+          {
+            "expr": "total_revenue",
+            "legendFormat": "Total Revenue"
+          },
+          {
+            "expr": "active_agents",
+            "legendFormat": "Active Agents"
+          },
+          {
+            "expr": "total_projects",
+            "legendFormat": "Total Projects"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      },
+      {
+        "id": 8,
+        "title": "System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{container=~\"ckempire.*\"}[5m])",
+            "legendFormat": "{{container}} CPU"
+          },
+          {
+            "expr": "container_memory_usage_bytes{container=~\"ckempire.*\"} / 1024 / 1024",
+            "legendFormat": "{{container}} Memory (MB)"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+      },
+      {
+        "id": 9,
+        "title": "Cloud Integration",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "cloud_backup_success_total",
+            "legendFormat": "Successful Backups"
+          },
+          {
+            "expr": "cloud_sync_duration_seconds",
+            "legendFormat": "Sync Duration"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+} 

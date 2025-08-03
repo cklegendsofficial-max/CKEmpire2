@@ -1,0 +1,501 @@
+# Safety configuration for CK Empire
+# This file configures Safety to check for known security vulnerabilities
+
+# Output format
+output_format: json
+output_file: reports/safety-report.json
+
+# Verbose output
+verbose: true
+
+# Debug mode
+debug: false
+
+# Full report (include all vulnerabilities, not just high severity)
+full_report: true
+
+# Check for vulnerabilities in development dependencies
+check_dev: true
+
+# Check for vulnerabilities in all dependencies
+check_all: true
+
+# Ignore specific vulnerabilities (if needed)
+ignore:
+  # Example: ignore specific CVE IDs
+  # - CVE-2021-1234
+  # - CVE-2021-5678
+
+# Ignore specific packages (if needed)
+ignore_packages:
+  # Example: ignore specific packages
+  # - package_name
+
+# Ignore specific vulnerability IDs (if needed)
+ignore_vulnerabilities:
+  # Example: ignore specific vulnerability IDs
+  # - 12345
+  # - 67890
+
+# Minimum severity level to report
+# Options: low, medium, high, critical
+min_severity: low
+
+# Check for vulnerabilities in requirements files
+requirements_files:
+  - requirements.txt
+  - requirements-dev.txt
+  - requirements-test.txt
+
+# Check for vulnerabilities in setup.py
+setup_py: true
+
+# Check for vulnerabilities in Pipfile
+pipfile: false
+
+# Check for vulnerabilities in poetry.lock
+poetry_lock: false
+
+# Check for vulnerabilities in pyproject.toml
+pyproject_toml: false
+
+# Check for vulnerabilities in environment
+environment: true
+
+# Check for vulnerabilities in installed packages
+installed: true
+
+# Check for vulnerabilities in virtual environment
+venv: true
+
+# Check for vulnerabilities in conda environment
+conda: false
+
+# Check for vulnerabilities in pipenv environment
+pipenv: false
+
+# Check for vulnerabilities in poetry environment
+poetry: false
+
+# Check for vulnerabilities in pip-tools environment
+pip_tools: false
+
+# Check for vulnerabilities in pipdeptree
+pipdeptree: false
+
+# Check for vulnerabilities in pip list
+pip_list: true
+
+# Check for vulnerabilities in pip freeze
+pip_freeze: true
+
+# Check for vulnerabilities in pip show
+pip_show: false
+
+# Check for vulnerabilities in pip check
+pip_check: true
+
+# Check for vulnerabilities in pip audit
+pip_audit: true
+
+# Check for vulnerabilities in pip-audit
+pip_audit_tool: true
+
+# Check for vulnerabilities in safety
+safety: true
+
+# Check for vulnerabilities in bandit
+bandit: false
+
+# Check for vulnerabilities in semgrep
+semgrep: false
+
+# Check for vulnerabilities in trivy
+trivy: false
+
+# Check for vulnerabilities in grype
+grype: false
+
+# Check for vulnerabilities in snyk
+snyk: false
+
+# Check for vulnerabilities in owasp dependency check
+owasp_dependency_check: false
+
+# Check for vulnerabilities in retire.js
+retire_js: false
+
+# Check for vulnerabilities in npm audit
+npm_audit: false
+
+# Check for vulnerabilities in yarn audit
+yarn_audit: false
+
+# Check for vulnerabilities in composer audit
+composer_audit: false
+
+# Check for vulnerabilities in cargo audit
+cargo_audit: false
+
+# Check for vulnerabilities in go mod
+go_mod: false
+
+# Check for vulnerabilities in maven
+maven: false
+
+# Check for vulnerabilities in gradle
+gradle: false
+
+# Check for vulnerabilities in nuget
+nuget: false
+
+# Check for vulnerabilities in bundler
+bundler: false
+
+# Check for vulnerabilities in mix
+mix: false
+
+# Check for vulnerabilities in hex
+hex: false
+
+# Check for vulnerabilities in conan
+conan: false
+
+# Check for vulnerabilities in vcpkg
+vcpkg: false
+
+# Check for vulnerabilities in hunter
+hunter: false
+
+# Check for vulnerabilities in conan-center
+conan_center: false
+
+# Check for vulnerabilities in vcpkg-registry
+vcpkg_registry: false
+
+# Check for vulnerabilities in hunter-packages
+hunter_packages: false
+
+# Check for vulnerabilities in conan-community
+conan_community: false
+
+# Check for vulnerabilities in vcpkg-community
+vcpkg_community: false
+
+# Check for vulnerabilities in hunter-community
+hunter_community: false
+
+# Check for vulnerabilities in conan-transit
+conan_transit: false
+
+# Check for vulnerabilities in vcpkg-transit
+vcpkg_transit: false
+
+# Check for vulnerabilities in hunter-transit
+hunter_transit: false
+
+# Check for vulnerabilities in conan-local
+conan_local: false
+
+# Check for vulnerabilities in vcpkg-local
+vcpkg_local: false
+
+# Check for vulnerabilities in hunter-local
+hunter_local: false
+
+# Check for vulnerabilities in conan-remote
+conan_remote: false
+
+# Check for vulnerabilities in vcpkg-remote
+vcpkg_remote: false
+
+# Check for vulnerabilities in hunter-remote
+hunter_remote: false
+
+# Check for vulnerabilities in conan-cache
+conan_cache: false
+
+# Check for vulnerabilities in vcpkg-cache
+vcpkg_cache: false
+
+# Check for vulnerabilities in hunter-cache
+hunter_cache: false
+
+# Check for vulnerabilities in conan-user
+conan_user: false
+
+# Check for vulnerabilities in vcpkg-user
+vcpkg_user: false
+
+# Check for vulnerabilities in hunter-user
+hunter_user: false
+
+# Check for vulnerabilities in conan-system
+conan_system: false
+
+# Check for vulnerabilities in vcpkg-system
+vcpkg_system: false
+
+# Check for vulnerabilities in hunter-system
+hunter_system: false
+
+# Check for vulnerabilities in conan-build
+conan_build: false
+
+# Check for vulnerabilities in vcpkg-build
+vcpkg_build: false
+
+# Check for vulnerabilities in hunter-build
+hunter_build: false
+
+# Check for vulnerabilities in conan-host
+conan_host: false
+
+# Check for vulnerabilities in vcpkg-host
+vcpkg_host: false
+
+# Check for vulnerabilities in hunter-host
+hunter_host: false
+
+# Check for vulnerabilities in conan-target
+conan_target: false
+
+# Check for vulnerabilities in vcpkg-target
+vcpkg_target: false
+
+# Check for vulnerabilities in hunter-target
+hunter_target: false
+
+# Check for vulnerabilities in conan-build-requires
+conan_build_requires: false
+
+# Check for vulnerabilities in vcpkg-build-requires
+vcpkg_build_requires: false
+
+# Check for vulnerabilities in hunter-build-requires
+hunter_build_requires: false
+
+# Check for vulnerabilities in conan-requires
+conan_requires: false
+
+# Check for vulnerabilities in vcpkg-requires
+vcpkg_requires: false
+
+# Check for vulnerabilities in hunter-requires
+hunter_requires: false
+
+# Check for vulnerabilities in conan-options
+conan_options: false
+
+# Check for vulnerabilities in vcpkg-options
+vcpkg_options: false
+
+# Check for vulnerabilities in hunter-options
+hunter_options: false
+
+# Check for vulnerabilities in conan-default-options
+conan_default_options: false
+
+# Check for vulnerabilities in vcpkg-default-options
+vcpkg_default_options: false
+
+# Check for vulnerabilities in hunter-default-options
+hunter_default_options: false
+
+# Check for vulnerabilities in conan-generators
+conan_generators: false
+
+# Check for vulnerabilities in vcpkg-generators
+vcpkg_generators: false
+
+# Check for vulnerabilities in hunter-generators
+hunter_generators: false
+
+# Check for vulnerabilities in conan-imports
+conan_imports: false
+
+# Check for vulnerabilities in vcpkg-imports
+vcpkg_imports: false
+
+# Check for vulnerabilities in hunter-imports
+hunter_imports: false
+
+# Check for vulnerabilities in conan-exports
+conan_exports: false
+
+# Check for vulnerabilities in vcpkg-exports
+vcpkg_exports: false
+
+# Check for vulnerabilities in hunter-exports
+hunter_exports: false
+
+# Check for vulnerabilities in conan-exports-sources
+conan_exports_sources: false
+
+# Check for vulnerabilities in vcpkg-exports-sources
+vcpkg_exports_sources: false
+
+# Check for vulnerabilities in hunter-exports-sources
+hunter_exports_sources: false
+
+# Check for vulnerabilities in conan-short-paths
+conan_short_paths: false
+
+# Check for vulnerabilities in vcpkg-short-paths
+vcpkg_short_paths: false
+
+# Check for vulnerabilities in hunter-short-paths
+hunter_short_paths: false
+
+# Check for vulnerabilities in conan-scm
+conan_scm: false
+
+# Check for vulnerabilities in vcpkg-scm
+vcpkg_scm: false
+
+# Check for vulnerabilities in hunter-scm
+hunter_scm: false
+
+# Check for vulnerabilities in conan-tools
+conan_tools: false
+
+# Check for vulnerabilities in vcpkg-tools
+vcpkg_tools: false
+
+# Check for vulnerabilities in hunter-tools
+hunter_tools: false
+
+# Check for vulnerabilities in conan-tool-requires
+conan_tool_requires: false
+
+# Check for vulnerabilities in vcpkg-tool-requires
+vcpkg_tool_requires: false
+
+# Check for vulnerabilities in hunter-tool-requires
+hunter_tool_requires: false
+
+# Check for vulnerabilities in conan-test-requires
+conan_test_requires: false
+
+# Check for vulnerabilities in vcpkg-test-requires
+vcpkg_test_requires: false
+
+# Check for vulnerabilities in hunter-test-requires
+hunter_test_requires: false
+
+# Check for vulnerabilities in conan-test-type
+conan_test_type: false
+
+# Check for vulnerabilities in vcpkg-test-type
+vcpkg_test_type: false
+
+# Check for vulnerabilities in hunter-test-type
+hunter_test_type: false
+
+# Check for vulnerabilities in conan-test-command
+conan_test_command: false
+
+# Check for vulnerabilities in vcpkg-test-command
+vcpkg_test_command: false
+
+# Check for vulnerabilities in hunter-test-command
+hunter_test_command: false
+
+# Check for vulnerabilities in conan-test-folder
+conan_test_folder: false
+
+# Check for vulnerabilities in vcpkg-test-folder
+vcpkg_test_folder: false
+
+# Check for vulnerabilities in hunter-test-folder
+hunter_test_folder: false
+
+# Check for vulnerabilities in conan-test-working-directory
+conan_test_working_directory: false
+
+# Check for vulnerabilities in vcpkg-test-working-directory
+vcpkg_test_working_directory: false
+
+# Check for vulnerabilities in hunter-test-working-directory
+hunter_test_working_directory: false
+
+# Check for vulnerabilities in conan-test-env
+conan_test_env: false
+
+# Check for vulnerabilities in vcpkg-test-env
+vcpkg_test_env: false
+
+# Check for vulnerabilities in hunter-test-env
+hunter_test_env: false
+
+# Check for vulnerabilities in conan-test-args
+conan_test_args: false
+
+# Check for vulnerabilities in vcpkg-test-args
+vcpkg_test_args: false
+
+# Check for vulnerabilities in hunter-test-args
+hunter_test_args: false
+
+# Check for vulnerabilities in conan-test-requires
+conan_test_requires: false
+
+# Check for vulnerabilities in vcpkg-test-requires
+vcpkg_test_requires: false
+
+# Check for vulnerabilities in hunter-test-requires
+hunter_test_requires: false
+
+# Check for vulnerabilities in conan-test-type
+conan_test_type: false
+
+# Check for vulnerabilities in vcpkg-test-type
+vcpkg_test_type: false
+
+# Check for vulnerabilities in hunter-test-type
+hunter_test_type: false
+
+# Check for vulnerabilities in conan-test-command
+conan_test_command: false
+
+# Check for vulnerabilities in vcpkg-test-command
+vcpkg_test_command: false
+
+# Check for vulnerabilities in hunter-test-command
+hunter_test_command: false
+
+# Check for vulnerabilities in conan-test-folder
+conan_test_folder: false
+
+# Check for vulnerabilities in vcpkg-test-folder
+vcpkg_test_folder: false
+
+# Check for vulnerabilities in hunter-test-folder
+hunter_test_folder: false
+
+# Check for vulnerabilities in conan-test-working-directory
+conan_test_working_directory: false
+
+# Check for vulnerabilities in vcpkg-test-working-directory
+vcpkg_test_working_directory: false
+
+# Check for vulnerabilities in hunter-test-working-directory
+hunter_test_working_directory: false
+
+# Check for vulnerabilities in conan-test-env
+conan_test_env: false
+
+# Check for vulnerabilities in vcpkg-test-env
+vcpkg_test_env: false
+
+# Check for vulnerabilities in hunter-test-env
+hunter_test_env: false
+
+# Check for vulnerabilities in conan-test-args
+conan_test_args: false
+
+# Check for vulnerabilities in vcpkg-test-args
+vcpkg_test_args: false
+
+# Check for vulnerabilities in hunter-test-args
+hunter_test_args: false 

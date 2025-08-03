@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-service
+  namespace: ck-empire
+  labels:
+    app: postgres-service
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-service
+  template:
+    metadata:
+      labels:
+        app: postgres-service
+        component: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: "ckempire"
+        - name: POSTGRES_USER
+          value: "ckempire"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ck-empire-secrets
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - ckempire
+            - -d
+            - ckempire
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - ckempire
+            - -d
+            - ckempire
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+      securityContext:
+        fsGroup: 999
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: ck-empire
+  labels:
+    app: postgres-service
+    component: database
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres-service
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: ck-empire
+  labels:
+    app: postgres-service
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: gp2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: ck-empire
+  labels:
+    app: postgres-service
+    component: database
+data:
+  postgresql.conf: |
+    # PostgreSQL configuration for CK Empire
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 4MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    max_worker_processes = 8
+    max_parallel_workers_per_gather = 4
+    max_parallel_workers = 8
+    max_parallel_maintenance_workers = 4
+    log_statement = 'all'
+    log_duration = on
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+    log_autovacuum_min_duration = 0
+    log_error_verbosity = verbose
+    log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+    log_timezone = 'UTC'
+    datestyle = 'iso, mdy'
+    timezone = 'UTC'
+    lc_messages = 'C'
+    lc_monetary = 'C'
+    lc_numeric = 'C'
+    lc_time = 'C'
+    default_text_search_config = 'pg_catalog.english' 

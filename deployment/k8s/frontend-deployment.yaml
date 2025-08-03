@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ck-empire-frontend
+  namespace: ck-empire
+  labels:
+    app: ck-empire-frontend
+    version: IMAGE_TAG
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ck-empire-frontend
+  template:
+    metadata:
+      labels:
+        app: ck-empire-frontend
+        version: IMAGE_TAG
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/ckempire/ck-empire-builder-frontend:IMAGE_TAG
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://api.ckempire.com"
+        - name: REACT_APP_ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 1001 

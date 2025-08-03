@@ -1,0 +1,21 @@
+apiVersion: v2
+name: ckempire
+description: CK Empire - AI-Powered Content Management Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - content
+  - management
+  - fastapi
+  - react
+  - postgresql
+  - redis
+home: https://github.com/ckempire/ckempire
+sources:
+  - https://github.com/ckempire/ckempire
+maintainers:
+  - name: CK Empire Team
+    email: team@ckempire.com
+icon: https://ckempire.com/logo.png 

@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ck-empire-backend
+  namespace: ck-empire
+  labels:
+    app: ck-empire-backend
+    version: IMAGE_TAG
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ck-empire-backend
+  template:
+    metadata:
+      labels:
+        app: ck-empire-backend
+        version: IMAGE_TAG
+    spec:
+      containers:
+      - name: backend
+        image: ghcr.io/ckempire/ck-empire-builder-backend:IMAGE_TAG
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ck-empire-config
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ck-empire-config
+              key: REDIS_URL
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ck-empire-secrets
+              key: ENCRYPTION_KEY
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ck-empire-secrets
+              key: OPENAI_API_KEY
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ck-empire-secrets
+              key: STRIPE_SECRET_KEY
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ck-empire-secrets
+              key: JWT_SECRET_KEY
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: ck-empire-config
+              key: ENVIRONMENT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ck-empire-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 1000 

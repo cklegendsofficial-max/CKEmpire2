@@ -1,0 +1,124 @@
+# Bandit security testing configuration for CK Empire
+# This file configures Bandit to scan for security vulnerabilities
+
+# Exclude directories and files
+exclude_dirs:
+  - tests
+  - .git
+  - __pycache__
+  - .pytest_cache
+  - venv
+  - env
+  - .env
+
+# Test configuration
+tests:
+  - B101  # assert_used
+  - B102  # exec_used
+  - B103  # set_bad_file_permissions
+  - B104  # hardcoded_bind_all_interfaces
+  - B105  # hardcoded_password_string
+  - B106  # hardcoded_password_func_arg
+  - B107  # hardcoded_password_default
+  - B110  # try_except_pass
+  - B112  # try_except_continue
+  - B201  # flask_debug_true
+  - B301  # pickle
+  - B302  # marshal
+  - B303  # md5
+  - B304  # md5_insecure
+  - B305  # sha1
+  - B306  # mktemp_q
+  - B307  # eval
+  - B308  # mark_safe
+  - B309  # httpsconnection
+  - B310  # urllib_urlopen
+  - B311  # random
+  - B312  # telnetlib
+  - B313  # xml_bad_cElementTree
+  - B314  # xml_bad_ElementTree
+  - B315  # xml_bad_expatreader
+  - B316  # xml_bad_expatbuilder
+  - B317  # xml_bad_sax
+  - B318  # xml_bad_minidom
+  - B319  # xml_bad_pulldom
+  - B320  # xml_bad_etree
+  - B321  # ftplib
+  - B322  # input
+  - B323  # unverified_context
+  - B324  # hashlib_new_insecure_functions
+  - B325  # tempnam
+  - B401  # import_telnetlib
+  - B402  # import_ftplib
+  - B403  # import_pickle
+  - B404  # import_subprocess
+  - B405  # import_xml_etree
+  - B406  # import_xml_sax
+  - B407  # import_xml_expat
+  - B408  # import_xml_minidom
+  - B409  # import_xml_pulldom
+  - B410  # import_lxml
+  - B411  # import_xmlrpclib
+  - B412  # import_httpoxy
+  - B413  # import_pycrypto
+  - B501  # request_with_no_cert_validation
+  - B601  # paramiko_calls
+  - B602  # subprocess_popen_with_shell_equals_true
+  - B603  # subprocess_without_shell_equals_true
+  - B604  # any_other_function_with_shell_equals_true
+  - B605  # start_process_with_a_shell
+  - B606  # start_process_with_no_shell
+  - B607  # start_process_with_partial_path
+  - B608  # hardcoded_sql_expressions
+  - B609  # linux_commands_wildcard_injection
+  - B701  # jinja2_autoescape_false
+
+# Severity levels
+# 1: Low
+# 2: Medium  
+# 3: High
+severity: 1
+confidence: 1
+
+# Output format
+output_format: json
+output_file: reports/bandit-report.json
+
+# Verbose output
+verbose: true
+
+# Skip tests (if needed for false positives)
+skips:
+  - B101  # Skip assert_used for test files
+  - B601  # Skip paramiko_calls if not using paramiko
+
+# Include only specific tests (alternative to tests)
+# include:
+#   - B102
+#   - B103
+#   - B104
+
+# Aggressive mode (more thorough scanning)
+aggressive: false
+
+# Recursive scanning
+recursive: true
+
+# Number of processes for parallel scanning
+processes: 4
+
+# Debug mode
+debug: false
+
+# Profile configuration
+profile: []
+
+# Baseline file (for comparing against previous scans)
+baseline: null
+
+# Configuration file
+config_file: null
+
+# Target directories
+targets:
+  - . 

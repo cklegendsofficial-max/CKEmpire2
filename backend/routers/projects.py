@@ -5,6 +5,7 @@ import logging
 
 from database import get_db, get_all_projects, get_project_by_id, create_project, update_project, delete_project
 from models import ProjectCreate, ProjectUpdate, ProjectModel, ProjectList, SuccessResponse, ErrorResponse
+from performance import cache_decorator, performance_monitor
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -39,6 +40,8 @@ async def create_new_project(
         raise HTTPException(status_code=500, detail="Failed to create project")
 
 @router.get("/projects", response_model=ProjectList)
+@cache_decorator(expire=300, key_prefix="projects")  # Cache for 5 minutes
+@performance_monitor
 async def get_projects(
     skip: int = Query(0, ge=0, description="Number of projects to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of projects to return"),
@@ -74,6 +77,8 @@ async def get_projects(
         raise HTTPException(status_code=500, detail="Failed to get projects")
 
 @router.get("/projects/{project_id}", response_model=ProjectModel)
+@cache_decorator(expire=600, key_prefix="project")  # Cache for 10 minutes
+@performance_monitor
 async def get_project(
     project_id: int,
     db: Session = Depends(get_db)

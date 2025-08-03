@@ -1,0 +1,31 @@
+# Custom Redis Dockerfile for CK Empire
+FROM redis:7-alpine
+
+# Install additional tools
+RUN apk add --no-cache \
+    curl \
+    bash
+
+# Copy custom Redis configuration
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+# Create non-root user
+RUN addgroup -g 1000 redis_user && \
+    adduser -D -s /bin/sh -u 1000 -G redis_user redis_user
+
+# Create necessary directories
+RUN mkdir -p /data /logs && \
+    chown -R redis_user:redis_user /data /logs
+
+# Switch to non-root user
+USER redis_user
+
+# Expose port
+EXPOSE 6379
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD redis-cli ping || exit 1
+
+# Start Redis with custom configuration
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"] 

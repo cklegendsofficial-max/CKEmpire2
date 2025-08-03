@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-dark-900 text-dark-50 font-empire;
+  }
+  
+  * {
+    @apply border-dark-700;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-empire-gradient text-white px-6 py-3 rounded-lg font-semibold 
+           hover:shadow-empire transition-all duration-300 transform hover:scale-105
+           focus:outline-none focus:ring-2 focus:ring-empire-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+  
+  .btn-secondary {
+    @apply bg-dark-700 text-dark-100 px-6 py-3 rounded-lg font-semibold 
+           hover:bg-dark-600 transition-all duration-300 transform hover:scale-105
+           focus:outline-none focus:ring-2 focus:ring-dark-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+  
+  .card {
+    @apply bg-dark-800 rounded-xl p-6 shadow-lg border border-dark-700 
+           hover:shadow-empire transition-all duration-300;
+  }
+  
+  .card-gradient {
+    @apply bg-gradient-to-br from-dark-800 to-dark-900 rounded-xl p-6 
+           shadow-lg border border-dark-700 hover:shadow-empire transition-all duration-300;
+  }
+  
+  .metric-card {
+    @apply bg-gradient-to-br from-empire-900/20 to-royal-900/20 rounded-xl p-6 
+           border border-empire-700/30 hover:border-empire-500/50 transition-all duration-300;
+  }
+  
+  .chart-container {
+    @apply bg-dark-800 rounded-xl p-6 border border-dark-700;
+  }
+  
+  .sidebar {
+    @apply bg-dark-900 border-r border-dark-700 min-h-screen;
+  }
+  
+  .nav-link {
+    @apply flex items-center px-4 py-3 text-dark-300 hover:text-white hover:bg-dark-800 
+           rounded-lg transition-all duration-200 font-medium;
+  }
+  
+  .nav-link.active {
+    @apply text-empire-400 bg-empire-900/20 border-r-2 border-empire-500;
+  }
+  
+  .input-field {
+    @apply bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-dark-100 
+           placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-empire-500 
+           focus:border-transparent transition-all duration-200;
+  }
+  
+  .table-header {
+    @apply bg-dark-800 text-dark-200 font-semibold px-6 py-4 text-left;
+  }
+  
+  .table-cell {
+    @apply px-6 py-4 text-dark-100 border-b border-dark-700;
+  }
+  
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .status-success {
+    @apply bg-green-900/20 text-green-400 border border-green-700/30;
+  }
+  
+  .status-warning {
+    @apply bg-yellow-900/20 text-yellow-400 border border-yellow-700/30;
+  }
+  
+  .status-error {
+    @apply bg-red-900/20 text-red-400 border border-red-700/30;
+  }
+  
+  .status-info {
+    @apply bg-empire-900/20 text-empire-400 border border-empire-700/30;
+  }
+}
+
+/* Custom utility styles */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-empire-400 to-royal-400 bg-clip-text text-transparent;
+  }
+  
+  .bg-glass {
+    @apply bg-dark-800/50 backdrop-blur-sm border border-dark-700/50;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+/* Recharts customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  @apply stroke-dark-600;
+}
+
+.recharts-text {
+  @apply fill-dark-300;
+}
+
+.recharts-legend-item-text {
+  @apply text-dark-300;
+}
+
+.recharts-tooltip-wrapper {
+  @apply bg-dark-800 border border-dark-600 rounded-lg shadow-lg;
+}
+
+.recharts-tooltip-content {
+  @apply text-dark-100;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-dark-500;
+} 

@@ -1,0 +1,924 @@
+openapi: 3.0.3
+info:
+  title: CK Empire Builder API
+  description: |
+    # CK Empire Builder - Advanced Digital Empire Management API
+    
+    ## Overview
+    
+    CK Empire Builder is a comprehensive digital empire management platform that provides:
+    
+    * **Project Management**: Organize and track digital projects
+    * **Revenue Tracking**: Monitor income streams and financial metrics
+    * **AI Integration**: Advanced AI features for content generation
+    * **Ethics Monitoring**: Built-in ethical AI monitoring
+    * **Performance Analytics**: Real-time metrics and insights
+    * **Cloud Integration**: AWS/GCP integration with auto-scaling
+    * **Backup & Recovery**: Automated backup and disaster recovery
+    
+    ## Features
+    
+    ### 🔥 Core Features
+    - **Project Management**: Create, track, and manage digital projects
+    - **Revenue Analytics**: Monitor income streams and financial performance
+    - **AI-Powered Content**: Generate content using advanced AI models
+    - **Ethics Compliance**: Built-in ethical AI monitoring and compliance
+    - **Performance Monitoring**: Real-time analytics and insights
+    
+    ### ☁️ Cloud Features
+    - **AWS Integration**: S3 backup, RDS database, ElastiCache Redis
+    - **GCP Integration**: Cloud Storage, Cloud SQL, Memorystore
+    - **Auto-scaling**: Kubernetes HPA for automatic scaling
+    - **Backup & Recovery**: Automated database backups and restoration
+    - **Monitoring**: CloudWatch metrics and alerts
+    
+    ### 🔒 Security Features
+    - **Authentication**: JWT-based authentication
+    - **Encryption**: End-to-end data encryption
+    - **Rate Limiting**: API rate limiting and protection
+    - **CORS**: Configurable CORS policies
+    - **Audit Logging**: Comprehensive audit trails
+  version: 1.0.0
+  contact:
+    name: CK Empire Team
+    email: support@ckempire.com
+    url: https://ckempire.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.ckempire.com
+    description: Production server
+  - url: https://staging-api.ckempire.com
+    description: Staging server
+  - url: http://localhost:8000
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /:
+    get:
+      summary: API Root
+      description: Get basic API information and available endpoints
+      tags:
+        - System
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootResponse'
+  
+  /health:
+    get:
+      summary: Health Check
+      description: Check the health status of the API and its dependencies
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /metrics:
+    get:
+      summary: Get Metrics
+      description: Get application performance metrics and statistics
+      tags:
+        - System
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+  
+  /info:
+    get:
+      summary: Get Info
+      description: Get detailed information about the application and its features
+      tags:
+        - System
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+  
+  /api/v1/projects:
+    get:
+      summary: List Projects
+      description: Retrieve a list of all projects
+      tags:
+        - Projects
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+    
+    post:
+      summary: Create Project
+      description: Create a new project
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/projects/{project_id}:
+    get:
+      summary: Get Project
+      description: Retrieve a specific project by ID
+      tags:
+        - Projects
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      summary: Update Project
+      description: Update an existing project
+      tags:
+        - Projects
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateRequest'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      summary: Delete Project
+      description: Delete a project
+      tags:
+        - Projects
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted successfully
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/revenue:
+    get:
+      summary: Get Revenue
+      description: Retrieve revenue analytics and data
+      tags:
+        - Revenue
+      parameters:
+        - name: start_date
+          in: query
+          description: Start date for revenue data (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          description: End date for revenue data (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueResponse'
+    
+    post:
+      summary: Add Revenue Entry
+      description: Add a new revenue entry
+      tags:
+        - Revenue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevenueCreateRequest'
+      responses:
+        '201':
+          description: Revenue entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueEntryResponse'
+  
+  /api/v1/ai/ideas:
+    post:
+      summary: Generate AI Ideas
+      description: Generate AI-powered ideas for content or projects
+      tags:
+        - AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdeaGenerationRequest'
+      responses:
+        '200':
+          description: Ideas generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdeaGenerationResponse'
+  
+  /api/v1/ai/content:
+    post:
+      summary: Generate AI Content
+      description: Generate AI-powered content
+      tags:
+        - AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentGenerationRequest'
+      responses:
+        '200':
+          description: Content generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentGenerationResponse'
+  
+  /api/v1/ethics/check:
+    post:
+      summary: Check Content Ethics
+      description: Check content for ethical concerns
+      tags:
+        - Ethics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EthicsCheckRequest'
+      responses:
+        '200':
+          description: Ethics check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EthicsCheckResponse'
+  
+  /api/v1/cloud/config:
+    get:
+      summary: Get Cloud Configuration
+      description: Get current cloud configuration
+      tags:
+        - Cloud
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudConfigResponse'
+  
+  /api/v1/cloud/backup:
+    post:
+      summary: Create Backup
+      description: Create a new database backup
+      tags:
+        - Cloud
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupRequest'
+      responses:
+        '200':
+          description: Backup created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupInfo'
+  
+  /api/v1/cloud/backups:
+    get:
+      summary: List Backups
+      description: List all available backups
+      tags:
+        - Cloud
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BackupInfo'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    RootResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "CK Empire Builder API"
+        version:
+          type: string
+          example: "1.0.0"
+        status:
+          type: string
+          example: "running"
+        cloud_enabled:
+          type: boolean
+          example: true
+        cloud_provider:
+          type: string
+          example: "aws"
+        docs_url:
+          type: string
+          example: "/docs"
+        redoc_url:
+          type: string
+          example: "/redoc"
+        openapi_url:
+          type: string
+          example: "/openapi.json"
+    
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        database:
+          type: string
+          example: "connected"
+        cloud_enabled:
+          type: boolean
+          example: true
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+    
+    MetricsResponse:
+      type: object
+      properties:
+        consciousness_score:
+          type: number
+          format: float
+          example: 0.45
+        total_revenue:
+          type: integer
+          example: 48000
+        active_agents:
+          type: integer
+          example: 18
+        total_projects:
+          type: integer
+          example: 12
+        total_content:
+          type: integer
+          example: 156
+        cloud_provider:
+          type: string
+          example: "aws"
+        cloud_enabled:
+          type: boolean
+          example: true
+    
+    InfoResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "CK Empire Builder"
+        version:
+          type: string
+          example: "1.0.0"
+        description:
+          type: string
+          example: "Advanced Digital Empire Management Tool"
+        features:
+          type: array
+          items:
+            type: string
+          example: ["Project Management", "Revenue Tracking", "AI Integration"]
+        cloud_config:
+          type: object
+          properties:
+            provider:
+              type: string
+              example: "aws"
+            enabled:
+              type: boolean
+              example: true
+            auto_backup:
+              type: boolean
+              example: true
+            auto_scaling:
+              type: boolean
+              example: true
+            monitoring:
+              type: boolean
+              example: true
+    
+    ProjectCreateRequest:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Project name
+          example: "AI Content Generator"
+        description:
+          type: string
+          description: Project description
+          example: "Advanced AI-powered content generation system"
+        status:
+          type: string
+          enum: [active, inactive, completed, paused]
+          default: active
+          example: "active"
+        metadata_encrypted:
+          type: string
+          description: Encrypted metadata
+          example: "encrypted-metadata-string"
+    
+    ProjectUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Project name
+          example: "AI Content Generator v2"
+        description:
+          type: string
+          description: Project description
+          example: "Enhanced AI-powered content generation system"
+        status:
+          type: string
+          enum: [active, inactive, completed, paused]
+          example: "active"
+        metadata_encrypted:
+          type: string
+          description: Encrypted metadata
+          example: "encrypted-metadata-string"
+    
+    ProjectResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "proj_123456789"
+        name:
+          type: string
+          example: "AI Content Generator"
+        description:
+          type: string
+          example: "Advanced AI-powered content generation system"
+        status:
+          type: string
+          enum: [active, inactive, completed, paused]
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+        metadata_encrypted:
+          type: string
+          example: "encrypted-metadata-string"
+    
+    ProjectListResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectResponse'
+        total:
+          type: integer
+          example: 25
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        pages:
+          type: integer
+          example: 3
+    
+    RevenueCreateRequest:
+      type: object
+      required:
+        - amount
+        - source
+      properties:
+        amount:
+          type: number
+          format: float
+          description: Revenue amount
+          example: 1500.00
+        source:
+          type: string
+          description: Revenue source
+          example: "AI Content Sales"
+        date:
+          type: string
+          format: date
+          description: Revenue date
+          example: "2024-01-01"
+        metadata_encrypted:
+          type: string
+          description: Encrypted metadata
+          example: "encrypted-metadata-string"
+    
+    RevenueResponse:
+      type: object
+      properties:
+        total_revenue:
+          type: number
+          format: float
+          example: 48000.00
+        monthly_revenue:
+          type: number
+          format: float
+          example: 12000.00
+        revenue_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueEntryResponse'
+        trends:
+          type: object
+          properties:
+            growth_rate:
+              type: number
+              format: float
+              example: 15.5
+            top_sources:
+              type: array
+              items:
+                type: string
+              example: ["AI Content", "Consulting", "Training"]
+    
+    RevenueEntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "rev_123456789"
+        amount:
+          type: number
+          format: float
+          example: 1500.00
+        source:
+          type: string
+          example: "AI Content Sales"
+        date:
+          type: string
+          format: date
+          example: "2024-01-01"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+        metadata_encrypted:
+          type: string
+          example: "encrypted-metadata-string"
+    
+    IdeaGenerationRequest:
+      type: object
+      required:
+        - topic
+      properties:
+        topic:
+          type: string
+          description: Topic for idea generation
+          example: "artificial intelligence"
+        style:
+          type: string
+          enum: [viral, professional, creative, technical]
+          default: viral
+          example: "viral"
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+          example: 5
+    
+    IdeaGenerationResponse:
+      type: object
+      properties:
+        ideas:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "AI-Powered Personal Assistant"
+              description:
+                type: string
+                example: "Create an AI assistant that learns user preferences"
+              category:
+                type: string
+                example: "Technology"
+              potential_revenue:
+                type: number
+                format: float
+                example: 50000.00
+        total_generated:
+          type: integer
+          example: 5
+    
+    ContentGenerationRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          description: Content generation prompt
+          example: "Write a blog post about AI trends in 2024"
+        content_type:
+          type: string
+          enum: [blog, social, video, email]
+          default: blog
+          example: "blog"
+        tone:
+          type: string
+          enum: [professional, casual, formal, creative]
+          default: professional
+          example: "professional"
+        length:
+          type: string
+          enum: [short, medium, long]
+          default: medium
+          example: "medium"
+    
+    ContentGenerationResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "Generated content text..."
+        title:
+          type: string
+          example: "AI Trends in 2024: What to Expect"
+        summary:
+          type: string
+          example: "A comprehensive overview of AI trends..."
+        word_count:
+          type: integer
+          example: 1500
+        generation_time:
+          type: number
+          format: float
+          example: 2.5
+    
+    EthicsCheckRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Content to check for ethics
+          example: "Content text to analyze..."
+        content_type:
+          type: string
+          enum: [text, image, video]
+          default: text
+          example: "text"
+        user_id:
+          type: string
+          description: User ID for tracking
+          example: "user_123456789"
+    
+    EthicsCheckResponse:
+      type: object
+      properties:
+        is_ethical:
+          type: boolean
+          example: true
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          example: 0.95
+        flagged_issues:
+          type: array
+          items:
+            type: string
+          example: []
+        recommendations:
+          type: array
+          items:
+            type: string
+          example: ["Content appears to be ethical and compliant"]
+    
+    CloudConfigResponse:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: "aws"
+        enabled:
+          type: boolean
+          example: true
+        auto_backup:
+          type: boolean
+          example: true
+        auto_scaling:
+          type: boolean
+          example: true
+        monitoring:
+          type: boolean
+          example: true
+        database_url:
+          type: string
+          example: "postgresql://user:pass@host:5432/db"
+        redis_url:
+          type: string
+          example: "redis://host:6379"
+    
+    BackupRequest:
+      type: object
+      properties:
+        backup_name:
+          type: string
+          description: Custom backup name
+          example: "manual-backup-2024-01-01"
+        description:
+          type: string
+          description: Backup description
+          example: "Manual backup before major update"
+    
+    BackupInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "db-backup-20240101-120000"
+        size:
+          type: integer
+          example: 1048576
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        uploaded:
+          type: boolean
+          example: true
+        database_type:
+          type: string
+          example: "postgresql"
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Resource not found"
+        message:
+          type: string
+          example: "The requested resource was not found"
+        status_code:
+          type: integer
+          example: 404
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+
+tags:
+  - name: System
+    description: System-level endpoints for health checks and information
+  - name: Projects
+    description: Project management operations
+  - name: Revenue
+    description: Revenue tracking and analytics
+  - name: AI
+    description: AI-powered features and content generation
+  - name: Ethics
+    description: Ethics monitoring and compliance
+  - name: Performance
+    description: Performance monitoring and analytics
+  - name: Cloud
+    description: Cloud infrastructure management 

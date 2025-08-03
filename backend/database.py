@@ -149,15 +149,19 @@ class EthicsLog(Base):
     __tablename__ = "ethics_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    action = Column(String(100), nullable=False)
-    content = Column(Text, nullable=False)
+    content_id = Column(Integer, nullable=True, index=True)
+    bias_detected = Column(Boolean, default=False)
     bias_score = Column(Float, nullable=True)
-    risk_level = Column(String(50), nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    fairness_score = Column(Float, nullable=True)
+    bias_types = Column(Text, nullable=True)  # JSON string of bias types
+    status = Column(String(50), nullable=True)  # approved, flagged, rejected, needs_review
+    recommendations = Column(Text, nullable=True)  # JSON string of recommendations
+    confidence_score = Column(Float, nullable=True)
+    analysis_timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, nullable=True)
     
     def __repr__(self):
-        return f"<EthicsLog(id={self.id}, action='{self.action}', risk_level='{self.risk_level}')>"
+        return f"<EthicsLog(id={self.id}, content_id={self.content_id}, bias_detected={self.bias_detected})>"
 
 class AILog(Base):
     """AI interaction log"""

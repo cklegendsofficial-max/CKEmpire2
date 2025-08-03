@@ -52,6 +52,20 @@ class Settings(BaseSettings):
     NFT_CONTRACT_ADDRESS: Optional[str] = None
     WEB3_PROVIDER_URL: Optional[str] = None
     
+    # Ethereum Blockchain
+    ETHEREUM_RPC_URL: Optional[str] = None
+    ETHEREUM_PRIVATE_KEY: Optional[str] = None
+    ETHEREUM_CONTRACT_ADDRESS: Optional[str] = None
+    
+    # Stripe Payments
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    
+    # Video Production
+    DAVINCI_PATH: Optional[str] = None
+    CAPCUT_PATH: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

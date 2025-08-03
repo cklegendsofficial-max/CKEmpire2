@@ -3,12 +3,15 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     container_name: ckempire-postgres
     environment:
       POSTGRES_DB: ckempire
       POSTGRES_USER: ckempire_user
       POSTGRES_PASSWORD: ckempire_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -17,12 +20,19 @@ services:
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ckempire_user -d ckempire"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Redis Cache
   redis:
-    image: redis:7-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.redis
     container_name: ckempire-redis
-    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     ports:
@@ -30,6 +40,12 @@ services:
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Backend API
   backend:
@@ -40,21 +56,35 @@ services:
     environment:
       - DATABASE_URL=postgresql://ckempire_user:ckempire_password@postgres:5432/ckempire
       - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ENVIRONMENT=production
+      - SENTRY_DSN=${SENTRY_DSN}
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-elasticsearch}
+      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT:-9200}
+      - GRAFANA_URL=${GRAFANA_URL:-http://grafana:3000}
+      - ALERTMANAGER_URL=${ALERTMANAGER_URL:-http://alertmanager:9093}
     ports:
       - "8000:8000"
     volumes:
       - ../backend:/app
       - /app/__pycache__
+      - backend_logs:/app/logs
+      - backend_reports:/app/reports
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ckempire-network
     restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Frontend React App
   frontend:
@@ -63,35 +93,52 @@ services:
       dockerfile: Dockerfile
     container_name: ckempire-frontend
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=https://localhost/api
       - REACT_APP_ENVIRONMENT=production
+      - REACT_APP_SENTRY_DSN=${SENTRY_DSN}
     ports:
-      - "3000:3000"
+      - "3000:80"
     volumes:
       - ../frontend:/app
       - /app/node_modules
+      - frontend_logs:/var/log/nginx
     depends_on:
       - backend
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Nginx Reverse Proxy
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     container_name: ckempire-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - nginx_logs:/var/log/nginx
     depends_on:
       - backend
       - frontend
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Celery Worker for Background Tasks
   celery-worker:
@@ -104,15 +151,19 @@ services:
       - REDIS_URL=redis://redis:6379
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ENVIRONMENT=production
     volumes:
       - ../backend:/app
+      - backend_logs:/app/logs
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ckempire-network
     restart: unless-stopped
-    command: celery -A app.celery worker --loglevel=info
+    command: celery -A main.celery worker --loglevel=info --concurrency=4
 
   # Celery Beat for Scheduled Tasks
   celery-beat:
@@ -125,15 +176,19 @@ services:
       - REDIS_URL=redis://redis:6379
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ENVIRONMENT=production
     volumes:
       - ../backend:/app
+      - backend_logs:/app/logs
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ckempire-network
     restart: unless-stopped
-    command: celery -A app.celery beat --loglevel=info
+    command: celery -A main.celery beat --loglevel=info
 
   # Monitoring with Prometheus
   prometheus:
@@ -143,25 +198,114 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml
       - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Grafana for Visualization
   grafana:
     image: grafana/grafana:latest
     container_name: ckempire-grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     ports:
       - "3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - ckempire-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Alertmanager
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ckempire-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.listen-address=:9093'
+    networks:
+      - ckempire-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: ckempire-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - ckempire-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: ckempire-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ckempire-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   postgres_data:
@@ -171,6 +315,18 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  backend_logs:
+    driver: local
+  backend_reports:
+    driver: local
+  frontend_logs:
+    driver: local
+  nginx_logs:
     driver: local
 
 networks:

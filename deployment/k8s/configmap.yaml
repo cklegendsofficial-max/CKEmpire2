@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ck-empire-config
+  namespace: ck-empire
+data:
+  # Database configuration
+  DATABASE_URL: "postgresql://ckempire:password@postgres-service:5432/ckempire"
+  REDIS_URL: "redis://redis-service:6379"
+  
+  # Application settings
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  CORS_ORIGINS: "https://ckempire.com,https://www.ckempire.com"
+  
+  # Performance settings
+  WORKER_PROCESSES: "4"
+  MAX_CONNECTIONS: "1000"
+  
+  # Security settings
+  SECURE_COOKIES: "true"
+  SESSION_TIMEOUT: "3600" 

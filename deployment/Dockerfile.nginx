@@ -1,0 +1,38 @@
+# Custom Nginx Dockerfile for CK Empire
+FROM nginx:alpine
+
+# Install additional tools
+RUN apk add --no-cache \
+    curl \
+    openssl \
+    certbot \
+    certbot-nginx
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY ssl/ /etc/nginx/ssl/
+
+# Create non-root user
+RUN addgroup -g 1000 nginx_user && \
+    adduser -D -s /bin/sh -u 1000 -G nginx_user nginx_user
+
+# Create necessary directories
+RUN mkdir -p /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
+    chown -R nginx_user:nginx_user /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
+
+# Create SSL certificate directory
+RUN mkdir -p /etc/nginx/ssl && \
+    chown -R nginx_user:nginx_user /etc/nginx/ssl
+
+# Switch to non-root user
+USER nginx_user
+
+# Expose ports
+EXPOSE 80 443
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"] 

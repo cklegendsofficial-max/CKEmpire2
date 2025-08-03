@@ -1,85 +1,118 @@
-# FastAPI ve Web Framework
+# Core FastAPI dependencies
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
 
-# Veritabanı
+# Database
 sqlalchemy==2.0.23
-alembic==1.12.1
+alembic==1.13.1
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
+
+# Security and encryption
+cryptography==41.0.8
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# HTTP client
+httpx==0.25.2
+requests==2.31.0
+
+# Redis
 redis==5.0.1
 
-# Şifreleme ve Güvenlik
-cryptography==41.0.7
-bcrypt==4.1.2
-PyJWT==2.8.0
-
-# AI ve OpenAI
+# AI and ML
 openai==1.3.7
-langchain==0.0.350
-langchain-openai==0.0.2
+aif360==0.5.0
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.2
 
-# Video İşleme
+# Video processing
 moviepy==1.0.3
 opencv-python==4.8.1.78
 Pillow==10.1.0
 
-# NFT ve Blockchain
+# Web3 and blockchain
 web3==6.11.3
 eth-account==0.9.0
-eth-utils==2.3.0
+eth-utils==2.2.0
 
-# HTTP İstemcisi
-httpx==0.25.2
-aiohttp==3.9.1
-requests==2.31.0
+# Payment processing
+stripe==7.8.0
 
-# Veri İşleme
-pandas==2.1.4
-numpy==1.25.2
-pydantic==2.5.0
-pydantic-settings==2.1.0
-
-# Test
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-httpx==0.25.2
-
-# Logging ve Monitoring
+# Performance monitoring
 structlog==23.2.0
 prometheus-client==0.19.0
 
-# CORS ve Middleware
-starlette==0.27.0
+# Monitoring and Observability
+sentry-sdk[fastapi]==1.38.0
+elasticsearch==8.11.0
+logstash==0.0.1
+kibana==0.0.1
+elastic-apm==6.18.0
 
-# Validation
-email-validator==2.1.0
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-html==4.1.1
+pytest-xdist==3.3.1
+pytest-mock==3.12.0
+pytest-selenium==4.0.1
+pytest-timeout==2.1.0
+pytest-randomly==3.15.0
+pytest-benchmark==4.0.0
+pytest-json-report==1.5.0
 
-# Async Support
-asyncio-mqtt==0.16.1
+# E2E Testing
+selenium==4.15.2
+webdriver-manager==4.0.1
+playwright==1.40.0
 
-# File Upload
-aiofiles==23.2.1
+# Load Testing
+locust==2.17.0
 
-# Background Tasks
-celery==5.3.4
+# Security Testing
+bandit==1.7.5
+safety==2.3.5
+semgrep==1.50.0
 
-# Cache
-aioredis==2.0.1
+# Code Quality
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
+isort==5.13.2
+pre-commit==3.6.0
+coverage==7.3.2
 
-# Rate Limiting
-slowapi==0.1.9
+# Environment and configuration
+python-dotenv==1.0.0
 
-# Health Checks
-healthcheck==1.3.0
+# Cloud services - AWS
+boto3==1.34.0
+botocore==1.34.0
 
-# Development Tools
-black==23.11.0
-isort==5.12.0
-flake8==6.1.0
-mypy==1.7.1 
+# Cloud services - Google Cloud
+google-cloud-storage==2.10.0
+google-cloud-sql-connector==1.2.0
+google-cloud-redis==2.0.0
+
+# Cloud services - Azure (optional)
+azure-storage-blob==12.19.0
+azure-identity==1.15.0
+
+# Database backup tools
+pg_dump==0.1.0
+
+# Monitoring and logging
+locust==2.17.0
+
+# Development tools
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
+isort==5.13.2
+pre-commit==3.6.0 
