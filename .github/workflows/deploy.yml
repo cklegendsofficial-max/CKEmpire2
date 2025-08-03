@@ -1,89 +1,61 @@
-name: CK Empire CI/CD Pipeline
+name: Deploy CKEmpire
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  release:
-    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Security and Code Quality
+  # Security scanning
   security-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Run Bandit security scan
-        run: |
-          pip install bandit
-          bandit -r backend/ -f json -o bandit-report.json || true
-          
-      - name: Run Safety vulnerability scan
-        run: |
-          pip install safety
-          safety check --json --output safety-report.json || true
-          
-      - name: Run Semgrep SAST
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/security-audit
-            p/secrets
-            p/owasp-top-ten
-          json: true
-          
-      - name: Upload security reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: security-reports
-          path: |
-            bandit-report.json
-            safety-report.json
-            semgrep-report.json
 
-  # Backend Tests
-  backend-tests:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Build and test backend
+  test-backend:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: ckempire_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-          
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-          
+    needs: security-scan
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -91,262 +63,374 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            
+
       - name: Install dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-html pytest-xdist
-          
-      - name: Run backend tests
+          pip install pytest pytest-cov bandit safety
+
+      - name: Run security checks
         run: |
           cd backend
-          pytest tests/ -v --cov=. --cov-report=html --cov-report=xml --junitxml=test-results.xml
-          
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: |
-            backend/htmlcov/
-            backend/test-results.xml
-            backend.coverage.xml
+          bandit -r . -f json -o bandit-report.json || true
+          safety check --json --output safety-report.json || true
 
-  # Frontend Tests
-  frontend-tests:
+      - name: Run tests
+        run: |
+          cd backend
+          pytest --cov=. --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # Build and test frontend
+  test-frontend:
     runs-on: ubuntu-latest
+    needs: security-scan
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-          
-      - name: Install frontend dependencies
+
+      - name: Install dependencies
         run: |
           cd frontend
           npm ci
-          
-      - name: Run frontend tests
+
+      - name: Run linting
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Run tests
         run: |
           cd frontend
           npm test -- --coverage --watchAll=false
-          
-      - name: Upload frontend test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-test-results
-          path: frontend/coverage/
 
-  # Build and Push Images
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  # Build Docker images
   build-images:
-    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
     permissions:
       contents: read
       packages: write
-      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Log in to Container Registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-            
-      - name: Build and push Backend image
+
+      - name: Build and push backend image
         uses: docker/build-push-action@v4
         with:
           context: ./backend
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
-      - name: Build and push Frontend image
+
+      - name: Build and push frontend image
         uses: docker/build-push-action@v4
         with:
           context: ./frontend
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Deploy to Development
+  # Deploy to development
   deploy-dev:
-    needs: [build-images]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
+    needs: build-images
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
     environment: development
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ckempire-dev-cluster --region ${{ secrets.AWS_REGION }}
-        
-      - name: Deploy to development
-        run: |
-          helm upgrade --install ckempire-dev ./deployment/helm/ckempire \
-            --namespace ckempire-dev \
-            --create-namespace \
-            --set global.environment=development \
-            --set backend.image.tag=${{ github.sha }} \
-            --set frontend.image.tag=${{ github.sha }} \
-            --wait --timeout=10m
+          aws-region: us-west-2
 
-  # Deploy to Production
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: |
+          cd deployment/terraform
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd deployment/terraform
+          terraform plan -var="environment=dev" -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd deployment/terraform
+          terraform apply -auto-approve tfplan
+
+      - name: Deploy with Helm
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add sentry https://sentry-kubernetes.github.io/charts
+          helm repo update
+          
+          # Deploy monitoring stack
+          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --values deployment/terraform/values/prometheus-values.yaml
+          
+          # Deploy Sentry
+          helm upgrade --install sentry sentry/sentry \
+            --namespace monitoring \
+            --values deployment/sentry/sentry-values.yaml
+          
+          # Deploy CKEmpire application
+          helm upgrade --install ckempire deployment/helm \
+            --namespace ckempire --create-namespace \
+            --values deployment/terraform/values/ckempire-values.yaml \
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }}
+
+  # Deploy to staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-images
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: |
+          cd deployment/terraform
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd deployment/terraform
+          terraform plan -var="environment=staging" -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd deployment/terraform
+          terraform apply -auto-approve tfplan
+
+      - name: Deploy with Helm
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add sentry https://sentry-kubernetes.github.io/charts
+          helm repo update
+          
+          # Deploy monitoring stack
+          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --values deployment/terraform/values/prometheus-values.yaml
+          
+          # Deploy Sentry
+          helm upgrade --install sentry sentry/sentry \
+            --namespace monitoring \
+            --values deployment/sentry/sentry-values.yaml
+          
+          # Deploy CKEmpire application
+          helm upgrade --install ckempire deployment/helm \
+            --namespace ckempire --create-namespace \
+            --values deployment/terraform/values/ckempire-values.yaml \
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }}
+
+  # Deploy to production
   deploy-prod:
-    needs: [build-images]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    needs: build-images
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
     environment: production
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ckempire-prod-cluster --region ${{ secrets.AWS_REGION }}
-        
-      - name: Deploy to production
-        run: |
-          helm upgrade --install ckempire-prod ./deployment/helm/ckempire \
-            --namespace ckempire-prod \
-            --create-namespace \
-            --set global.environment=production \
-            --set backend.image.tag=${{ github.sha }} \
-            --set frontend.image.tag=${{ github.sha }} \
-            --wait --timeout=15m
-            
-      - name: Run smoke tests
-        run: |
-          # Wait for deployment to be ready
-          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-prod-backend -n ckempire-prod
-          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-prod-frontend -n ckempire-prod
-          
-          # Run basic health checks
-          curl -f https://api.ckempire.com/health || exit 1
-          curl -f https://ckempire.com/ || exit 1
+          aws-region: us-west-2
 
-  # Notifications
-  notify:
-    needs: [deploy-dev, deploy-prod]
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: |
+          cd deployment/terraform
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd deployment/terraform
+          terraform plan -var="environment=prod" -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd deployment/terraform
+          terraform apply -auto-approve tfplan
+
+      - name: Deploy with Helm
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add sentry https://sentry-kubernetes.github.io/charts
+          helm repo update
+          
+          # Deploy monitoring stack
+          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --values deployment/terraform/values/prometheus-values.yaml
+          
+          # Deploy Sentry
+          helm upgrade --install sentry sentry/sentry \
+            --namespace monitoring \
+            --values deployment/sentry/sentry-values.yaml
+          
+          # Deploy CKEmpire application
+          helm upgrade --install ckempire deployment/helm \
+            --namespace ckempire --create-namespace \
+            --values deployment/terraform/values/ckempire-values.yaml \
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }}
+
+  # Health checks
+  health-check:
     runs-on: ubuntu-latest
+    needs: [deploy-dev, deploy-staging, deploy-prod]
     if: always()
-    
     steps:
-      - name: Notify Slack on success
-        if: success()
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ckempire-${{ github.event.inputs.environment || 'dev' }} --region us-west-2
+
+      - name: Wait for deployment
+        run: |
+          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-backend -n ckempire
+          kubectl wait --for=condition=available --timeout=300s deployment/ckempire-frontend -n ckempire
+
+      - name: Run health checks
+        run: |
+          # Get the service URLs
+          BACKEND_URL=$(kubectl get svc ckempire-backend -n ckempire -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          FRONTEND_URL=$(kubectl get svc ckempire-frontend -n ckempire -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          
+          # Health check backend
+          curl -f http://$BACKEND_URL:8000/health || exit 1
+          
+          # Health check frontend
+          curl -f http://$FRONTEND_URL:80/ || exit 1
+          
+          echo "✅ All health checks passed!"
+
+      - name: Notify deployment status
+        if: always()
         uses: 8398a7/action-slack@v3
         with:
-          status: success
-          text: 'CK Empire deployment successful! :rocket:'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          text: |
+            Deployment to ${{ github.event.inputs.environment || 'dev' }} ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref }}
+
+  # Rollback on failure
+  rollback:
+    runs-on: ubuntu-latest
+    needs: [deploy-dev, deploy-staging, deploy-prod, health-check]
+    if: failure()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ckempire-${{ github.event.inputs.environment || 'dev' }} --region us-west-2
+
+      - name: Rollback deployment
+        run: |
+          # Rollback to previous version
+          helm rollback ckempire -n ckempire
           
-      - name: Notify Slack on failure
-        if: failure()
+          echo "🔄 Deployment rolled back due to health check failure"
+
+      - name: Notify rollback
         uses: 8398a7/action-slack@v3
         with:
           status: failure
-          text: 'CK Empire deployment failed! :x:'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  # Performance Testing
-  performance-test:
-    needs: [deploy-prod]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          
-      - name: Install Locust
-        run: pip install locust
-        
-      - name: Run performance tests
-        run: |
-          cd backend
-          locust -f tests/performance/locustfile.py \
-            --host=https://api.ckempire.com \
-            --users=100 \
-            --spawn-rate=10 \
-            --run-time=5m \
-            --headless \
-            --html=performance-report.html
-            
-      - name: Upload performance report
-        uses: actions/upload-artifact@v3
-        with:
-          name: performance-report
-          path: backend/performance-report.html
-
-  # Security Compliance
-  compliance-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Upload Trivy scan results
-        uses: actions/upload-artifact@v3
-        with:
-          name: trivy-results
-          path: trivy-results.sarif
-          
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif' 
+          channel: '#alerts'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          text: |
+            🚨 Deployment failed and rolled back
+            Environment: ${{ github.event.inputs.environment || 'dev' }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref }} 

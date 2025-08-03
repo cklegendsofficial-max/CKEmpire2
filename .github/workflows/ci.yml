@@ -189,6 +189,111 @@ jobs:
         name: frontend-coverage
         fail_ci_if_error: false
 
+  # Security Scanning with ZAP
+  security-scan-zap:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+        pip install requests
+    
+    - name: Start ZAP
+      uses: zaproxy/action-full-scan@v0.8.0
+      with:
+        target: 'http://localhost:8000'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+    
+    - name: Upload ZAP scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'zap-report.sarif'
+
+  # OWASP Security Testing
+  owasp-security-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+        pip install bandit safety
+    
+    - name: Run Bandit security linter
+      run: |
+        cd backend
+        bandit -r . -f json -o bandit-report.json || true
+    
+    - name: Run Safety check
+      run: |
+        cd backend
+        safety check --json --output safety-report.json || true
+    
+    - name: Run OWASP security tests
+      run: |
+        cd backend
+        python -c "
+        from security_scanner import get_security_scanner
+        from penetration_test import get_penetration_tester
+        
+        # Run OWASP checklist
+        scanner = get_security_scanner()
+        owasp_report = scanner.run_owasp_checklist()
+        
+        # Run penetration tests
+        tester = get_penetration_tester()
+        pentest_report = tester.run_full_penetration_test()
+        
+        # Save reports
+        import json
+        with open('owasp-report.json', 'w') as f:
+            json.dump(owasp_report, f, indent=2)
+        
+        with open('pentest-report.json', 'w') as f:
+            json.dump(pentest_report, f, indent=2)
+        
+        # Check for critical vulnerabilities
+        if pentest_report.get('overall_security_score', 100) < 70:
+            print('⚠️  Security score below threshold')
+            exit(1)
+        else:
+            print('✅ Security tests passed')
+        "
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          backend/owasp-report.json
+          backend/pentest-report.json
+          backend/bandit-report.json
+          backend/safety-report.json
+
   # Build Docker Images
   build-backend:
     needs: [backend-test, frontend-test]

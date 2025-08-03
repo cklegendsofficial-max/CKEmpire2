@@ -1,0 +1,105 @@
+{"input": "Düşük bütçe ile başla", "output": "Lean startup stratejisi: MVP geliştir, erken kullanıcılarla test et, hızlı iterasyon yap. Bütçe: $50K, Süre: 6 ay, ROI: %15"}
+{"input": "Revenue hedefi $20K", "output": "Scale-up stratejisi: Pazarlama bütçesini artır, satış ekibi kur, yeni pazarlara açıl. Bütçe: $200K, Süre: 12 ay, ROI: %25"}
+{"input": "Yüksek risk toleransı", "output": "Innovation stratejisi: R&D yatırımı yap, yeni teknolojiler dene, patent başvuruları. Bütçe: $500K, Süre: 18 ay, ROI: %40"}
+{"input": "Hızlı büyüme istiyorum", "output": "Acquisition stratejisi: Küçük şirketleri satın al, stratejik ortaklıklar kur, pazar payını artır. Bütçe: $1M, Süre: 24 ay, ROI: %30"}
+{"input": "Maliyet optimizasyonu", "output": "Cost optimization stratejisi: Operasyonel verimliliği artır, otomasyon yatırımı yap, gereksiz maliyetleri kes. Bütçe: $100K, Süre: 6 ay, ROI: %20"}
+{"input": "Yeni pazarlara açıl", "output": "Diversification stratejisi: Yeni ürün hatları geliştir, farklı pazarları araştır, stratejik ortaklıklar kur. Bütçe: $300K, Süre: 12 ay, ROI: %18"}
+{"input": "Teknoloji odaklı", "output": "Innovation stratejisi: AI/ML yatırımı yap, yeni teknolojiler geliştir, patent portföyü oluştur. Bütçe: $400K, Süre: 15 ay, ROI: %35"}
+{"input": "Konsolide et", "output": "Acquisition stratejisi: Rakip şirketleri satın al, pazar konsolidasyonu yap, monopol pozisyonu kur. Bütçe: $2M, Süre: 30 ay, ROI: %50"}
+{"input": "Sürdürülebilir büyüme", "output": "Scale-up stratejisi: Organik büyüme odaklan, müşteri memnuniyetini artır, uzun vadeli planlama yap. Bütçe: $150K, Süre: 18 ay, ROI: %22"}
+{"input": "Kriz yönetimi", "output": "Lean startup stratejisi: Nakit akışını koru, kritik operasyonları sürdür, esnek yapı kur. Bütçe: $50K, Süre: 6 ay, ROI: %10"}
+{"input": "Start with low budget", "output": "Lean startup strategy: Build MVP, test with early adopters, rapid iteration. Budget: $50K, Duration: 6 months, ROI: 15%"}
+{"input": "Revenue target $20K", "output": "Scale-up strategy: Increase marketing budget, build sales team, enter multiple markets. Budget: $200K, Duration: 12 months, ROI: 25%"}
+{"input": "High risk tolerance", "output": "Innovation strategy: Invest in R&D, try new technologies, file patents. Budget: $500K, Duration: 18 months, ROI: 40%"}
+{"input": "Want fast growth", "output": "Acquisition strategy: Buy small companies, strategic partnerships, increase market share. Budget: $1M, Duration: 24 months, ROI: 30%"}
+{"input": "Cost optimization", "output": "Cost optimization strategy: Improve operational efficiency, automation investment, cut unnecessary costs. Budget: $100K, Duration: 6 months, ROI: 20%"}
+{"input": "Expand to new markets", "output": "Diversification strategy: Develop new product lines, research different markets, strategic partnerships. Budget: $300K, Duration: 12 months, ROI: 18%"}
+{"input": "Technology focused", "output": "Innovation strategy: Invest in AI/ML, develop new technologies, create patent portfolio. Budget: $400K, Duration: 15 months, ROI: 35%"}
+{"input": "Consolidate market", "output": "Acquisition strategy: Buy competitors, market consolidation, establish monopoly position. Budget: $2M, Duration: 30 months, ROI: 50%"}
+{"input": "Sustainable growth", "output": "Scale-up strategy: Focus on organic growth, increase customer satisfaction, long-term planning. Budget: $150K, Duration: 18 months, ROI: 22%"}
+{"input": "Crisis management", "output": "Lean startup strategy: Preserve cash flow, maintain critical operations, flexible structure. Budget: $50K, Duration: 6 months, ROI: 10%"}
+{"input": "SaaS startup with $100K", "output": "Lean startup strategy: Build MVP SaaS platform, focus on product-market fit, bootstrap funding. Budget: $100K, Duration: 12 months, ROI: 20%"}
+{"input": "E-commerce expansion", "output": "Scale-up strategy: Invest in marketing automation, expand product catalog, enter new markets. Budget: $500K, Duration: 18 months, ROI: 30%"}
+{"input": "AI/ML company", "output": "Innovation strategy: Hire AI researchers, invest in computing infrastructure, file AI patents. Budget: $1M, Duration: 24 months, ROI: 45%"}
+{"input": "Manufacturing efficiency", "output": "Cost optimization strategy: Implement lean manufacturing, automate production lines, optimize supply chain. Budget: $300K, Duration: 12 months, ROI: 25%"}
+{"input": "Digital marketing agency", "output": "Diversification strategy: Add new service lines, target different industries, strategic partnerships. Budget: $200K, Duration: 15 months, ROI: 28%"}
+{"input": "Need $1M revenue in 2 years", "output": "Scale-up strategy: Aggressive marketing, expand sales team, enter multiple markets. Budget: $800K, Duration: 24 months, ROI: 25%"}
+{"input": "Conservative growth approach", "output": "Lean startup strategy: Focus on profitability, organic growth, minimal external funding. Budget: $150K, Duration: 18 months, ROI: 15%"}
+{"input": "High-growth tech startup", "output": "Innovation strategy: R&D investment, talent acquisition, market disruption. Budget: $2M, Duration: 36 months, ROI: 50%"}
+{"input": "Traditional business transformation", "output": "Diversification strategy: Digital transformation, new product development, market expansion. Budget: $600K, Duration: 24 months, ROI: 22%"}
+{"input": "Crisis recovery plan", "output": "Cost optimization strategy: Restructure operations, reduce costs, focus on core business. Budget: $100K, Duration: 12 months, ROI: 12%"}
+{"input": "Scenario 1: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Business case 2: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Strategy request 3: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Growth plan 4: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Investment strategy 5: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Scenario 6: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Business case 7: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Strategy request 8: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Growth plan 9: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Investment strategy 10: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Scenario 11: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Business case 12: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Strategy request 13: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Growth plan 14: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Investment strategy 15: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Scenario 16: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Business case 17: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Strategy request 18: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Growth plan 19: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Investment strategy 20: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Scenario 21: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Business case 22: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Strategy request 23: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Growth plan 24: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Investment strategy 25: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Scenario 26: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Business case 27: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Strategy request 28: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Growth plan 29: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Investment strategy 30: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Scenario 31: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Business case 32: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Strategy request 33: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Growth plan 34: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Investment strategy 35: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Scenario 36: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Business case 37: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Strategy request 38: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Growth plan 39: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Investment strategy 40: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Scenario 41: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Business case 42: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Strategy request 43: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Growth plan 44: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Investment strategy 45: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Scenario 46: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Business case 47: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Strategy request 48: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Growth plan 49: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Investment strategy 50: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Scenario 51: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Business case 52: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Strategy request 53: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Growth plan 54: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Investment strategy 55: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Scenario 56: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Business case 57: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Strategy request 58: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Growth plan 59: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Investment strategy 60: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Scenario 61: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Business case 62: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Strategy request 63: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Growth plan 64: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Investment strategy 65: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Scenario 66: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Business case 67: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Strategy request 68: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Growth plan 69: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
+{"input": "Investment strategy 70: Düşük bütçe ile başla", "output": "Acquisition Strategy: Grow through strategic acquisitions and market consolidation. Budget: $5,000,000, Duration: 30 months, ROI: 35%"}
+{"input": "Scenario 71: Düşük bütçe ile başla", "output": "Innovation Strategy: Focus on R&D and breakthrough technologies. Budget: $3,000,000, Duration: 36 months, ROI: 40%"}
+{"input": "Business case 72: Düşük bütçe ile başla", "output": "Cost Optimization Strategy: Improve profitability through operational efficiency. Budget: $200,000, Duration: 12 months, ROI: 18%"}
+{"input": "Strategy request 73: Düşük bütçe ile başla", "output": "Lean Startup Strategy: Minimal viable product approach with rapid iteration and customer validation. Budget: $50,000, Duration: 6 months, ROI: 15%"}
+{"input": "Growth plan 74: Düşük bütçe ile başla", "output": "Scale-Up Strategy: Rapid growth with significant investment and market expansion. Budget: $2,000,000, Duration: 18 months, ROI: 25%"}
+{"input": "Investment strategy 75: Düşük bütçe ile başla", "output": "Diversification Strategy: Expand into new product lines and markets to reduce risk. Budget: $1,000,000, Duration: 24 months, ROI: 20%"}
