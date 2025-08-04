@@ -826,5 +826,226 @@ class FinanceManager:
             else:
                 return "Low Risk"
 
+    def calculate_max_digital_income(self, 
+                                   channels: List[str],
+                                   monthly_views_per_channel: Dict[str, int] = None,
+                                   rpm_rates: Dict[str, float] = None,
+                                   affiliate_rates: Dict[str, float] = None,
+                                   product_margins: Dict[str, float] = None) -> Dict[str, Any]:
+        """
+        Calculate maximum digital income for multi-channel (5 channels) including ads/affiliate/products
+        
+        Args:
+            channels: List of channel names (YouTube, TikTok, Instagram, LinkedIn, Twitter)
+            monthly_views_per_channel: Dictionary of monthly views per channel
+            rpm_rates: Revenue per mille (per 1000 views) for each channel
+            affiliate_rates: Affiliate commission rates per channel
+            product_margins: Product margin percentages per channel
+            
+        Returns:
+            Dictionary containing total earnings breakdown and forecasts
+        """
+        # Default channel configurations
+        default_channels = ["YouTube", "TikTok", "Instagram", "LinkedIn", "Twitter"]
+        
+        if not channels:
+            channels = default_channels
+        
+        # Default monthly views per channel (if not provided)
+        if monthly_views_per_channel is None:
+            monthly_views_per_channel = {
+                "YouTube": 50000,
+                "TikTok": 100000,
+                "Instagram": 75000,
+                "LinkedIn": 25000,
+                "Twitter": 30000
+            }
+        
+        # Default RPM rates per channel (Revenue Per Mille - per 1000 views)
+        if rpm_rates is None:
+            rpm_rates = {
+                "YouTube": 3.50,  # $3.50 per 1000 views
+                "TikTok": 2.00,   # $2.00 per 1000 views
+                "Instagram": 4.00, # $4.00 per 1000 views
+                "LinkedIn": 8.00,  # $8.00 per 1000 views (higher value audience)
+                "Twitter": 2.50    # $2.50 per 1000 views
+            }
+        
+        # Default affiliate commission rates per channel
+        if affiliate_rates is None:
+            affiliate_rates = {
+                "YouTube": 0.15,   # 15% commission
+                "TikTok": 0.10,    # 10% commission
+                "Instagram": 0.12, # 12% commission
+                "LinkedIn": 0.20,  # 20% commission (higher value)
+                "Twitter": 0.08    # 8% commission
+            }
+        
+        # Default product margin percentages per channel
+        if product_margins is None:
+            product_margins = {
+                "YouTube": 0.25,   # 25% margin
+                "TikTok": 0.20,    # 20% margin
+                "Instagram": 0.30, # 30% margin
+                "LinkedIn": 0.35,  # 35% margin (premium audience)
+                "Twitter": 0.18    # 18% margin
+            }
+        
+        total_earnings = {
+            "ads_revenue": 0,
+            "affiliate_revenue": 0,
+            "product_revenue": 0,
+            "total_revenue": 0,
+            "channel_breakdown": {},
+            "monthly_forecast": {},
+            "yearly_forecast": {},
+            "roi_analysis": {},
+            "recommendations": []
+        }
+        
+        # Calculate earnings for each channel
+        for channel in channels:
+            monthly_views = monthly_views_per_channel.get(channel, 0)
+            rpm_rate = rpm_rates.get(channel, 0)
+            affiliate_rate = affiliate_rates.get(channel, 0)
+            product_margin = product_margins.get(channel, 0)
+            
+            # Calculate ad revenue
+            ad_revenue = (monthly_views / 1000) * rpm_rate
+            
+            # Calculate affiliate revenue (assuming 5% of viewers make purchases)
+            affiliate_conversion_rate = 0.05
+            affiliate_purchases = monthly_views * affiliate_conversion_rate
+            average_order_value = 50  # $50 average order value
+            affiliate_revenue = affiliate_purchases * average_order_value * affiliate_rate
+            
+            # Calculate product revenue (assuming 2% of viewers buy products)
+            product_conversion_rate = 0.02
+            product_purchases = monthly_views * product_conversion_rate
+            average_product_value = 100  # $100 average product value
+            product_revenue = product_purchases * average_product_value * product_margin
+            
+            # Total revenue for this channel
+            channel_total = ad_revenue + affiliate_revenue + product_revenue
+            
+            # Store channel breakdown
+            total_earnings["channel_breakdown"][channel] = {
+                "monthly_views": monthly_views,
+                "ad_revenue": round(ad_revenue, 2),
+                "affiliate_revenue": round(affiliate_revenue, 2),
+                "product_revenue": round(product_revenue, 2),
+                "total_revenue": round(channel_total, 2),
+                "rpm_rate": rpm_rate,
+                "affiliate_rate": affiliate_rate,
+                "product_margin": product_margin
+            }
+            
+            # Add to totals
+            total_earnings["ads_revenue"] += ad_revenue
+            total_earnings["affiliate_revenue"] += affiliate_revenue
+            total_earnings["product_revenue"] += product_revenue
+            total_earnings["total_revenue"] += channel_total
+        
+        # Round totals
+        total_earnings["ads_revenue"] = round(total_earnings["ads_revenue"], 2)
+        total_earnings["affiliate_revenue"] = round(total_earnings["affiliate_revenue"], 2)
+        total_earnings["product_revenue"] = round(total_earnings["product_revenue"], 2)
+        total_earnings["total_revenue"] = round(total_earnings["total_revenue"], 2)
+        
+        # Generate monthly forecast (12 months with growth)
+        monthly_growth_rate = 0.15  # 15% monthly growth
+        current_monthly_revenue = total_earnings["total_revenue"]
+        
+        for month in range(1, 13):
+            monthly_revenue = current_monthly_revenue * ((1 + monthly_growth_rate) ** (month - 1))
+            total_earnings["monthly_forecast"][f"month_{month}"] = {
+                "revenue": round(monthly_revenue, 2),
+                "cumulative_revenue": round(sum([
+                    current_monthly_revenue * ((1 + monthly_growth_rate) ** (m - 1))
+                    for m in range(1, month + 1)
+                ]), 2)
+            }
+        
+        # Generate yearly forecast
+        yearly_revenue = sum([
+            total_earnings["monthly_forecast"][f"month_{i}"]["revenue"]
+            for i in range(1, 13)
+        ])
+        total_earnings["yearly_forecast"] = {
+            "total_revenue": round(yearly_revenue, 2),
+            "average_monthly_revenue": round(yearly_revenue / 12, 2),
+            "growth_rate": monthly_growth_rate * 12
+        }
+        
+        # Calculate ROI analysis
+        initial_investment = 5000  # $5000 initial investment
+        roi_calc = self.calculate_roi_for_target(
+            target_amount=yearly_revenue,
+            initial_investment=initial_investment,
+            time_period=1.0
+        )
+        
+        total_earnings["roi_analysis"] = {
+            "initial_investment": initial_investment,
+            "yearly_revenue": yearly_revenue,
+            "roi_percentage": roi_calc.calculate_roi(),
+            "annualized_roi": roi_calc.calculate_annualized_roi(),
+            "payback_period": roi_calc.calculate_payback_period()
+        }
+        
+        # Generate recommendations
+        total_earnings["recommendations"] = self._generate_digital_income_recommendations(
+            total_earnings, roi_calc
+        )
+        
+        return total_earnings
+    
+    def _generate_digital_income_recommendations(self, 
+                                               earnings_data: Dict[str, Any],
+                                               roi_calc: ROICalculation) -> List[str]:
+        """Generate recommendations for digital income optimization"""
+        recommendations = []
+        
+        total_revenue = earnings_data["total_revenue"]
+        roi_percentage = roi_calc.calculate_roi()
+        
+        # Revenue-based recommendations
+        if total_revenue < 1000:
+            recommendations.append("Focus on increasing content frequency and quality")
+            recommendations.append("Optimize for higher RPM channels (LinkedIn, Instagram)")
+            recommendations.append("Implement affiliate marketing strategies")
+        elif total_revenue < 5000:
+            recommendations.append("Scale successful content formats across channels")
+            recommendations.append("Diversify revenue streams with product launches")
+            recommendations.append("Invest in audience growth and engagement")
+        elif total_revenue < 10000:
+            recommendations.append("Consider premium content and subscription models")
+            recommendations.append("Expand to new channels and markets")
+            recommendations.append("Optimize conversion rates for affiliate and product sales")
+        else:
+            recommendations.append("Excellent performance - focus on scaling and automation")
+            recommendations.append("Consider building a team and outsourcing content creation")
+            recommendations.append("Explore new revenue streams and partnerships")
+        
+        # ROI-based recommendations
+        if roi_percentage > 200:
+            recommendations.append("Outstanding ROI - consider aggressive scaling")
+        elif roi_percentage > 100:
+            recommendations.append("Strong ROI - continue current strategy with optimizations")
+        elif roi_percentage > 50:
+            recommendations.append("Good ROI - focus on efficiency improvements")
+        else:
+            recommendations.append("Low ROI - review content strategy and monetization approach")
+        
+        # Channel-specific recommendations
+        channel_breakdown = earnings_data["channel_breakdown"]
+        best_channel = max(channel_breakdown.items(), key=lambda x: x[1]["total_revenue"])
+        worst_channel = min(channel_breakdown.items(), key=lambda x: x[1]["total_revenue"])
+        
+        recommendations.append(f"Focus on {best_channel[0]} - highest performing channel")
+        recommendations.append(f"Optimize {worst_channel[0]} - lowest performing channel")
+        
+        return recommendations
+
 # Global instance
 finance_manager = FinanceManager() 

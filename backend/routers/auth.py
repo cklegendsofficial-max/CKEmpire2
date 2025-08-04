@@ -22,7 +22,7 @@ from rate_limiter import get_enhanced_rate_limiter
 from database import get_db
 from models import UserCreate, UserResponse, TokenResponse, OAuth2TokenResponse
 from database import User
-from settings import settings
+from config import settings
 
 logger = structlog.get_logger()
 

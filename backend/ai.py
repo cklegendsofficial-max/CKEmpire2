@@ -56,7 +56,7 @@ except ImportError:
 
 # Configuration
 try:
-    from settings import settings
+    from config import settings
 except ImportError:
     # Mock settings for development
     class settings:
@@ -215,6 +215,46 @@ class AGIState:
     last_evolution: datetime
     evolution_count: int = 0
 
+@dataclass
+class ContentPerformance:
+    """Content performance tracking for feedback loop"""
+    content_id: str
+    title: str
+    content_type: ContentType
+    views: int
+    engagement_rate: float
+    revenue_generated: float
+    viral_potential: float
+    quality_score: float
+    improvement_suggestions: List[str]
+    created_at: datetime = None
+    last_updated: datetime = None
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.utcnow()
+        if self.last_updated is None:
+            self.last_updated = datetime.utcnow()
+
+@dataclass
+class TrendData:
+    """2025 trend data for content optimization"""
+    trend_name: str
+    category: str
+    impact_score: float
+    audience_reach: str
+    content_adaptation: str
+    viral_potential: float
+    revenue_potential: float
+    platform_optimization: List[str]
+    hashtags: List[str]
+    keywords: List[str]
+    created_at: datetime = None
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.utcnow()
+
 class AIModule:
     """Enhanced AI module for content generation, video production, NFT automation, and fine-tuning"""
     
@@ -247,6 +287,17 @@ class AIModule:
         # Load fine-tuning dataset
         self._ensure_dataset_directory()
         self._load_or_create_dataset()
+        
+        # Performance tracking and optimization
+        self.performance_data = []
+        self.trend_data = self._initialize_2025_trends()
+        self.feedback_loop_active = True
+        self.optimization_threshold = 0.6  # Content below this score gets optimized
+        self.continuous_optimization = True  # 24/7 operation
+        self.last_optimization = datetime.utcnow()
+        
+        # Load performance data from file
+        self._load_performance_data()
 
     def _load_strategy_templates(self) -> Dict[str, Dict[str, Any]]:
         """Load enhanced empire strategy templates"""
@@ -1544,6 +1595,1725 @@ class AIModule:
                 "timestamp": datetime.utcnow().isoformat()
             }
 
+    async def generate_and_implement_business_idea(self, current_ideas: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Generate a new business idea using Ollama and implement it with ROI calculation, PDF plan, and mock applications
+        
+        Args:
+            current_ideas: List of existing business ideas to avoid duplication
+            
+        Returns:
+            Dictionary containing the new business idea, ROI analysis, PDF plan path, and mock applications
+        """
+        try:
+            # Import finance module for ROI calculation
+            from finance import FinanceManager
+            
+            # Initialize finance manager
+            finance_manager = FinanceManager()
+            
+            # Generate new business idea using Ollama
+            business_idea = await self._generate_business_idea_with_ollama(current_ideas)
+            
+            # Calculate ROI using finance.py
+            roi_analysis = await self._calculate_business_roi(business_idea, finance_manager)
+            
+            # Generate PDF implementation plan
+            pdf_path = await self._generate_business_pdf_plan(business_idea, roi_analysis)
+            
+            # Generate mock applications (PDF e-book, YouTube link)
+            mock_applications = await self._generate_mock_applications(business_idea, roi_analysis)
+            
+            # Maximize earnings with affiliate integration
+            affiliate_earnings = await self._calculate_affiliate_earnings(business_idea, finance_manager)
+            
+            # Track revenue potential with analytics
+            await self._track_business_analytics(business_idea, roi_analysis, mock_applications, affiliate_earnings)
+            
+            return {
+                "business_idea": business_idea,
+                "roi_analysis": roi_analysis,
+                "pdf_plan_path": pdf_path,
+                "mock_applications": mock_applications,
+                "affiliate_earnings": affiliate_earnings,
+                "generated_at": datetime.utcnow().isoformat(),
+                "status": "success"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating and implementing business idea: {e}")
+            return {
+                "error": str(e),
+                "status": "failed",
+                "generated_at": datetime.utcnow().isoformat()
+            }
+
+    async def _generate_business_idea_with_ollama(self, current_ideas: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate a new business idea using Ollama"""
+        try:
+            import httpx
+            
+            # Create prompt for business idea generation
+            current_ideas_text = ""
+            if current_ideas:
+                current_ideas_text = "Existing ideas to avoid: " + ", ".join([idea.get("title", "") for idea in current_ideas[:5]])
+            
+            prompt = f"""
+            Generate a new innovative business idea for 2025. Consider current market trends, technology advancements, and emerging opportunities.
+            
+            {current_ideas_text}
+            
+            2025 TREND CONTEXT:
+            - Short-form content and multi-channel distribution strategies
+            - AI-enhanced business models and automation
+            - Authentic storytelling and community engagement
+            - Educational value in all business offerings
+            - Sustainability and social impact focus
+            - Data-driven decision making and analytics
+            - Cross-platform monetization strategies
+            - Long-term audience building approaches
+            
+            Provide the response in JSON format with the following structure:
+            {{
+                "title": "Business Idea Title",
+                "description": "Detailed description of the business idea",
+                "target_market": "Target market and audience",
+                "unique_value_proposition": "What makes this idea unique",
+                "initial_investment": 50000,
+                "projected_revenue_year_1": 120000,
+                "projected_revenue_year_2": 250000,
+                "projected_revenue_year_3": 500000,
+                "growth_rate": 0.15,
+                "risk_level": "medium",
+                "timeline_months": 18,
+                "key_resources": ["resource1", "resource2"],
+                "competitive_advantages": ["advantage1", "advantage2"],
+                "revenue_streams": ["stream1", "stream2"],
+                "scalability_potential": "high",
+                "trend_alignment": ["short-form", "multi-channel", "ai-enhanced"],
+                "viral_potential": 0.8
+            }}
+            
+            Focus on innovative, scalable, and profitable business ideas that can be implemented with reasonable investment.
+            """
+            
+            # Make request to Ollama
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": "llama2",
+                        "prompt": prompt,
+                        "stream": False
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    response_text = result.get("response", "")
+                    
+                    # Try to parse JSON response
+                    try:
+                        import json
+                        business_idea = json.loads(response_text)
+                        return business_idea
+                    except json.JSONDecodeError:
+                        # Fallback: create structured idea from text
+                        return self._create_structured_business_idea(response_text)
+                else:
+                    raise Exception(f"Ollama request failed with status {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"Error generating business idea with Ollama: {e}")
+            # Return a mock business idea as fallback
+            return self._create_mock_business_idea()
+
+    def _create_structured_business_idea(self, response_text: str) -> Dict[str, Any]:
+        """Create structured business idea from text response"""
+        return {
+            "title": "AI-Powered Personal Finance Advisor",
+            "description": response_text[:500] + "...",
+            "target_market": "Young professionals aged 25-40",
+            "unique_value_proposition": "AI-driven personalized financial planning",
+            "initial_investment": 75000,
+            "projected_revenue_year_1": 150000,
+            "projected_revenue_year_2": 300000,
+            "projected_revenue_year_3": 600000,
+            "growth_rate": 0.20,
+            "risk_level": "medium",
+            "timeline_months": 24,
+            "key_resources": ["AI/ML expertise", "Financial advisors", "Mobile app development"],
+            "competitive_advantages": ["AI personalization", "Low cost structure", "Scalable platform"],
+            "revenue_streams": ["Subscription fees", "Commission on investments", "Premium features"],
+            "scalability_potential": "high"
+        }
+
+    def _create_mock_business_idea(self) -> Dict[str, Any]:
+        """Create a mock business idea as fallback"""
+        return {
+            "title": "Sustainable Smart Home Energy Management",
+            "description": "AI-powered system that optimizes home energy consumption using IoT sensors and machine learning algorithms to reduce costs and environmental impact.",
+            "target_market": "Environmentally conscious homeowners",
+            "unique_value_proposition": "Automated energy optimization with 30% cost savings",
+            "initial_investment": 100000,
+            "projected_revenue_year_1": 200000,
+            "projected_revenue_year_2": 450000,
+            "projected_revenue_year_3": 900000,
+            "growth_rate": 0.25,
+            "risk_level": "low",
+            "timeline_months": 18,
+            "key_resources": ["IoT hardware", "AI/ML expertise", "Energy consultants"],
+            "competitive_advantages": ["Proven energy savings", "Government incentives", "Growing market"],
+            "revenue_streams": ["Hardware sales", "Monthly subscriptions", "Energy consulting"],
+            "scalability_potential": "high"
+        }
+
+    async def _calculate_business_roi(self, business_idea: Dict[str, Any], finance_manager) -> Dict[str, Any]:
+        """Calculate ROI for the business idea using finance.py"""
+        try:
+            initial_investment = business_idea.get("initial_investment", 50000)
+            projected_revenue = [
+                business_idea.get("projected_revenue_year_1", 100000),
+                business_idea.get("projected_revenue_year_2", 200000),
+                business_idea.get("projected_revenue_year_3", 400000)
+            ]
+            growth_rate = business_idea.get("growth_rate", 0.15)
+            
+            # Create DCF model
+            dcf_model = finance_manager.create_dcf_model(
+                initial_investment=initial_investment,
+                target_revenue=projected_revenue[-1],
+                growth_rate=growth_rate,
+                discount_rate=0.10,
+                time_period=3
+            )
+            
+            # Calculate ROI
+            roi_calc = finance_manager.calculate_roi_for_target(
+                target_amount=projected_revenue[-1],
+                initial_investment=initial_investment,
+                time_period=3.0
+            )
+            
+            # Calculate enhanced ROI with CAC/LTV
+            enhanced_roi = finance_manager.calculate_enhanced_roi(
+                target_amount=projected_revenue[-1],
+                initial_investment=initial_investment,
+                time_period=3.0,
+                customer_acquisition_cost=initial_investment * 0.3,  # 30% of investment for marketing
+                customer_lifetime_value=projected_revenue[-1] / 100,  # Average customer value
+                marketing_spend=initial_investment * 0.3,
+                new_customers=1000
+            )
+            
+            return {
+                "dcf_model": {
+                    "npv": dcf_model.calculate_npv(),
+                    "irr": dcf_model.calculate_irr(),
+                    "present_value": dcf_model.calculate_present_value()
+                },
+                "roi_calculation": {
+                    "roi_percentage": roi_calc.calculate_roi(),
+                    "annualized_roi": roi_calc.calculate_annualized_roi(),
+                    "payback_period": roi_calc.calculate_payback_period()
+                },
+                "enhanced_roi": enhanced_roi,
+                "business_idea": business_idea
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating business ROI: {e}")
+            return {
+                "error": str(e),
+                "dcf_model": {"npv": 0, "irr": 0, "present_value": 0},
+                "roi_calculation": {"roi_percentage": 0, "annualized_roi": 0, "payback_period": 0},
+                "enhanced_roi": {},
+                "business_idea": business_idea
+            }
+
+    async def _generate_business_pdf_plan(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any]) -> str:
+        """Generate PDF implementation plan for the business idea"""
+        try:
+            import pdfkit
+            from pathlib import Path
+            
+            # Create data directory if it doesn't exist
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            # Generate HTML content for PDF
+            html_content = self._generate_business_plan_html(business_idea, roi_analysis)
+            
+            # Create PDF file path
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            pdf_filename = f"business_plan_{business_idea.get('title', 'idea').replace(' ', '_')}_{timestamp}.pdf"
+            pdf_path = data_dir / pdf_filename
+            
+            # Generate PDF
+            try:
+                pdfkit.from_string(html_content, str(pdf_path))
+                logger.info(f"PDF business plan generated: {pdf_path}")
+                return str(pdf_path)
+            except Exception as e:
+                logger.warning(f"PDFKit failed, creating HTML file instead: {e}")
+                # Fallback to HTML file
+                html_path = pdf_path.with_suffix('.html')
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                return str(html_path)
+                
+        except Exception as e:
+            logger.error(f"Error generating PDF plan: {e}")
+            return ""
+
+    def _generate_business_plan_html(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any]) -> str:
+        """Generate HTML content for business plan PDF"""
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Business Plan: {business_idea.get('title', 'New Business Idea')}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; }}
+                h2 {{ color: #34495e; margin-top: 30px; }}
+                .section {{ margin: 20px 0; }}
+                .highlight {{ background-color: #ecf0f1; padding: 10px; border-radius: 5px; }}
+                .financial {{ background-color: #e8f5e8; padding: 15px; border-radius: 5px; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+            </style>
+        </head>
+        <body>
+            <h1>Business Plan: {business_idea.get('title', 'New Business Idea')}</h1>
+            
+            <div class="section">
+                <h2>Executive Summary</h2>
+                <p><strong>Business Idea:</strong> {business_idea.get('title', 'N/A')}</p>
+                <p><strong>Description:</strong> {business_idea.get('description', 'N/A')}</p>
+                <p><strong>Target Market:</strong> {business_idea.get('target_market', 'N/A')}</p>
+                <p><strong>Unique Value Proposition:</strong> {business_idea.get('unique_value_proposition', 'N/A')}</p>
+            </div>
+            
+            <div class="section">
+                <h2>Financial Projections</h2>
+                <table>
+                    <tr><th>Year</th><th>Projected Revenue</th><th>Growth Rate</th></tr>
+                    <tr><td>Year 1</td><td>${business_idea.get('projected_revenue_year_1', 0):,.0f}</td><td>-</td></tr>
+                    <tr><td>Year 2</td><td>${business_idea.get('projected_revenue_year_2', 0):,.0f}</td><td>{(business_idea.get('projected_revenue_year_2', 0) / business_idea.get('projected_revenue_year_1', 1) - 1) * 100:.1f}%</td></tr>
+                    <tr><td>Year 3</td><td>${business_idea.get('projected_revenue_year_3', 0):,.0f}</td><td>{(business_idea.get('projected_revenue_year_3', 0) / business_idea.get('projected_revenue_year_2', 1) - 1) * 100:.1f}%</td></tr>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>Investment Requirements</h2>
+                <div class="highlight">
+                    <p><strong>Initial Investment:</strong> ${business_idea.get('initial_investment', 0):,.0f}</p>
+                    <p><strong>Timeline:</strong> {business_idea.get('timeline_months', 0)} months</p>
+                    <p><strong>Risk Level:</strong> {business_idea.get('risk_level', 'N/A').title()}</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>ROI Analysis</h2>
+                <div class="financial">
+                    <p><strong>ROI Percentage:</strong> {roi_analysis.get('roi_calculation', {}).get('roi_percentage', 0):.2f}%</p>
+                    <p><strong>Annualized ROI:</strong> {roi_analysis.get('roi_calculation', {}).get('annualized_roi', 0):.2f}%</p>
+                    <p><strong>Payback Period:</strong> {roi_analysis.get('roi_calculation', {}).get('payback_period', 0):.1f} years</p>
+                    <p><strong>NPV:</strong> ${roi_analysis.get('dcf_model', {}).get('npv', 0):,.0f}</p>
+                    <p><strong>IRR:</strong> {roi_analysis.get('dcf_model', {}).get('irr', 0):.2f}%</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Implementation Strategy</h2>
+                <h3>Key Resources Required:</h3>
+                <ul>
+                    {''.join([f'<li>{resource}</li>' for resource in business_idea.get('key_resources', [])])}
+                </ul>
+                
+                <h3>Competitive Advantages:</h3>
+                <ul>
+                    {''.join([f'<li>{advantage}</li>' for advantage in business_idea.get('competitive_advantages', [])])}
+                </ul>
+                
+                <h3>Revenue Streams:</h3>
+                <ul>
+                    {''.join([f'<li>{stream}</li>' for stream in business_idea.get('revenue_streams', [])])}
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>Risk Assessment</h2>
+                <p><strong>Risk Level:</strong> {business_idea.get('risk_level', 'N/A').title()}</p>
+                <p><strong>Scalability Potential:</strong> {business_idea.get('scalability_potential', 'N/A').title()}</p>
+            </div>
+            
+            <div class="section">
+                <h2>Generated on:</h2>
+                <p>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+
+    async def _generate_mock_applications(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate mock applications for the business idea (PDF e-book, YouTube link)"""
+        try:
+            # Generate PDF e-book
+            ebook_path = await self._generate_business_ebook(business_idea, roi_analysis)
+            
+            # Generate YouTube video link
+            youtube_link = await self._generate_youtube_promotion_link(business_idea)
+            
+            # Generate social media content
+            social_content = await self._generate_social_media_content(business_idea)
+            
+            return {
+                "ebook_path": ebook_path,
+                "youtube_link": youtube_link,
+                "social_media_content": social_content,
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating mock applications: {e}")
+            return {
+                "ebook_path": "",
+                "youtube_link": "",
+                "social_media_content": {},
+                "error": str(e)
+            }
+
+    async def _generate_business_ebook(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any]) -> str:
+        """Generate a PDF e-book for the business idea"""
+        try:
+            import pdfkit
+            from pathlib import Path
+            
+            # Create data directory if it doesn't exist
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            # Generate HTML content for e-book
+            html_content = self._generate_ebook_html(business_idea, roi_analysis)
+            
+            # Create e-book file path
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            ebook_filename = f"business_ebook_{business_idea.get('title', 'idea').replace(' ', '_')}_{timestamp}.pdf"
+            ebook_path = data_dir / ebook_filename
+            
+            # Generate PDF e-book
+            try:
+                pdfkit.from_string(html_content, str(ebook_path))
+                logger.info(f"Business e-book generated: {ebook_path}")
+                return str(ebook_path)
+            except Exception as e:
+                logger.warning(f"PDFKit failed for e-book, creating HTML file instead: {e}")
+                # Fallback to HTML file
+                html_path = ebook_path.with_suffix('.html')
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                return str(html_path)
+                
+        except Exception as e:
+            logger.error(f"Error generating business e-book: {e}")
+            return ""
+
+    def _generate_ebook_html(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any]) -> str:
+        """Generate HTML content for business e-book"""
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Complete Guide: {business_idea.get('title', 'New Business Idea')}</title>
+            <style>
+                body {{ font-family: 'Georgia', serif; margin: 40px; line-height: 1.6; }}
+                h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; text-align: center; }}
+                h2 {{ color: #34495e; margin-top: 40px; border-left: 4px solid #3498db; padding-left: 15px; }}
+                h3 {{ color: #2c3e50; margin-top: 30px; }}
+                .chapter {{ margin: 30px 0; page-break-inside: avoid; }}
+                .highlight {{ background-color: #ecf0f1; padding: 15px; border-radius: 8px; margin: 20px 0; }}
+                .financial {{ background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                .quote {{ font-style: italic; color: #7f8c8d; border-left: 3px solid #95a5a6; padding-left: 15px; margin: 20px 0; }}
+                .step {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #f2f2f2; font-weight: bold; }}
+                .toc {{ background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                .toc ul {{ list-style-type: none; padding-left: 0; }}
+                .toc li {{ margin: 8px 0; }}
+                .toc a {{ text-decoration: none; color: #3498db; }}
+            </style>
+        </head>
+        <body>
+            <h1>Complete Guide: {business_idea.get('title', 'New Business Idea')}</h1>
+            <p style="text-align: center; color: #7f8c8d; font-style: italic;">
+                A comprehensive guide to launching and scaling your business idea
+            </p>
+            
+            <div class="toc">
+                <h2>Table of Contents</h2>
+                <ul>
+                    <li><a href="#executive-summary">1. Executive Summary</a></li>
+                    <li><a href="#business-overview">2. Business Overview</a></li>
+                    <li><a href="#market-analysis">3. Market Analysis</a></li>
+                    <li><a href="#implementation-strategy">4. Implementation Strategy</a></li>
+                    <li><a href="#financial-projections">5. Financial Projections</a></li>
+                    <li><a href="#risk-assessment">6. Risk Assessment</a></li>
+                    <li><a href="#action-plan">7. 90-Day Action Plan</a></li>
+                </ul>
+            </div>
+            
+            <div class="chapter" id="executive-summary">
+                <h2>1. Executive Summary</h2>
+                <div class="highlight">
+                    <h3>Business Concept</h3>
+                    <p><strong>{business_idea.get('title', 'N/A')}</strong></p>
+                    <p>{business_idea.get('description', 'N/A')}</p>
+                </div>
+                
+                <div class="financial">
+                    <h3>Key Financial Highlights</h3>
+                    <ul>
+                        <li><strong>Initial Investment:</strong> ${business_idea.get('initial_investment', 0):,.0f}</li>
+                        <li><strong>3-Year Revenue Projection:</strong> ${business_idea.get('projected_revenue_year_3', 0):,.0f}</li>
+                        <li><strong>ROI:</strong> {roi_analysis.get('roi_calculation', {}).get('roi_percentage', 0):.2f}%</li>
+                        <li><strong>Payback Period:</strong> {roi_analysis.get('roi_calculation', {}).get('payback_period', 0):.1f} years</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="chapter" id="business-overview">
+                <h2>2. Business Overview</h2>
+                
+                <h3>Target Market</h3>
+                <p>{business_idea.get('target_market', 'N/A')}</p>
+                
+                <h3>Unique Value Proposition</h3>
+                <div class="quote">
+                    "{business_idea.get('unique_value_proposition', 'N/A')}"
+                </div>
+                
+                <h3>Competitive Advantages</h3>
+                <ul>
+                    {''.join([f'<li>{advantage}</li>' for advantage in business_idea.get('competitive_advantages', [])])}
+                </ul>
+                
+                <h3>Revenue Streams</h3>
+                <ul>
+                    {''.join([f'<li>{stream}</li>' for stream in business_idea.get('revenue_streams', [])])}
+                </ul>
+            </div>
+            
+            <div class="chapter" id="market-analysis">
+                <h2>3. Market Analysis</h2>
+                
+                <h3>Market Size and Growth</h3>
+                <p>The target market for this business idea is experiencing significant growth, with increasing demand for innovative solutions.</p>
+                
+                <h3>Customer Segments</h3>
+                <ul>
+                    <li><strong>Primary Customers:</strong> {business_idea.get('target_market', 'N/A')}</li>
+                    <li><strong>Secondary Customers:</strong> Related market segments with similar needs</li>
+                    <li><strong>Future Expansion:</strong> Adjacent markets and international opportunities</li>
+                </ul>
+            </div>
+            
+            <div class="chapter" id="implementation-strategy">
+                <h2>4. Implementation Strategy</h2>
+                
+                <h3>Key Resources Required</h3>
+                <ul>
+                    {''.join([f'<li>{resource}</li>' for resource in business_idea.get('key_resources', [])])}
+                </ul>
+                
+                <h3>Timeline</h3>
+                <p><strong>Implementation Period:</strong> {business_idea.get('timeline_months', 0)} months</p>
+                
+                <h3>Development Phases</h3>
+                <div class="step">
+                    <h4>Phase 1: Foundation (Months 1-3)</h4>
+                    <ul>
+                        <li>Market research and validation</li>
+                        <li>Core team assembly</li>
+                        <li>Initial product development</li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <h4>Phase 2: Launch (Months 4-6)</h4>
+                    <ul>
+                        <li>Beta testing and refinement</li>
+                        <li>Marketing campaign launch</li>
+                        <li>Customer acquisition</li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <h4>Phase 3: Scale (Months 7-12)</h4>
+                    <ul>
+                        <li>Market expansion</li>
+                        <li>Product enhancement</li>
+                        <li>Team growth</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="chapter" id="financial-projections">
+                <h2>5. Financial Projections</h2>
+                
+                <table>
+                    <tr><th>Year</th><th>Revenue</th><th>Growth Rate</th><th>Profit Margin</th></tr>
+                    <tr><td>Year 1</td><td>${business_idea.get('projected_revenue_year_1', 0):,.0f}</td><td>-</td><td>15%</td></tr>
+                    <tr><td>Year 2</td><td>${business_idea.get('projected_revenue_year_2', 0):,.0f}</td><td>{(business_idea.get('projected_revenue_year_2', 0) / business_idea.get('projected_revenue_year_1', 1) - 1) * 100:.1f}%</td><td>20%</td></tr>
+                    <tr><td>Year 3</td><td>${business_idea.get('projected_revenue_year_3', 0):,.0f}</td><td>{(business_idea.get('projected_revenue_year_3', 0) / business_idea.get('projected_revenue_year_2', 1) - 1) * 100:.1f}%</td><td>25%</td></tr>
+                </table>
+                
+                <div class="financial">
+                    <h3>Investment Analysis</h3>
+                    <ul>
+                        <li><strong>NPV:</strong> ${roi_analysis.get('dcf_model', {}).get('npv', 0):,.0f}</li>
+                        <li><strong>IRR:</strong> {roi_analysis.get('dcf_model', {}).get('irr', 0):.2f}%</li>
+                        <li><strong>Annualized ROI:</strong> {roi_analysis.get('roi_calculation', {}).get('annualized_roi', 0):.2f}%</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="chapter" id="risk-assessment">
+                <h2>6. Risk Assessment</h2>
+                
+                <h3>Risk Level: {business_idea.get('risk_level', 'N/A').title()}</h3>
+                
+                <h3>Key Risks and Mitigation Strategies</h3>
+                <ul>
+                    <li><strong>Market Risk:</strong> Diversify customer base and revenue streams</li>
+                    <li><strong>Technology Risk:</strong> Invest in robust infrastructure and security</li>
+                    <li><strong>Competition Risk:</strong> Maintain competitive advantages and innovation</li>
+                    <li><strong>Financial Risk:</strong> Maintain adequate cash reserves and monitor cash flow</li>
+                </ul>
+                
+                <h3>Scalability Potential: {business_idea.get('scalability_potential', 'N/A').title()}</h3>
+                <p>This business model demonstrates strong scalability potential through technology leverage and market expansion opportunities.</p>
+            </div>
+            
+            <div class="chapter" id="action-plan">
+                <h2>7. 90-Day Action Plan</h2>
+                
+                <h3>Week 1-2: Foundation</h3>
+                <div class="step">
+                    <ul>
+                        <li>Conduct detailed market research</li>
+                        <li>Validate business concept with potential customers</li>
+                        <li>Assemble core team and advisors</li>
+                        <li>Secure initial funding or resources</li>
+                    </ul>
+                </div>
+                
+                <h3>Week 3-6: Development</h3>
+                <div class="step">
+                    <ul>
+                        <li>Develop minimum viable product (MVP)</li>
+                        <li>Create marketing materials and website</li>
+                        <li>Establish legal and business structure</li>
+                        <li>Begin customer outreach and testing</li>
+                    </ul>
+                </div>
+                
+                <h3>Week 7-12: Launch Preparation</h3>
+                <div class="step">
+                    <ul>
+                        <li>Refine product based on feedback</li>
+                        <li>Launch marketing campaigns</li>
+                        <li>Establish partnerships and distribution channels</li>
+                        <li>Prepare for full market launch</li>
+                    </ul>
+                </div>
+                
+                <div class="highlight">
+                    <h3>Success Metrics</h3>
+                    <ul>
+                        <li>Customer acquisition rate</li>
+                        <li>Revenue growth month-over-month</li>
+                        <li>Customer satisfaction scores</li>
+                        <li>Market share expansion</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin-top: 50px; text-align: center; color: #7f8c8d;">
+                <p><strong>Generated on:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                <p>This guide is part of the CK Empire Builder system - Automated Business Intelligence</p>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+
+    async def _generate_youtube_promotion_link(self, business_idea: Dict[str, Any]) -> str:
+        """Generate a mock YouTube promotion link for the business idea"""
+        try:
+            # Create a mock YouTube video ID
+            video_id = f"biz_{business_idea.get('title', 'idea').replace(' ', '_').lower()}_{datetime.utcnow().strftime('%Y%m%d')}"
+            
+            # Generate YouTube URL
+            youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+            
+            # Create mock video details
+            video_details = {
+                "title": f"Complete Guide: {business_idea.get('title', 'New Business Idea')}",
+                "description": f"Learn how to launch and scale {business_idea.get('title', 'this business idea')}. This comprehensive guide covers everything from market research to implementation strategy.",
+                "duration": "15:30",
+                "views": 12500,
+                "likes": 890,
+                "comments": 156,
+                "upload_date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "url": youtube_url
+            }
+            
+            logger.info(f"YouTube promotion link generated: {youtube_url}")
+            return youtube_url
+            
+        except Exception as e:
+            logger.error(f"Error generating YouTube promotion link: {e}")
+            return "https://www.youtube.com/watch?v=example"
+
+    async def _generate_social_media_content(self, business_idea: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate social media content for the business idea"""
+        try:
+            # Generate content for different platforms
+            content = {
+                "linkedin": {
+                    "title": f"🚀 New Business Opportunity: {business_idea.get('title', 'Innovative Business Idea')}",
+                    "content": f"Excited to share this innovative business concept that could revolutionize {business_idea.get('target_market', 'the market')}. Key highlights:\n\n✅ {business_idea.get('unique_value_proposition', 'Unique value proposition')}\n✅ ROI: {business_idea.get('projected_revenue_year_3', 0) / business_idea.get('initial_investment', 1) * 100:.1f}%\n✅ Scalable business model\n\nWhat do you think about this opportunity? #BusinessInnovation #Entrepreneurship #Startup",
+                    "hashtags": ["#BusinessInnovation", "#Entrepreneurship", "#Startup", "#BusinessIdea"]
+                },
+                "twitter": {
+                    "title": f"💡 Business Idea: {business_idea.get('title', 'Innovative Concept')}",
+                    "content": f"Just discovered an amazing business opportunity!\n\n🎯 {business_idea.get('title', 'Business Idea')}\n💰 ROI: {business_idea.get('projected_revenue_year_3', 0) / business_idea.get('initial_investment', 1) * 100:.1f}%\n🚀 {business_idea.get('scalability_potential', 'High')} scalability\n\nWould you invest in this? #BusinessIdea #Startup #Innovation",
+                    "hashtags": ["#BusinessIdea", "#Startup", "#Innovation", "#Entrepreneur"]
+                },
+                "instagram": {
+                    "title": f"💼 Business Opportunity Alert!",
+                    "content": f"📈 {business_idea.get('title', 'Innovative Business Idea')}\n\n🎯 Target: {business_idea.get('target_market', 'Market segment')}\n💡 Value: {business_idea.get('unique_value_proposition', 'Unique proposition')}\n💰 Potential: ${business_idea.get('projected_revenue_year_3', 0):,.0f} in 3 years\n\n#BusinessOpportunity #Entrepreneur #Innovation #StartupLife",
+                    "hashtags": ["#BusinessOpportunity", "#Entrepreneur", "#Innovation", "#StartupLife"]
+                }
+            }
+            
+            logger.info(f"Social media content generated for {business_idea.get('title', 'business idea')}")
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error generating social media content: {e}")
+            return {}
+
+    async def _calculate_affiliate_earnings(self, business_idea: Dict[str, Any], finance_manager) -> Dict[str, Any]:
+        """Calculate affiliate earnings for the business idea"""
+        try:
+            # Calculate affiliate revenue potential
+            base_revenue = business_idea.get('projected_revenue_year_3', 100000)
+            affiliate_commission_rate = 0.15  # 15% commission
+            conversion_rate = 0.03  # 3% conversion rate
+            traffic_multiplier = 2.5  # Traffic from affiliate marketing
+            
+            # Calculate affiliate earnings
+            affiliate_revenue = base_revenue * affiliate_commission_rate * conversion_rate * traffic_multiplier
+            
+            # Calculate different affiliate channels
+            affiliate_channels = {
+                "youtube_affiliate": {
+                    "platform": "YouTube",
+                    "commission_rate": 0.12,
+                    "estimated_earnings": affiliate_revenue * 0.4,
+                    "content_type": "Video tutorials and reviews",
+                    "conversion_rate": 0.04
+                },
+                "blog_affiliate": {
+                    "platform": "Blog/Website",
+                    "commission_rate": 0.15,
+                    "estimated_earnings": affiliate_revenue * 0.3,
+                    "content_type": "Detailed guides and reviews",
+                    "conversion_rate": 0.05
+                },
+                "social_media_affiliate": {
+                    "platform": "Social Media",
+                    "commission_rate": 0.10,
+                    "estimated_earnings": affiliate_revenue * 0.2,
+                    "content_type": "Promotional posts and stories",
+                    "conversion_rate": 0.02
+                },
+                "email_affiliate": {
+                    "platform": "Email Marketing",
+                    "commission_rate": 0.18,
+                    "estimated_earnings": affiliate_revenue * 0.1,
+                    "content_type": "Newsletter promotions",
+                    "conversion_rate": 0.06
+                }
+            }
+            
+            # Calculate total affiliate earnings
+            total_affiliate_earnings = sum(channel["estimated_earnings"] for channel in affiliate_channels.values())
+            
+            # Calculate ROI for affiliate marketing
+            affiliate_investment = base_revenue * 0.05  # 5% of revenue for affiliate marketing
+            affiliate_roi = (total_affiliate_earnings - affiliate_investment) / affiliate_investment * 100 if affiliate_investment > 0 else 0
+            
+            return {
+                "total_affiliate_earnings": total_affiliate_earnings,
+                "affiliate_investment": affiliate_investment,
+                "affiliate_roi": affiliate_roi,
+                "channels": affiliate_channels,
+                "conversion_rate": conversion_rate,
+                "commission_rate": affiliate_commission_rate,
+                "calculated_at": datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating affiliate earnings: {e}")
+            return {
+                "total_affiliate_earnings": 0,
+                "affiliate_investment": 0,
+                "affiliate_roi": 0,
+                "channels": {},
+                "error": str(e)
+            }
+
+    async def _track_business_analytics(self, business_idea: Dict[str, Any], roi_analysis: Dict[str, Any], mock_applications: Dict[str, Any], affiliate_earnings: Dict[str, Any]):
+        """Track business idea analytics and log revenue potential"""
+        try:
+            # Log analytics data
+            analytics_data = {
+                "business_idea_id": business_idea.get("title", "unknown").replace(" ", "_").lower(),
+                "idea_title": business_idea.get("title", "Unknown"),
+                "initial_investment": business_idea.get("initial_investment", 0),
+                "projected_revenue_year_3": business_idea.get("projected_revenue_year_3", 0),
+                "roi_percentage": roi_analysis.get("roi_calculation", {}).get("roi_percentage", 0),
+                "npv": roi_analysis.get("dcf_model", {}).get("npv", 0),
+                "risk_level": business_idea.get("risk_level", "unknown"),
+                "scalability_potential": business_idea.get("scalability_potential", "unknown"),
+                "mock_applications": {
+                    "ebook_generated": bool(mock_applications.get("ebook_path")),
+                    "youtube_link": mock_applications.get("youtube_link", ""),
+                    "social_content_generated": bool(mock_applications.get("social_media_content"))
+                },
+                "affiliate_earnings": affiliate_earnings.get("total_affiliate_earnings", 0),
+                "affiliate_roi": affiliate_earnings.get("affiliate_roi", 0),
+                "total_potential_earnings": business_idea.get("projected_revenue_year_3", 0) + affiliate_earnings.get("total_affiliate_earnings", 0),
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            
+            # Save to analytics file
+            from pathlib import Path
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            analytics_file = data_dir / "business_ideas_analytics.json"
+            
+            # Load existing analytics or create new
+            if analytics_file.exists():
+                with open(analytics_file, 'r', encoding='utf-8') as f:
+                    existing_analytics = json.load(f)
+            else:
+                existing_analytics = []
+            
+            existing_analytics.append(analytics_data)
+            
+            # Save updated analytics
+            with open(analytics_file, 'w', encoding='utf-8') as f:
+                json.dump(existing_analytics, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Business idea analytics tracked: {business_idea.get('title', 'Unknown')} - ROI: {analytics_data['roi_percentage']:.2f}% - Affiliate Earnings: ${affiliate_earnings.get('total_affiliate_earnings', 0):,.0f}")
+            
+        except Exception as e:
+            logger.error(f"Error tracking business analytics: {e}")
+
+    async def suggest_alternative_channels(self, original_content: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Suggest alternative channels for content distribution with channel-specific adaptations
+        and revenue forecasting using finance module
+        
+        Args:
+            original_content: Original content idea with title, description, content_type
+            
+        Returns:
+            Dictionary containing channel suggestions with adaptations and revenue forecasts
+        """
+        try:
+            # Import finance module for revenue forecasting
+            from finance import FinanceManager
+            
+            # Initialize finance manager
+            finance_manager = FinanceManager()
+            
+            # Define the 5 channels with their characteristics
+            channels = {
+                "youtube": {
+                    "name": "YouTube",
+                    "optimal_length": "10-15 minutes",
+                    "format": "video",
+                    "content_type": "long_form_video",
+                    "rpm_range": (2.0, 8.0),  # Revenue per 1000 views
+                    "engagement_rate": 0.08,
+                    "best_posting_time": "15:00-17:00",
+                    "hashtag_limit": 15,
+                    "adaptation_focus": "educational, detailed, SEO-optimized"
+                },
+                "tiktok": {
+                    "name": "TikTok",
+                    "optimal_length": "15-60 seconds",
+                    "format": "short_video",
+                    "content_type": "short_form_video",
+                    "rpm_range": (0.5, 2.0),
+                    "engagement_rate": 0.12,
+                    "best_posting_time": "19:00-21:00",
+                    "hashtag_limit": 5,
+                    "adaptation_focus": "trending, viral, hook-based"
+                },
+                "instagram": {
+                    "name": "Instagram",
+                    "optimal_length": "30-60 seconds",
+                    "format": "reel",
+                    "content_type": "short_form_video",
+                    "rpm_range": (1.0, 4.0),
+                    "engagement_rate": 0.10,
+                    "best_posting_time": "12:00-14:00",
+                    "hashtag_limit": 30,
+                    "adaptation_focus": "visual, aesthetic, story-driven"
+                },
+                "linkedin": {
+                    "name": "LinkedIn",
+                    "optimal_length": "1-3 minutes",
+                    "format": "professional_video",
+                    "content_type": "professional_content",
+                    "rpm_range": (3.0, 10.0),
+                    "engagement_rate": 0.06,
+                    "best_posting_time": "09:00-11:00",
+                    "hashtag_limit": 5,
+                    "adaptation_focus": "professional, business-focused, thought leadership"
+                },
+                "twitter": {
+                    "name": "Twitter",
+                    "optimal_length": "2-3 minutes",
+                    "format": "thread",
+                    "content_type": "text_thread",
+                    "rpm_range": (1.5, 5.0),
+                    "engagement_rate": 0.09,
+                    "best_posting_time": "08:00-10:00",
+                    "hashtag_limit": 3,
+                    "adaptation_focus": "conversational, trending, engagement-driven"
+                }
+            }
+            
+            # Generate channel-specific adaptations using Ollama
+            channel_suggestions = {}
+            
+            for channel_key, channel_config in channels.items():
+                adaptation = await self._generate_channel_adaptation(
+                    original_content, channel_config
+                )
+                
+                # Calculate revenue forecast for this channel
+                revenue_forecast = await self._calculate_channel_revenue_forecast(
+                    channel_config, finance_manager
+                )
+                
+                channel_suggestions[channel_key] = {
+                    "channel_name": channel_config["name"],
+                    "adaptation": adaptation,
+                    "revenue_forecast": revenue_forecast,
+                    "channel_config": channel_config
+                }
+            
+            # Track analytics
+            await self._track_channel_suggestions_analytics(original_content, channel_suggestions)
+            
+            return {
+                "original_content": original_content,
+                "channel_suggestions": channel_suggestions,
+                "total_potential_revenue": sum(
+                    suggestion["revenue_forecast"]["monthly_revenue"] 
+                    for suggestion in channel_suggestions.values()
+                ),
+                "generated_at": datetime.utcnow().isoformat(),
+                "status": "success"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error suggesting alternative channels: {e}")
+            return {
+                "error": str(e),
+                "status": "failed",
+                "generated_at": datetime.utcnow().isoformat()
+            }
+
+    async def _generate_channel_adaptation(self, original_content: Dict[str, Any], channel_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate channel-specific content adaptation using Ollama"""
+        try:
+            import httpx
+            
+            prompt = f"""
+            Adapt this content for {channel_config['name']}:
+            
+            Original Content:
+            - Title: {original_content.get('title', 'Unknown')}
+            - Description: {original_content.get('description', 'No description')}
+            - Content Type: {original_content.get('content_type', 'video')}
+            
+            Channel Requirements:
+            - Optimal Length: {channel_config['optimal_length']}
+            - Format: {channel_config['format']}
+            - Focus: {channel_config['adaptation_focus']}
+            - Hashtag Limit: {channel_config['hashtag_limit']}
+            - Best Posting Time: {channel_config['best_posting_time']}
+            
+            Provide adaptation in JSON format:
+            {{
+                "adapted_title": "Channel-specific title",
+                "adapted_description": "Channel-optimized description",
+                "content_script": "Detailed content script/structure",
+                "key_hooks": ["hook1", "hook2"],
+                "optimal_hashtags": ["#hashtag1", "#hashtag2"],
+                "posting_strategy": "When and how to post",
+                "engagement_tips": ["tip1", "tip2"],
+                "estimated_views": 5000,
+                "estimated_engagement_rate": 0.08
+            }}
+            
+            Focus on making the content viral and engaging for {channel_config['name']} audience.
+            """
+            
+            # Make request to Ollama
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": "llama2",
+                        "prompt": prompt,
+                        "stream": False
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    response_text = result.get("response", "")
+                    
+                    # Try to parse JSON response
+                    try:
+                        import json
+                        adaptation = json.loads(response_text)
+                        return adaptation
+                    except json.JSONDecodeError:
+                        # Fallback: create structured adaptation
+                        return self._create_fallback_channel_adaptation(original_content, channel_config)
+                else:
+                    raise Exception(f"Ollama request failed with status {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"Error generating channel adaptation: {e}")
+            return self._create_fallback_channel_adaptation(original_content, channel_config)
+
+    def _create_fallback_channel_adaptation(self, original_content: Dict[str, Any], channel_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Create fallback channel adaptation"""
+        title = original_content.get('title', 'Unknown Content')
+        description = original_content.get('description', 'No description available')
+        
+        return {
+            "adapted_title": f"{title} - {channel_config['name']} Version",
+            "adapted_description": f"{description} Optimized for {channel_config['name']}",
+            "content_script": f"Adapt {title} for {channel_config['format']} format with {channel_config['optimal_length']} duration",
+            "key_hooks": [f"Optimized for {channel_config['name']} audience", "Engaging opening"],
+            "optimal_hashtags": [f"#{channel_config['name'].lower()}", "#content", "#viral"],
+            "posting_strategy": f"Post at {channel_config['best_posting_time']} for maximum engagement",
+            "engagement_tips": ["Use trending hashtags", "Engage with comments"],
+            "estimated_views": 3000,
+            "estimated_engagement_rate": channel_config["engagement_rate"]
+        }
+
+    async def _calculate_channel_revenue_forecast(self, channel_config: Dict[str, Any], finance_manager) -> Dict[str, Any]:
+        """Calculate revenue forecast for a specific channel"""
+        try:
+            # Get RPM range for the channel
+            min_rpm, max_rpm = channel_config["rpm_range"]
+            avg_rpm = (min_rpm + max_rpm) / 2
+            
+            # Estimate views based on channel characteristics
+            estimated_views = 5000  # Base estimate
+            engagement_rate = channel_config["engagement_rate"]
+            
+            # Calculate monthly revenue
+            monthly_views = estimated_views * 30  # Assuming daily posting
+            monthly_revenue = (monthly_views / 1000) * avg_rpm
+            
+            # Calculate yearly projections
+            yearly_revenue = monthly_revenue * 12
+            growth_rate = 0.15  # 15% monthly growth
+            
+            # Create financial projections
+            monthly_projections = []
+            for month in range(1, 13):
+                month_views = estimated_views * (1 + growth_rate) ** (month - 1) * 30
+                month_revenue = (month_views / 1000) * avg_rpm
+                monthly_projections.append({
+                    "month": month,
+                    "views": int(month_views),
+                    "revenue": round(month_revenue, 2),
+                    "growth_rate": round(growth_rate * 100, 1)
+                })
+            
+            # Calculate ROI metrics
+            roi_calc = finance_manager.calculate_roi_for_target(
+                target_amount=yearly_revenue,
+                initial_investment=0,  # No initial investment for content creation
+                time_period=1.0
+            )
+            
+            return {
+                "monthly_revenue": round(monthly_revenue, 2),
+                "yearly_revenue": round(yearly_revenue, 2),
+                "avg_rpm": round(avg_rpm, 2),
+                "estimated_views_per_month": monthly_views,
+                "engagement_rate": engagement_rate,
+                "monthly_projections": monthly_projections,
+                "roi_percentage": roi_calc.calculate_roi(),
+                "payback_period": roi_calc.calculate_payback_period()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating channel revenue forecast: {e}")
+            return {
+                "monthly_revenue": 0,
+                "yearly_revenue": 0,
+                "avg_rpm": 0,
+                "estimated_views_per_month": 0,
+                "engagement_rate": 0,
+                "monthly_projections": [],
+                "roi_percentage": 0,
+                "payback_period": 0
+            }
+
+    async def _track_channel_suggestions_analytics(self, original_content: Dict[str, Any], channel_suggestions: Dict[str, Any]):
+        """Track channel suggestions analytics"""
+        try:
+            analytics_data = {
+                "content_id": original_content.get("title", "unknown").replace(" ", "_").lower(),
+                "original_title": original_content.get("title", "Unknown"),
+                "total_channels": len(channel_suggestions),
+                "total_potential_revenue": sum(
+                    suggestion["revenue_forecast"]["monthly_revenue"] 
+                    for suggestion in channel_suggestions.values()
+                ),
+                "channel_breakdown": {
+                    channel: {
+                        "revenue": suggestion["revenue_forecast"]["monthly_revenue"],
+                        "views": suggestion["revenue_forecast"]["estimated_views_per_month"],
+                        "engagement_rate": suggestion["revenue_forecast"]["engagement_rate"]
+                    }
+                    for channel, suggestion in channel_suggestions.items()
+                },
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            
+            # Save to analytics file
+            from pathlib import Path
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            analytics_file = data_dir / "channel_suggestions_analytics.json"
+            
+            # Load existing analytics or create new
+            if analytics_file.exists():
+                with open(analytics_file, 'r', encoding='utf-8') as f:
+                    existing_analytics = json.load(f)
+            else:
+                existing_analytics = []
+            
+            existing_analytics.append(analytics_data)
+            
+            # Save updated analytics
+            with open(analytics_file, 'w', encoding='utf-8') as f:
+                json.dump(existing_analytics, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Channel suggestions analytics tracked: {original_content.get('title', 'Unknown')} - Revenue: ${analytics_data['total_potential_revenue']:.2f}")
+            
+        except Exception as e:
+            logger.error(f"Error tracking channel suggestions analytics: {e}")
+
+    async def generate_monetization_for_channels(self, channels: List[str]) -> Dict[str, Any]:
+        """
+        Generate monetization strategies for multiple channels using AI and finance calculations
+        
+        Args:
+            channels: List of channel names (YouTube, TikTok, Instagram, LinkedIn, Twitter)
+            
+        Returns:
+            Dictionary containing monetization strategies, revenue forecasts, and recommendations
+        """
+        try:
+            logger.info(f"🎯 Generating monetization strategies for {len(channels)} channels...")
+            
+            # Import finance module for calculations
+            from finance import finance_manager
+            
+            # Generate channel-specific monetization suggestions using Ollama
+            monetization_suggestions = await self._generate_channel_monetization_suggestions(channels)
+            
+            # Calculate digital income using finance module
+            digital_income_analysis = finance_manager.calculate_max_digital_income(
+                channels=channels,
+                monthly_views_per_channel=monetization_suggestions.get("monthly_views", {}),
+                rpm_rates=monetization_suggestions.get("rpm_rates", {}),
+                affiliate_rates=monetization_suggestions.get("affiliate_rates", {}),
+                product_margins=monetization_suggestions.get("product_margins", {})
+            )
+            
+            # Combine AI suggestions with financial analysis
+            result = {
+                "status": "success",
+                "channels": channels,
+                "monetization_suggestions": monetization_suggestions,
+                "financial_analysis": digital_income_analysis,
+                "total_potential_revenue": digital_income_analysis["total_revenue"],
+                "monthly_forecast": digital_income_analysis["monthly_forecast"],
+                "yearly_forecast": digital_income_analysis["yearly_forecast"],
+                "roi_analysis": digital_income_analysis["roi_analysis"],
+                "recommendations": digital_income_analysis["recommendations"]
+            }
+            
+            # Track analytics
+            await self._track_monetization_analytics(channels, result)
+            
+            logger.info(f"✅ Generated monetization strategies - Total potential revenue: ${result['total_potential_revenue']:.2f}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating monetization for channels: {e}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "channels": channels,
+                "total_potential_revenue": 0
+            }
+    
+    async def _generate_channel_monetization_suggestions(self, channels: List[str]) -> Dict[str, Any]:
+        """Generate channel-specific monetization suggestions using Ollama"""
+        try:
+            # Create prompt for Ollama
+            prompt = f"""
+            Generate monetization strategies for the following social media channels: {', '.join(channels)}
+            
+            For each channel, provide:
+            1. Monthly view estimates
+            2. Recommended RPM (Revenue Per Mille) rates
+            3. Affiliate commission rates
+            4. Product margin percentages
+            5. Specific monetization strategies (e.g., TikTok Shop, YouTube Premium, Instagram Shopping)
+            
+            Return the response as a JSON object with the following structure:
+            {{
+                "monthly_views": {{
+                    "YouTube": 50000,
+                    "TikTok": 100000,
+                    "Instagram": 75000,
+                    "LinkedIn": 25000,
+                    "Twitter": 30000
+                }},
+                "rpm_rates": {{
+                    "YouTube": 3.50,
+                    "TikTok": 2.00,
+                    "Instagram": 4.00,
+                    "LinkedIn": 8.00,
+                    "Twitter": 2.50
+                }},
+                "affiliate_rates": {{
+                    "YouTube": 0.15,
+                    "TikTok": 0.10,
+                    "Instagram": 0.12,
+                    "LinkedIn": 0.20,
+                    "Twitter": 0.08
+                }},
+                "product_margins": {{
+                    "YouTube": 0.25,
+                    "TikTok": 0.20,
+                    "Instagram": 0.30,
+                    "LinkedIn": 0.35,
+                    "Twitter": 0.18
+                }},
+                "monetization_strategies": {{
+                    "YouTube": ["AdSense", "Sponsorships", "Memberships", "Merchandise"],
+                    "TikTok": ["TikTok Shop", "Live Gifts", "Brand Partnerships", "Affiliate Links"],
+                    "Instagram": ["Instagram Shopping", "Sponsored Posts", "IGTV Ads", "Affiliate Marketing"],
+                    "LinkedIn": ["Sponsored Content", "Premium Subscriptions", "B2B Services", "Consulting"],
+                    "Twitter": ["Promoted Tweets", "Twitter Spaces", "Newsletter Subscriptions", "Digital Products"]
+                }}
+            }}
+            """
+            
+            # Call Ollama
+            import httpx
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": "llama3.2",
+                        "prompt": prompt,
+                        "stream": False
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    response_text = response_data.get("response", "")
+                    
+                    # Try to parse JSON response
+                    try:
+                        import json
+                        suggestions = json.loads(response_text)
+                        return suggestions
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to parse Ollama response as JSON, using fallback")
+                        return self._create_fallback_monetization_suggestions(channels)
+                else:
+                    logger.warning("Ollama request failed, using fallback")
+                    return self._create_fallback_monetization_suggestions(channels)
+                    
+        except Exception as e:
+            logger.error(f"Error generating channel monetization suggestions: {e}")
+            return self._create_fallback_monetization_suggestions(channels)
+    
+    def _create_fallback_monetization_suggestions(self, channels: List[str]) -> Dict[str, Any]:
+        """Create fallback monetization suggestions when Ollama fails"""
+        default_suggestions = {
+            "monthly_views": {
+                "YouTube": 50000,
+                "TikTok": 100000,
+                "Instagram": 75000,
+                "LinkedIn": 25000,
+                "Twitter": 30000
+            },
+            "rpm_rates": {
+                "YouTube": 3.50,
+                "TikTok": 2.00,
+                "Instagram": 4.00,
+                "LinkedIn": 8.00,
+                "Twitter": 2.50
+            },
+            "affiliate_rates": {
+                "YouTube": 0.15,
+                "TikTok": 0.10,
+                "Instagram": 0.12,
+                "LinkedIn": 0.20,
+                "Twitter": 0.08
+            },
+            "product_margins": {
+                "YouTube": 0.25,
+                "TikTok": 0.20,
+                "Instagram": 0.30,
+                "LinkedIn": 0.35,
+                "Twitter": 0.18
+            },
+            "monetization_strategies": {
+                "YouTube": ["AdSense", "Sponsorships", "Memberships", "Merchandise"],
+                "TikTok": ["TikTok Shop", "Live Gifts", "Brand Partnerships", "Affiliate Links"],
+                "Instagram": ["Instagram Shopping", "Sponsored Posts", "IGTV Ads", "Affiliate Marketing"],
+                "LinkedIn": ["Sponsored Content", "Premium Subscriptions", "B2B Services", "Consulting"],
+                "Twitter": ["Promoted Tweets", "Twitter Spaces", "Newsletter Subscriptions", "Digital Products"]
+            }
+        }
+        
+        # Filter for requested channels only
+        filtered_suggestions = {}
+        for key, value in default_suggestions.items():
+            if isinstance(value, dict):
+                filtered_suggestions[key] = {channel: value.get(channel, 0) for channel in channels}
+            else:
+                filtered_suggestions[key] = value
+        
+        return filtered_suggestions
+    
+    async def _track_monetization_analytics(self, channels: List[str], result: Dict[str, Any]):
+        """Track monetization analytics"""
+        try:
+            analytics_data = {
+                "channels": channels,
+                "total_potential_revenue": result.get("total_potential_revenue", 0),
+                "monthly_revenue": result.get("financial_analysis", {}).get("total_revenue", 0),
+                "yearly_revenue": result.get("yearly_forecast", {}).get("total_revenue", 0),
+                "roi_percentage": result.get("roi_analysis", {}).get("roi_percentage", 0),
+                "channel_breakdown": result.get("financial_analysis", {}).get("channel_breakdown", {}),
+                "recommendations": result.get("recommendations", []),
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            
+            # Save to CSV file for tracking
+            from pathlib import Path
+            import csv
+            
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            csv_file = data_dir / "monetization_analytics.csv"
+            
+            # Check if file exists to determine if we need to write headers
+            file_exists = csv_file.exists()
+            
+            with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                
+                # Write headers if file is new
+                if not file_exists:
+                    writer.writerow([
+                        "Date", "Channels", "Total_Potential_Revenue", "Monthly_Revenue", 
+                        "Yearly_Revenue", "ROI_Percentage", "Channel_Breakdown", "Recommendations"
+                    ])
+                
+                # Write data row
+                writer.writerow([
+                    analytics_data["generated_at"],
+                    ",".join(channels),
+                    analytics_data["total_potential_revenue"],
+                    analytics_data["monthly_revenue"],
+                    analytics_data["yearly_revenue"],
+                    analytics_data["roi_percentage"],
+                    str(analytics_data["channel_breakdown"]),
+                    "|".join(analytics_data["recommendations"])
+                ])
+            
+            logger.info(f"Monetization analytics tracked to CSV: {csv_file}")
+            
+        except Exception as e:
+            logger.error(f"Error tracking monetization analytics: {e}")
+
+    async def generate_niche_content_ideas(self, niche: str, channels: int = 5) -> List[ContentIdea]:
+        """
+        Generate niche-specific content ideas with educational, viral, and lifestyle variations.
+        
+        Args:
+            niche: The specific niche/topic to generate content for
+            channels: Number of content variations to generate (default: 5)
+            
+        Returns:
+            List of ContentIdea objects with niche-specific content
+        """
+        try:
+            logger.info(f"🎯 Generating niche content ideas for: {niche}")
+            
+            # 2025 trends to include in prompts
+            trends_2025 = [
+                "AI-powered personalization", "Short-form video dominance", 
+                "Authentic storytelling", "Community-driven content", "Educational entertainment",
+                "Sustainability focus", "Mental health awareness", "Remote work lifestyle",
+                "Digital nomad culture", "Micro-influencer partnerships", "Voice-first content",
+                "AR/VR integration", "Podcast resurgence", "Newsletter renaissance",
+                "Live streaming growth", "User-generated content", "Collaborative content",
+                "Data-driven storytelling", "Cross-platform narratives", "Interactive content"
+            ]
+            
+            # Content variation types
+            variation_types = ["educational", "viral", "lifestyle"]
+            
+            # Generate content ideas using Ollama
+            content_ideas = []
+            
+            for i in range(channels):
+                variation_type = variation_types[i % len(variation_types)]
+                
+                prompt = f"""
+Generate a {variation_type} content idea for the niche: "{niche}"
+
+Requirements:
+- Content type: {variation_type}
+- Niche: {niche}
+- Must be engaging and shareable
+- Include 2025 trends: {', '.join(trends_2025[:5])}
+- Target audience: {niche} enthusiasts and general audience
+- Viral potential: High
+- Revenue potential: Medium to High
+
+Format the response as JSON:
+{{
+    "title": "Engaging title",
+    "description": "Detailed description",
+    "content_type": "video|article|social_media|podcast",
+    "target_audience": "Specific audience",
+    "viral_potential": 0.0-1.0,
+    "estimated_revenue": 0.0,
+    "keywords": ["keyword1", "keyword2"],
+    "hashtags": ["#hashtag1", "#hashtag2"],
+    "variation_type": "{variation_type}",
+    "niche_focus": "{niche}",
+    "trends_included": ["trend1", "trend2"]
+}}
+"""
+                
+                try:
+                    # Try Ollama first
+                    response = await self._generate_with_ollama_niche(prompt, niche, variation_type)
+                    if response:
+                        content_idea = self._parse_niche_content_idea(response, niche, variation_type)
+                        if content_idea:
+                            content_ideas.append(content_idea)
+                            logger.info(f"✅ Generated {variation_type} content for {niche}")
+                        else:
+                            # Fallback to mock content
+                            content_idea = self._create_mock_niche_content(niche, variation_type, i)
+                            content_ideas.append(content_idea)
+                            logger.info(f"📝 Created mock {variation_type} content for {niche}")
+                    else:
+                        # Fallback to mock content
+                        content_idea = self._create_mock_niche_content(niche, variation_type, i)
+                        content_ideas.append(content_idea)
+                        logger.info(f"📝 Created mock {variation_type} content for {niche}")
+                        
+                except Exception as e:
+                    logger.error(f"Error generating {variation_type} content for {niche}: {e}")
+                    # Fallback to mock content
+                    content_idea = self._create_mock_niche_content(niche, variation_type, i)
+                    content_ideas.append(content_idea)
+                    logger.info(f"📝 Created fallback {variation_type} content for {niche}")
+            
+            # Track niche content analytics
+            await self._track_niche_content_analytics(niche, content_ideas)
+            
+            logger.info(f"🎯 Generated {len(content_ideas)} niche content ideas for {niche}")
+            return content_ideas
+            
+        except Exception as e:
+            logger.error(f"Error generating niche content ideas: {e}")
+            return []
+
+    async def _generate_with_ollama_niche(self, prompt: str, niche: str, variation_type: str) -> Optional[str]:
+        """Generate niche content using Ollama with 2025 trends"""
+        try:
+            import httpx
+            
+            # Enhanced prompt with 2025 trends
+            enhanced_prompt = f"""
+{prompt}
+
+2025 TREND OPTIMIZATION:
+- Short-form content (15-60 seconds) for maximum engagement
+- Multi-channel adaptability (YouTube, TikTok, Instagram, LinkedIn, Twitter)
+- AI-enhanced creative elements and automation
+- Authentic storytelling with personal touch
+- Educational value even in entertainment content
+- Community engagement and interaction focus
+- Sustainability and social impact considerations
+- Data-driven content optimization
+- Cross-platform hashtag strategy
+- Long-term audience building approach
+
+CONTENT ADAPTATION FOR {variation_type.upper()}:
+- Educational: Focus on knowledge sharing and skill development
+- Viral: Emphasize shareable, trending elements with high engagement
+- Lifestyle: Include personal journey and relatable experiences
+
+RESPONSE FORMAT: JSON with title, description, viral_potential, engagement_metrics, platform_optimization, and hashtags.
+"""
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": "llama3.2",
+                        "prompt": enhanced_prompt,
+                        "stream": False
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get("response", "")
+                else:
+                    logger.warning(f"Ollama request failed for niche {niche}: {response.status_code}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error calling Ollama for niche content: {e}")
+            return None
+
+    def _parse_niche_content_idea(self, response_text: str, niche: str, variation_type: str) -> Optional[ContentIdea]:
+        """Parse niche content idea from Ollama response"""
+        try:
+            # Extract JSON from response
+            import re
+            import json
+            
+            # Find JSON in response
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                data = json.loads(json_str)
+                
+                # Create ContentIdea object
+                content_type = ContentType.VIDEO if data.get("content_type") == "video" else ContentType.SOCIAL_MEDIA
+                
+                return ContentIdea(
+                    title=data.get("title", f"{variation_type.title()} {niche} Content"),
+                    description=data.get("description", f"Engaging {variation_type} content about {niche}"),
+                    content_type=content_type,
+                    target_audience=data.get("target_audience", f"{niche} enthusiasts"),
+                    viral_potential=float(data.get("viral_potential", 0.7)),
+                    estimated_revenue=float(data.get("estimated_revenue", 50.0)),
+                    keywords=data.get("keywords", [niche, variation_type, "2025"]),
+                    hashtags=data.get("hashtags", [f"#{niche}", f"#{variation_type}", "#2025"])
+                )
+            else:
+                logger.warning(f"Could not parse JSON from niche content response: {response_text[:100]}...")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error parsing niche content idea: {e}")
+            return None
+
+    def _create_mock_niche_content(self, niche: str, variation_type: str, index: int) -> ContentIdea:
+        """Create mock niche content when Ollama is unavailable"""
+        
+        # Mock content templates based on variation type
+        templates = {
+            "educational": {
+                "titles": [
+                    f"Complete Guide to {niche} in 2025",
+                    f"5 Essential {niche} Tips Everyone Should Know",
+                    f"The Science Behind {niche} Success",
+                    f"Mastering {niche}: From Beginner to Expert",
+                    f"2025 {niche} Trends You Can't Ignore"
+                ],
+                "descriptions": [
+                    f"Learn everything about {niche} with this comprehensive guide",
+                    f"Discover the latest {niche} techniques and strategies",
+                    f"Expert insights on {niche} best practices",
+                    f"Step-by-step tutorial for {niche} mastery",
+                    f"Future-proof your {niche} knowledge"
+                ]
+            },
+            "viral": {
+                "titles": [
+                    f"Mind-Blowing {niche} Hack That Went Viral",
+                    f"The {niche} Secret Nobody Talks About",
+                    f"5 {niche} Mistakes That Will Shock You",
+                    f"This {niche} Trick Changed Everything",
+                    f"The Truth About {niche} That Will Blow Your Mind"
+                ],
+                "descriptions": [
+                    f"Viral {niche} content that will amaze your audience",
+                    f"Shocking revelations about {niche} that went viral",
+                    f"Controversial {niche} facts that will surprise you",
+                    f"Amazing {niche} discovery that's taking over social media",
+                    f"Viral {niche} hack that everyone needs to see"
+                ]
+            },
+            "lifestyle": {
+                "titles": [
+                    f"My {niche} Journey: A Day in the Life",
+                    f"How {niche} Changed My Life Forever",
+                    f"The {niche} Lifestyle: What It's Really Like",
+                    f"Living the {niche} Dream: Behind the Scenes",
+                    f"From Zero to {niche} Hero: My Story"
+                ],
+                "descriptions": [
+                    f"Personal story about embracing the {niche} lifestyle",
+                    f"Real-life experience with {niche} transformation",
+                    f"Lifestyle changes that came with {niche}",
+                    f"Day-to-day reality of living with {niche}",
+                    f"Inspirational journey through {niche} adoption"
+                ]
+            }
+        }
+        
+        template = templates.get(variation_type, templates["educational"])
+        title = template["titles"][index % len(template["titles"])]
+        description = template["descriptions"][index % len(template["descriptions"])]
+        
+        return ContentIdea(
+            title=title,
+            description=description,
+            content_type=ContentType.VIDEO,
+            target_audience=f"{niche} enthusiasts and {variation_type} content lovers",
+            viral_potential=0.6 + (index * 0.1),  # Varying viral potential
+            estimated_revenue=30.0 + (index * 10.0),  # Varying revenue potential
+            keywords=[niche, variation_type, "2025", "trending", "viral"],
+            hashtags=[f"#{niche}", f"#{variation_type}", "#2025", "#trending", "#viral"]
+        )
+
+    async def _track_niche_content_analytics(self, niche: str, content_ideas: List[ContentIdea]):
+        """Track niche content analytics"""
+        try:
+            analytics_data = {
+                "niche": niche,
+                "total_ideas": len(content_ideas),
+                "variation_types": {},
+                "average_viral_potential": 0.0,
+                "total_estimated_revenue": 0.0,
+                "content_types": {},
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            
+            # Calculate analytics
+            total_viral_potential = 0.0
+            total_revenue = 0.0
+            
+            for idea in content_ideas:
+                total_viral_potential += idea.viral_potential
+                total_revenue += idea.estimated_revenue
+                
+                # Count variation types (extract from title/description)
+                variation_type = "educational"  # default
+                if "viral" in idea.title.lower() or "shock" in idea.title.lower():
+                    variation_type = "viral"
+                elif "lifestyle" in idea.title.lower() or "journey" in idea.title.lower():
+                    variation_type = "lifestyle"
+                
+                analytics_data["variation_types"][variation_type] = analytics_data["variation_types"].get(variation_type, 0) + 1
+                analytics_data["content_types"][idea.content_type.value] = analytics_data["content_types"].get(idea.content_type.value, 0) + 1
+            
+            if content_ideas:
+                analytics_data["average_viral_potential"] = total_viral_potential / len(content_ideas)
+                analytics_data["total_estimated_revenue"] = total_revenue
+            
+            # Save to CSV file
+            from pathlib import Path
+            import csv
+            
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            csv_file = data_dir / "niche_content_analytics.csv"
+            
+            # Check if file exists to determine if we need to write headers
+            file_exists = csv_file.exists()
+            
+            with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                
+                # Write headers if file is new
+                if not file_exists:
+                    writer.writerow([
+                        "Date", "Niche", "Total_Ideas", "Average_Viral_Potential", 
+                        "Total_Estimated_Revenue", "Variation_Types", "Content_Types"
+                    ])
+                
+                # Write data row
+                writer.writerow([
+                    analytics_data["generated_at"],
+                    analytics_data["niche"],
+                    analytics_data["total_ideas"],
+                    analytics_data["average_viral_potential"],
+                    analytics_data["total_estimated_revenue"],
+                    str(analytics_data["variation_types"]),
+                    str(analytics_data["content_types"])
+                ])
+            
+            logger.info(f"Niche content analytics tracked to CSV: {csv_file}")
+            
+        except Exception as e:
+            logger.error(f"Error tracking niche content analytics: {e}")
+
     # Keep existing methods for backward compatibility
     async def generate_empire_strategy(self, user_input: str) -> EmpireStrategy:
         """Backward compatibility method"""
@@ -1561,6 +3331,457 @@ class AIModule:
     def _calculate_financial_metrics(self, strategy: EmpireStrategy) -> FinancialMetrics:
         """Backward compatibility method"""
         return self._calculate_enhanced_financial_metrics(strategy)
+
+    def _initialize_2025_trends(self) -> List[TrendData]:
+        """Initialize 2025 trend data for content optimization"""
+        return [
+            TrendData(
+                trend_name="Short-Form Video Dominance",
+                category="Video Content",
+                impact_score=0.95,
+                audience_reach="Gen Z and Millennials",
+                content_adaptation="15-60 second vertical videos",
+                viral_potential=0.9,
+                revenue_potential=0.85,
+                platform_optimization=["TikTok", "Instagram Reels", "YouTube Shorts"],
+                hashtags=["#shorts", "#viral", "#trending", "#fyp"],
+                keywords=["short-form", "vertical", "viral", "trending"]
+            ),
+            TrendData(
+                trend_name="Multi-Channel Content Strategy",
+                category="Distribution",
+                impact_score=0.88,
+                audience_reach="Cross-platform audiences",
+                content_adaptation="Platform-specific adaptations",
+                viral_potential=0.8,
+                revenue_potential=0.9,
+                platform_optimization=["YouTube", "TikTok", "Instagram", "LinkedIn", "Twitter"],
+                hashtags=["#multichannel", "#contentstrategy", "#crossplatform"],
+                keywords=["multi-channel", "cross-platform", "content strategy"]
+            ),
+            TrendData(
+                trend_name="AI-Generated Content",
+                category="Technology",
+                impact_score=0.92,
+                audience_reach="Tech-savvy audiences",
+                content_adaptation="AI-enhanced creative content",
+                viral_potential=0.85,
+                revenue_potential=0.8,
+                platform_optimization=["All platforms"],
+                hashtags=["#ai", "#aiart", "#aigenerated", "#future"],
+                keywords=["AI", "artificial intelligence", "generative", "automation"]
+            ),
+            TrendData(
+                trend_name="Authentic Storytelling",
+                category="Content Style",
+                impact_score=0.87,
+                audience_reach="All demographics",
+                content_adaptation="Personal, relatable narratives",
+                viral_potential=0.75,
+                revenue_potential=0.85,
+                platform_optimization=["All platforms"],
+                hashtags=["#authentic", "#storytelling", "#real", "#genuine"],
+                keywords=["authentic", "storytelling", "personal", "relatable"]
+            ),
+            TrendData(
+                trend_name="Educational Entertainment",
+                category="Content Type",
+                impact_score=0.83,
+                audience_reach="Lifelong learners",
+                content_adaptation="Edutainment content",
+                viral_potential=0.7,
+                revenue_potential=0.8,
+                platform_optimization=["YouTube", "TikTok", "LinkedIn"],
+                hashtags=["#edutainment", "#learn", "#education", "#knowledge"],
+                keywords=["educational", "learning", "knowledge", "informative"]
+            )
+        ]
+
+    def _load_performance_data(self):
+        """Load performance data from file"""
+        try:
+            performance_file = Path("data/content_performance_analytics.csv")
+            if performance_file.exists():
+                import csv
+                with open(performance_file, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        performance = ContentPerformance(
+                            content_id=row.get('content_id', ''),
+                            title=row.get('title', ''),
+                            content_type=ContentType(row.get('content_type', 'video')),
+                            views=int(row.get('views', 0)),
+                            engagement_rate=float(row.get('engagement_rate', 0.0)),
+                            revenue_generated=float(row.get('revenue_generated', 0.0)),
+                            viral_potential=float(row.get('viral_potential', 0.0)),
+                            quality_score=float(row.get('quality_score', 0.0)),
+                            improvement_suggestions=row.get('improvement_suggestions', '').split('|') if row.get('improvement_suggestions') else []
+                        )
+                        self.performance_data.append(performance)
+                logger.info(f"Loaded {len(self.performance_data)} performance records")
+        except Exception as e:
+            logger.error(f"Error loading performance data: {e}")
+
+    def _save_performance_data(self):
+        """Save performance data to file"""
+        try:
+            performance_file = Path("data/content_performance_analytics.csv")
+            import csv
+            with open(performance_file, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=[
+                    'content_id', 'title', 'content_type', 'views', 'engagement_rate',
+                    'revenue_generated', 'viral_potential', 'quality_score', 'improvement_suggestions'
+                ])
+                writer.writeheader()
+                for performance in self.performance_data:
+                    writer.writerow({
+                        'content_id': performance.content_id,
+                        'title': performance.title,
+                        'content_type': performance.content_type.value,
+                        'views': performance.views,
+                        'engagement_rate': performance.engagement_rate,
+                        'revenue_generated': performance.revenue_generated,
+                        'viral_potential': performance.viral_potential,
+                        'quality_score': performance.quality_score,
+                        'improvement_suggestions': '|'.join(performance.improvement_suggestions)
+                    })
+            logger.info(f"Saved {len(self.performance_data)} performance records")
+        except Exception as e:
+            logger.error(f"Error saving performance data: {e}")
+
+    async def _generate_optimized_prompt_with_2025_trends(self, base_prompt: str, content_type: ContentType, target_audience: str = "") -> str:
+        """Generate optimized prompt with 2025 trends"""
+        # Get relevant trends for content type
+        relevant_trends = [trend for trend in self.trend_data if content_type.value in trend.platform_optimization]
+        
+        # Get low-performance improvement suggestions
+        improvement_suggestions = self._get_improvement_suggestions(content_type)
+        
+        # Build enhanced prompt
+        enhanced_prompt = f"""
+{base_prompt}
+
+2025 TREND OPTIMIZATION:
+{self._format_trends_for_prompt(relevant_trends)}
+
+PERFORMANCE IMPROVEMENTS:
+{self._format_improvements_for_prompt(improvement_suggestions)}
+
+CONTENT OPTIMIZATION GUIDELINES:
+- Focus on short-form, engaging content (15-60 seconds for video)
+- Include educational elements even in entertainment content
+- Use authentic, relatable storytelling
+- Optimize for multi-channel distribution
+- Include AI-enhanced creative elements
+- Emphasize community engagement and interaction
+- Consider sustainability and social impact angles
+- Use data-driven insights and analytics
+- Focus on long-term audience building
+- Include cross-platform hashtag strategies
+
+TARGET AUDIENCE: {target_audience or "Multi-platform digital audience"}
+
+RESPONSE FORMAT: JSON with viral_potential, engagement_metrics, and platform_optimization fields.
+"""
+        return enhanced_prompt
+
+    def _format_trends_for_prompt(self, trends: List[TrendData]) -> str:
+        """Format trends for prompt inclusion"""
+        if not trends:
+            return "No specific trends identified for this content type."
+        
+        trend_text = []
+        for trend in trends[:3]:  # Top 3 most relevant trends
+            trend_text.append(f"- {trend.trend_name}: {trend.content_adaptation} (Viral Potential: {trend.viral_potential:.2f})")
+        
+        return "\n".join(trend_text)
+
+    def _format_improvements_for_prompt(self, improvements: List[str]) -> str:
+        """Format improvement suggestions for prompt inclusion"""
+        if not improvements:
+            return "No specific improvements identified."
+        
+        return "\n".join([f"- {improvement}" for improvement in improvements[:5]])
+
+    def _get_improvement_suggestions(self, content_type: ContentType) -> List[str]:
+        """Get improvement suggestions based on low-performance content"""
+        low_performance = [p for p in self.performance_data 
+                          if p.content_type == content_type and p.quality_score < self.optimization_threshold]
+        
+        if not low_performance:
+            return []
+        
+        # Analyze common issues
+        common_issues = []
+        for performance in low_performance:
+            common_issues.extend(performance.improvement_suggestions)
+        
+        # Count and return most common suggestions
+        from collections import Counter
+        issue_counts = Counter(common_issues)
+        return [issue for issue, count in issue_counts.most_common(5)]
+
+    async def _optimize_content_with_feedback_loop(self, content_idea: ContentIdea) -> ContentIdea:
+        """Optimize content using feedback loop and 2025 trends"""
+        try:
+            # Generate optimized prompt
+            base_prompt = f"Generate content about: {content_idea.title}"
+            optimized_prompt = await self._generate_optimized_prompt_with_2025_trends(
+                base_prompt, content_idea.content_type, content_idea.target_audience
+            )
+            
+            # Generate optimized content using Ollama
+            optimized_response = await self._generate_with_ollama_optimized(optimized_prompt)
+            
+            if optimized_response:
+                # Parse optimized content
+                optimized_idea = self._parse_optimized_content(optimized_response, content_idea)
+                return optimized_idea
+            else:
+                return content_idea
+                
+        except Exception as e:
+            logger.error(f"Error optimizing content: {e}")
+            return content_idea
+
+    async def _generate_with_ollama_optimized(self, prompt: str) -> Optional[str]:
+        """Generate optimized content using Ollama with 2025 trends"""
+        try:
+            import httpx
+            
+            # Enhanced prompt with 2025 optimization
+            enhanced_prompt = f"""
+{prompt}
+
+ADDITIONAL 2025 OPTIMIZATION CONTEXT:
+- Short-form content (15-60 seconds) for maximum engagement
+- Multi-channel adaptability (YouTube, TikTok, Instagram, LinkedIn, Twitter)
+- AI-enhanced creative elements and automation
+- Authentic storytelling with personal touch
+- Educational value even in entertainment content
+- Community engagement and interaction focus
+- Sustainability and social impact considerations
+- Data-driven content optimization
+- Cross-platform hashtag strategy
+- Long-term audience building approach
+
+RESPONSE FORMAT: JSON with title, description, viral_potential, engagement_metrics, platform_optimization, and hashtags.
+"""
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": "llama3.2",
+                        "prompt": enhanced_prompt,
+                        "stream": False
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get("response", "")
+                else:
+                    logger.warning(f"Ollama request failed for optimization: {response.status_code}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error calling Ollama for optimization: {e}")
+            return None
+
+    def _parse_optimized_content(self, response_text: str, original_idea: ContentIdea) -> ContentIdea:
+        """Parse optimized content from Ollama response"""
+        try:
+            import re
+            import json
+            
+            # Find JSON in response
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                data = json.loads(json_str)
+                
+                # Update content idea with optimized data
+                original_idea.title = data.get("title", original_idea.title)
+                original_idea.description = data.get("description", original_idea.description)
+                original_idea.viral_potential = float(data.get("viral_potential", original_idea.viral_potential))
+                original_idea.keywords.extend(data.get("keywords", []))
+                original_idea.hashtags.extend(data.get("hashtags", []))
+                
+                return original_idea
+            else:
+                logger.warning(f"Could not parse JSON from optimized response: {response_text[:100]}...")
+                return original_idea
+                
+        except Exception as e:
+            logger.error(f"Error parsing optimized content: {e}")
+            return original_idea
+
+    async def run_continuous_optimization(self):
+        """Run continuous optimization loop for 24/7 operation"""
+        while self.continuous_optimization:
+            try:
+                # Check for low-performance content
+                low_performance_content = [p for p in self.performance_data 
+                                         if p.quality_score < self.optimization_threshold]
+                
+                if low_performance_content:
+                    logger.info(f"Found {len(low_performance_content)} low-performance content items for optimization")
+                    
+                    # Optimize each low-performance content
+                    for performance in low_performance_content[:5]:  # Optimize top 5
+                        await self._optimize_single_content(performance)
+                
+                # Update trend data periodically
+                if (datetime.utcnow() - self.last_optimization).days >= 7:
+                    await self._update_trend_data()
+                    self.last_optimization = datetime.utcnow()
+                
+                # Save performance data
+                self._save_performance_data()
+                
+                # Wait before next optimization cycle
+                await asyncio.sleep(3600)  # Check every hour
+                
+            except Exception as e:
+                logger.error(f"Error in continuous optimization: {e}")
+                await asyncio.sleep(1800)  # Wait 30 minutes on error
+
+    async def _optimize_single_content(self, performance: ContentPerformance):
+        """Optimize a single content item"""
+        try:
+            # Create content idea from performance data
+            content_idea = ContentIdea(
+                title=performance.title,
+                description=f"Optimized version of {performance.title}",
+                content_type=performance.content_type,
+                target_audience="Multi-platform audience",
+                viral_potential=performance.viral_potential,
+                estimated_revenue=performance.revenue_generated,
+                keywords=["optimized", "2025", "trending"],
+                hashtags=["#optimized", "#2025", "#trending"]
+            )
+            
+            # Optimize content
+            optimized_idea = await self._optimize_content_with_feedback_loop(content_idea)
+            
+            # Update performance data
+            performance.viral_potential = optimized_idea.viral_potential
+            performance.quality_score = min(1.0, performance.quality_score + 0.1)
+            performance.improvement_suggestions.append("AI-optimized with 2025 trends")
+            performance.last_updated = datetime.utcnow()
+            
+            logger.info(f"Optimized content: {performance.title}")
+            
+        except Exception as e:
+            logger.error(f"Error optimizing single content: {e}")
+
+    async def _update_trend_data(self):
+        """Update trend data with latest 2025 insights"""
+        try:
+            # Generate new trend insights using Ollama
+            trend_prompt = """
+            Generate 5 new content trends for 2025 that are emerging or gaining momentum.
+            Focus on short-form content, multi-channel strategies, AI integration, and authentic storytelling.
+            
+            Provide response in JSON format with trend_name, category, impact_score, content_adaptation, viral_potential, and hashtags.
+            """
+            
+            trend_response = await self._generate_with_ollama_optimized(trend_prompt)
+            
+            if trend_response:
+                # Parse and update trend data
+                new_trends = self._parse_trend_data(trend_response)
+                if new_trends:
+                    self.trend_data.extend(new_trends)
+                    logger.info(f"Updated trend data with {len(new_trends)} new trends")
+            
+        except Exception as e:
+            logger.error(f"Error updating trend data: {e}")
+
+    def _parse_trend_data(self, response_text: str) -> List[TrendData]:
+        """Parse trend data from Ollama response"""
+        try:
+            import re
+            import json
+            
+            # Try to find JSON array first
+            json_array_match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            if json_array_match:
+                json_str = json_array_match.group()
+                data = json.loads(json_str)
+                
+                # Convert to TrendData objects
+                trends = []
+                if isinstance(data, list):
+                    for trend_dict in data:
+                        trends.append(TrendData(
+                            trend_name=trend_dict.get("trend_name", ""),
+                            category=trend_dict.get("category", "General"),
+                            impact_score=float(trend_dict.get("impact_score", 0.7)),
+                            audience_reach=trend_dict.get("audience_reach", "Multi-platform"),
+                            content_adaptation=trend_dict.get("content_adaptation", ""),
+                            viral_potential=float(trend_dict.get("viral_potential", 0.7)),
+                            revenue_potential=float(trend_dict.get("revenue_potential", 0.7)),
+                            platform_optimization=trend_dict.get("platform_optimization", ["All platforms"]),
+                            hashtags=trend_dict.get("hashtags", []),
+                            keywords=trend_dict.get("keywords", [])
+                        ))
+                
+                return trends
+            
+            # Try to find single JSON object
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                data = json.loads(json_str)
+                
+                # Convert single object to list
+                if isinstance(data, dict):
+                    trends = []
+                    trends.append(TrendData(
+                        trend_name=data.get("trend_name", ""),
+                        category=data.get("category", "General"),
+                        impact_score=float(data.get("impact_score", 0.7)),
+                        audience_reach=data.get("audience_reach", "Multi-platform"),
+                        content_adaptation=data.get("content_adaptation", ""),
+                        viral_potential=float(data.get("viral_potential", 0.7)),
+                        revenue_potential=float(data.get("revenue_potential", 0.7)),
+                        platform_optimization=data.get("platform_optimization", ["All platforms"]),
+                        hashtags=data.get("hashtags", []),
+                        keywords=data.get("keywords", [])
+                    ))
+                    return trends
+                
+                return []
+            else:
+                logger.warning(f"Could not parse JSON from trend response: {response_text[:100]}...")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error parsing trend data: {e}")
+            return []
+
+    async def start_24_7_optimization(self):
+        """Start 24/7 optimization process"""
+        logger.info("🚀 Starting 24/7 AI optimization with 2025 trends...")
+        
+        # Start continuous optimization in background
+        asyncio.create_task(self.run_continuous_optimization())
+        
+        logger.info("✅ 24/7 optimization started successfully")
+
+    def get_optimization_status(self) -> Dict[str, Any]:
+        """Get current optimization status"""
+        return {
+            "continuous_optimization": self.continuous_optimization,
+            "feedback_loop_active": self.feedback_loop_active,
+            "optimization_threshold": self.optimization_threshold,
+            "performance_records": len(self.performance_data),
+            "trend_data_count": len(self.trend_data),
+            "last_optimization": self.last_optimization.isoformat(),
+            "low_performance_content": len([p for p in self.performance_data if p.quality_score < self.optimization_threshold])
+        }
 
 # Global AI module instance
 ai_module = AIModule() 

@@ -1,0 +1,161 @@
+
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>CK Empire Dashboard - Multi-Channel Analytics</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+                    .container { max-width: 1400px; margin: 0 auto; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+                    .header p { font-size: 1.2em; opacity: 0.9; }
+                    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+                    .metric-card { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px); }
+                    .metric-card h3 { margin: 0 0 10px 0; font-size: 1.1em; opacity: 0.9; }
+                    .metric-card .value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+                    .metric-card .change { font-size: 0.9em; opacity: 0.8; }
+                    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; }
+                    .chart-container { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px); }
+                    .chart-container h3 { margin: 0 0 15px 0; text-align: center; }
+                    .chart-container img { width: 100%; height: auto; border-radius: 5px; }
+                    .channel-breakdown { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px); margin-top: 20px; }
+                    .channel-breakdown h3 { margin: 0 0 15px 0; }
+                    .channel-table { width: 100%; border-collapse: collapse; }
+                    .channel-table th, .channel-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+                    .channel-table th { font-weight: bold; opacity: 0.9; }
+                    .positive { color: #4ade80; }
+                    .negative { color: #f87171; }
+                    .timestamp { text-align: center; margin-top: 20px; opacity: 0.7; font-size: 0.9em; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🚀 CK Empire Dashboard</h1>
+                        <p>Multi-Channel Analytics & Performance Overview</p>
+                    </div>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h3>Total Views</h3>
+                            <div class="value">212,120</div>
+                            <div class="change positive">+12.5% from yesterday</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Total Revenue</h3>
+                            <div class="value">$17,120</div>
+                            <div class="change positive">+8.3% from yesterday</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Avg Engagement</h3>
+                            <div class="value">10.0%</div>
+                            <div class="change positive">+2.1% from yesterday</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Content Quality</h3>
+                            <div class="value">75.0%</div>
+                            <div class="change positive">+1.8% from yesterday</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Business Ideas</h3>
+                            <div class="value">3</div>
+                            <div class="change positive">Generated today</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Top Channel</h3>
+                            <div class="value">Youtube</div>
+                            <div class="change positive">Best performer</div>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>📊 Views Comparison</h3>
+                            <img src="data\views_comparison_20250804_085722.png" alt="Views Comparison Chart">
+                        </div>
+                        <div class="chart-container">
+                            <h3>💰 Revenue Comparison</h3>
+                            <img src="data\revenue_comparison_20250804_085722.png" alt="Revenue Comparison Chart">
+                        </div>
+                        <div class="chart-container">
+                            <h3>📈 Engagement Rates</h3>
+                            <img src="data\engagement_rates_20250804_085723.png" alt="Engagement Rate Chart">
+                        </div>
+                        <div class="chart-container">
+                            <h3>⭐ Quality Scores</h3>
+                            <img src="data\quality_scores_20250804_085723.png" alt="Quality Score Chart">
+                        </div>
+                    </div>
+                    
+                    <div class="channel-breakdown">
+                        <h3>📋 Channel Performance Breakdown</h3>
+                        <table class="channel-table">
+                            <thead>
+                                <tr>
+                                    <th>Channel</th>
+                                    <th>Views</th>
+                                    <th>Revenue</th>
+                                    <th>Engagement</th>
+                                    <th>Quality Score</th>
+                                    <th>Viral Potential</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td>Youtube</td>
+                                    <td>55,729</td>
+                                    <td>$1,729</td>
+                                    <td>14.0%</td>
+                                    <td>89.0%</td>
+                                    <td>59.0%</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td>Tiktok</td>
+                                    <td>52,177</td>
+                                    <td>$3,177</td>
+                                    <td>12.0%</td>
+                                    <td>77.0%</td>
+                                    <td>57.0%</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td>Instagram</td>
+                                    <td>36,431</td>
+                                    <td>$2,431</td>
+                                    <td>6.0%</td>
+                                    <td>71.0%</td>
+                                    <td>61.0%</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td>Linkedin</td>
+                                    <td>19,833</td>
+                                    <td>$5,833</td>
+                                    <td>8.0%</td>
+                                    <td>73.0%</td>
+                                    <td>63.0%</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td>Twitter</td>
+                                    <td>47,950</td>
+                                    <td>$3,950</td>
+                                    <td>5.0%</td>
+                                    <td>80.0%</td>
+                                    <td>30.0%</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="timestamp">
+                        <p>Report generated on: 2025-08-04 08:57:22 UTC</p>
+                        <p>CK Empire Builder - Automated Multi-Channel Analytics</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            

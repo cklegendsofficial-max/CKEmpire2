@@ -21,7 +21,7 @@ except ImportError:
     AWS_AVAILABLE = False
     logging.warning("AWS boto3 not available. Install with: pip install boto3")
 
-from settings import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

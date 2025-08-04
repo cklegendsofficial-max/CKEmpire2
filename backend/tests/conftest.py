@@ -1,83 +1,68 @@
+"""
+Common test configuration and fixtures for CK Empire Builder
+"""
+
 import pytest
 import asyncio
-import tempfile
-import os
-import sys
-from typing import Generator, AsyncGenerator
-from unittest.mock import Mock, patch
+from typing import Generator, Dict, Any
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
-from fastapi import FastAPI
-import httpx
-import json
-from datetime import datetime, timedelta
 
-# Add the backend directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from main import app
+from config import settings, constants
 from database import Base, get_db
-from config import get_settings
-from models import Project, Content, Revenue, AuditLog, EthicsLog, AILog
-from ai import AIProcessor
-from ethics import EthicsProcessor
-from performance import PerformanceProcessor
-from monitoring import get_monitoring
+from main import app
+from utils import generate_secure_password, hash_password
 
-# Test settings
+# Test database configuration
+TEST_DATABASE_URL = "sqlite:///./test.db"
+
+# Create test engine
+test_engine = create_engine(
+    TEST_DATABASE_URL,
+    poolclass=StaticPool,
+    connect_args={"check_same_thread": False}
+)
+
+# Create test session
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
 @pytest.fixture(scope="session")
-def test_settings():
-    """Test settings with overrides"""
-    settings = get_settings()
-    settings.database_url = "sqlite:///./test.db"
-    settings.environment = "test"
-    settings.debug = True
-    return settings
+def event_loop():
+    """Create an instance of the default event loop for the test session"""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
-# Database fixtures
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def test_db():
     """Create test database"""
-    # Create temporary database file
-    temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
-    temp_db.close()
-    
-    # Create engine for test database
-    engine = create_engine(
-        f"sqlite:///{temp_db.name}",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    
     # Create tables
-    Base.metadata.create_all(bind=engine)
-    
-    # Create session
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
-    yield TestingSessionLocal()
-    
-    # Cleanup
-    os.unlink(temp_db.name)
+    Base.metadata.create_all(bind=test_engine)
+    yield test_engine
+    # Clean up
+    Base.metadata.drop_all(bind=test_engine)
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def db_session(test_db):
-    """Database session for testing"""
-    try:
-        yield test_db
-    finally:
-        test_db.rollback()
-        test_db.close()
+    """Create database session for tests"""
+    connection = test_engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
+    
+    yield session
+    
+    session.close()
+    transaction.rollback()
+    connection.close()
 
-# FastAPI test client
-@pytest.fixture(scope="function")
-def client(test_db) -> Generator:
-    """FastAPI test client"""
+@pytest.fixture
+def client(db_session) -> Generator[TestClient, None, None]:
+    """Create test client"""
     def override_get_db():
         try:
-            yield test_db
+            yield db_session
         finally:
             pass
     
@@ -86,277 +71,260 @@ def client(test_db) -> Generator:
         yield test_client
     app.dependency_overrides.clear()
 
-# Async HTTP client
-@pytest.fixture(scope="function")
-async def async_client() -> AsyncGenerator[httpx.AsyncClient, None]:
-    """Async HTTP client for testing"""
-    async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
-
-# Authentication fixtures
 @pytest.fixture
-def mock_auth():
-    """Mock authentication"""
-    with patch('main.get_current_user') as mock:
-        mock.return_value = {
-            "id": 1,
-            "username": "testuser",
-            "email": "test@example.com",
-            "role": "admin"
-        }
-        yield mock
-
-@pytest.fixture
-def auth_headers(mock_auth):
-    """Authentication headers"""
-    return {"Authorization": "Bearer test-token"}
-
-# Sample data fixtures
-@pytest.fixture
-def sample_project_data():
-    """Sample project data for testing"""
+def test_user_data() -> Dict[str, Any]:
+    """Test user data"""
     return {
-        "name": "Test Project",
-        "description": "Test project description",
-        "status": "active",
-        "budget": 1000.0,
-        "revenue": 500.0,
-        "metadata": "Test encrypted metadata"
+        "username": "testuser",
+        "email": "test@example.com",
+        "password": "TestPassword123!",
+        "full_name": "Test User"
     }
 
 @pytest.fixture
-def sample_content_data():
-    """Sample content data for testing"""
+def test_project_data() -> Dict[str, Any]:
+    """Test project data"""
+    return {
+        "name": "Test Project",
+        "description": "A test project",
+        "status": constants.PROJECT_STATUS_ACTIVE,
+        "budget": 1000.0,
+        "revenue": 500.0
+    }
+
+@pytest.fixture
+def test_content_data() -> Dict[str, Any]:
+    """Test content data"""
     return {
         "project_id": 1,
         "title": "Test Content",
-        "content_type": "blog",
-        "content_data": "This is test content data",
-        "metadata": {"tags": ["test", "blog"]},
-        "status": "draft",
-        "ai_generated": False
+        "content_type": constants.CONTENT_TYPE_ARTICLE,
+        "content_data": "This is test content",
+        "status": "draft"
     }
 
 @pytest.fixture
-def sample_revenue_data():
-    """Sample revenue data for testing"""
+def test_revenue_data() -> Dict[str, Any]:
+    """Test revenue data"""
     return {
         "project_id": 1,
         "amount": 100.0,
-        "source": "test_source",
-        "description": "Test revenue",
-        "metadata": "Test revenue metadata"
+        "source": constants.REVENUE_SOURCE_ADS,
+        "description": "Test revenue"
     }
 
 @pytest.fixture
-def sample_ai_request_data():
-    """Sample AI request data for testing"""
+def auth_headers(client, test_user_data) -> Dict[str, str]:
+    """Get authentication headers"""
+    # Create user
+    response = client.post("/api/v1/auth/register", json=test_user_data)
+    assert response.status_code == 201
+    
+    # Login
+    login_data = {
+        "username": test_user_data["username"],
+        "password": test_user_data["password"]
+    }
+    response = client.post("/api/v1/auth/login", json=login_data)
+    assert response.status_code == 200
+    
+    token_data = response.json()
+    token = token_data["access_token"]
+    
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture
+def admin_headers(client) -> Dict[str, str]:
+    """Get admin authentication headers"""
+    admin_data = {
+        "username": "admin",
+        "email": "admin@example.com",
+        "password": "AdminPassword123!",
+        "full_name": "Admin User"
+    }
+    
+    # Create admin user
+    response = client.post("/api/v1/auth/register", json=admin_data)
+    assert response.status_code == 201
+    
+    # Login
+    login_data = {
+        "username": admin_data["username"],
+        "password": admin_data["password"]
+    }
+    response = client.post("/api/v1/auth/login", json=login_data)
+    assert response.status_code == 200
+    
+    token_data = response.json()
+    token = token_data["access_token"]
+    
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture
+def test_settings():
+    """Test settings"""
     return {
-        "prompt": "Write a blog post about AI",
-        "model": "gpt-4",
-        "max_tokens": 500,
-        "temperature": 0.7
+        "DATABASE_URL": TEST_DATABASE_URL,
+        "DEBUG": True,
+        "ENVIRONMENT": "testing",
+        "SECRET_KEY": "test-secret-key",
+        "OPENAI_API_KEY": "test-openai-key",
+        "STRIPE_SECRET_KEY": "test-stripe-key"
     }
 
 @pytest.fixture
-def sample_ethics_check_data():
-    """Sample ethics check data for testing"""
+def mock_ai_response():
+    """Mock AI response"""
     return {
-        "content": "This is test content for ethics checking",
-        "content_type": "blog",
-        "project_id": 1
+        "strategy_type": "lean_startup",
+        "title": "Test Strategy",
+        "description": "A test strategy",
+        "key_actions": ["Action 1", "Action 2"],
+        "timeline_months": 6,
+        "estimated_investment": 5000.0,
+        "projected_roi": 0.25,
+        "risk_level": "medium",
+        "success_metrics": ["Metric 1", "Metric 2"]
     }
 
-# Mock services
 @pytest.fixture
-def mock_ai_processor():
-    """Mock AI processor"""
-    with patch('ai.AIProcessor') as mock:
-        processor = Mock()
-        processor.generate_content.return_value = {
-            "content": "Generated test content",
-            "tokens_used": 100,
-            "model": "gpt-4"
-        }
-        processor.analyze_sentiment.return_value = {
-            "sentiment": "positive",
-            "confidence": 0.85
-        }
-        mock.return_value = processor
-        yield mock
+def mock_ethics_report():
+    """Mock ethics report"""
+    return {
+        "bias_detected": False,
+        "bias_score": 0.1,
+        "fairness_score": 0.9,
+        "flagged_keywords": [],
+        "status": constants.ETHICS_STATUS_APPROVED,
+        "recommendations": [],
+        "confidence_score": 0.95
+    }
 
 @pytest.fixture
-def mock_ethics_processor():
-    """Mock ethics processor"""
-    with patch('ethics.EthicsProcessor') as mock:
-        processor = Mock()
-        processor.check_content.return_value = {
-            "is_ethical": True,
-            "confidence": 0.9,
-            "issues": []
-        }
-        processor.audit_decision.return_value = {
-            "decision": "approved",
-            "reason": "Content meets ethical guidelines"
-        }
-        mock.return_value = processor
-        yield mock
-
-@pytest.fixture
-def mock_performance_processor():
-    """Mock performance processor"""
-    with patch('performance.PerformanceProcessor') as mock:
-        processor = Mock()
-        processor.analyze_performance.return_value = {
-            "score": 85.5,
-            "metrics": {
-                "response_time": 0.5,
-                "throughput": 100,
-                "error_rate": 0.01
-            }
-        }
-        processor.optimize_system.return_value = {
-            "optimizations": ["cache_enabled", "compression_enabled"],
-            "improvement": 15.2
-        }
-        mock.return_value = processor
-        yield mock
-
-@pytest.fixture
-def mock_monitoring():
-    """Mock monitoring system"""
-    with patch('monitoring.get_monitoring') as mock:
-        monitoring = Mock()
-        monitoring.record_http_request.return_value = None
-        monitoring.record_error.return_value = None
-        monitoring.record_ai_request.return_value = None
-        monitoring.record_ethics_check.return_value = None
-        monitoring.health_check.return_value = {"status": "healthy"}
-        monitoring.get_metrics.return_value = "test_metrics"
-        mock.return_value = monitoring
-        yield mock
-
-# Cloud service mocks
-@pytest.fixture
-def mock_aws_manager():
-    """Mock AWS manager"""
-    with patch('cloud.aws_manager.AWSManager') as mock:
-        aws = Mock()
-        aws.upload_file.return_value = "s3://bucket/test-file.txt"
-        aws.download_file.return_value = "/tmp/test-file.txt"
-        aws.create_backup.return_value = {"backup_id": "backup-123", "status": "completed"}
-        mock.return_value = aws
-        yield mock
-
-@pytest.fixture
-def mock_google_cloud_manager():
-    """Mock Google Cloud manager"""
-    with patch('cloud.google_cloud_manager.GoogleCloudManager') as mock:
-        gcp = Mock()
-        gcp.upload_file.return_value = "gs://bucket/test-file.txt"
-        gcp.download_file.return_value = "/tmp/test-file.txt"
-        gcp.create_backup.return_value = {"backup_id": "backup-456", "status": "completed"}
-        mock.return_value = gcp
-        yield mock
+def mock_metrics():
+    """Mock metrics data"""
+    return {
+        "consciousness_score": 0.45,
+        "total_revenue": 48000,
+        "active_agents": 18,
+        "total_projects": 12,
+        "total_content": 156,
+        "cloud_provider": "aws",
+        "cloud_enabled": True
+    }
 
 # Test utilities
-@pytest.fixture
-def create_test_project(db_session, sample_project_data):
-    """Utility to create a test project"""
-    def _create_project(**kwargs):
-        data = {**sample_project_data, **kwargs}
-        project = Project(**data)
-        db_session.add(project)
-        db_session.commit()
-        db_session.refresh(project)
-        return project
-    return _create_project
+def create_test_user(db_session, user_data: Dict[str, Any]):
+    """Create a test user"""
+    from database import User
+    
+    hashed_password = hash_password(user_data["password"])
+    user = User(
+        username=user_data["username"],
+        email=user_data["email"],
+        full_name=user_data.get("full_name"),
+        hashed_password=hashed_password,
+        is_active=True
+    )
+    
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
 
-@pytest.fixture
-def create_test_content(db_session, sample_content_data):
-    """Utility to create test content"""
-    def _create_content(**kwargs):
-        data = {**sample_content_data, **kwargs}
-        content = Content(**data)
-        db_session.add(content)
-        db_session.commit()
-        db_session.refresh(content)
-        return content
-    return _create_content
+def create_test_project(db_session, project_data: Dict[str, Any]):
+    """Create a test project"""
+    from database import Project
+    
+    project = Project(**project_data)
+    db_session.add(project)
+    db_session.commit()
+    db_session.refresh(project)
+    return project
 
-@pytest.fixture
-def create_test_revenue(db_session, sample_revenue_data):
-    """Utility to create test revenue"""
-    def _create_revenue(**kwargs):
-        data = {**sample_revenue_data, **kwargs}
-        revenue = Revenue(**data)
-        db_session.add(revenue)
-        db_session.commit()
-        db_session.refresh(revenue)
-        return revenue
-    return _create_revenue
+def create_test_content(db_session, content_data: Dict[str, Any]):
+    """Create test content"""
+    from database import Content
+    
+    content = Content(**content_data)
+    db_session.add(content)
+    db_session.commit()
+    db_session.refresh(content)
+    return content
 
-# Performance testing fixtures
-@pytest.fixture
-def benchmark_config():
-    """Benchmark configuration"""
-    return {
-        "min_rounds": 10,
-        "max_time": 10.0,
-        "warmup": True,
-        "disable_gc": True
-    }
+def create_test_revenue(db_session, revenue_data: Dict[str, Any]):
+    """Create test revenue"""
+    from database import Revenue
+    
+    revenue = Revenue(**revenue_data)
+    db_session.add(revenue)
+    db_session.commit()
+    db_session.refresh(revenue)
+    return revenue
 
-# Load testing fixtures
-@pytest.fixture
-def locust_config():
-    """Locust configuration for load testing"""
-    return {
-        "host": "http://localhost:8000",
-        "users": 10,
-        "spawn_rate": 2,
-        "run_time": "60s"
-    }
+def assert_response_structure(response_data: Dict[str, Any]):
+    """Assert response has correct structure"""
+    assert "success" in response_data
+    assert "message" in response_data
+    assert "timestamp" in response_data
 
-# Security testing fixtures
-@pytest.fixture
-def security_scan_config():
-    """Security scan configuration"""
-    return {
-        "bandit_config": "bandit.yaml",
-        "safety_config": "safety.yaml",
-        "semgrep_config": "semgrep.yaml"
-    }
+def assert_pagination_structure(pagination_data: Dict[str, Any]):
+    """Assert pagination has correct structure"""
+    required_fields = ["total", "page", "page_size", "pages", "has_next", "has_prev"]
+    for field in required_fields:
+        assert field in pagination_data
 
-# E2E testing fixtures
-@pytest.fixture
-def browser_config():
-    """Browser configuration for E2E tests"""
-    return {
-        "headless": True,
-        "slow_mo": 100,
-        "timeout": 30000,
-        "viewport": {"width": 1920, "height": 1080}
-    }
+def assert_error_response(response_data: Dict[str, Any]):
+    """Assert error response structure"""
+    assert response_data["success"] is False
+    assert "error" in response_data
+    assert "code" in response_data["error"]
+    assert "message" in response_data["error"]
 
-# Event loop for async tests
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session"""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+def assert_success_response(response_data: Dict[str, Any]):
+    """Assert success response structure"""
+    assert response_data["success"] is True
+    assert "data" in response_data
 
-# Cleanup fixtures
-@pytest.fixture(autouse=True)
-def cleanup_test_data(db_session):
-    """Clean up test data after each test"""
-    yield
-    # Clean up all test data
-    db_session.query(AILog).delete()
-    db_session.query(EthicsLog).delete()
-    db_session.query(AuditLog).delete()
-    db_session.query(Revenue).delete()
-    db_session.query(Content).delete()
-    db_session.query(Project).delete()
-    db_session.commit() 
+# Test decorators
+def skip_if_no_openai():
+    """Skip test if OpenAI is not configured"""
+    return pytest.mark.skipif(
+        not settings.OPENAI_API_KEY,
+        reason="OpenAI API key not configured"
+    )
+
+def skip_if_no_stripe():
+    """Skip test if Stripe is not configured"""
+    return pytest.mark.skipif(
+        not settings.STRIPE_SECRET_KEY,
+        reason="Stripe secret key not configured"
+    )
+
+def skip_if_no_cloud():
+    """Skip test if cloud is not configured"""
+    return pytest.mark.skipif(
+        settings.CLOUD_PROVIDER == "none",
+        reason="Cloud provider not configured"
+    )
+
+# Test markers
+pytest_plugins = [
+    "pytest_asyncio"
+]
+
+# Configure pytest
+def pytest_configure(config):
+    """Configure pytest"""
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests"
+    )
+    config.addinivalue_line(
+        "markers", "unit: marks tests as unit tests"
+    )
+    config.addinivalue_line(
+        "markers", "api: marks tests as API tests"
+    ) 

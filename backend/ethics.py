@@ -18,7 +18,7 @@ from fastapi import HTTPException, Depends
 from pydantic import BaseModel
 
 from database import get_db
-from settings import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

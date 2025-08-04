@@ -5,7 +5,7 @@ Run script for CK Empire Builder Backend
 
 import uvicorn
 import logging
-from settings import settings
+from config import settings
 
 # Configure logging
 logging.basicConfig(

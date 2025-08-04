@@ -6,65 +6,21 @@ from sqlalchemy import event
 from datetime import datetime
 import logging
 from typing import Generator, Optional
-from cryptography.fernet import Fernet
 import os
-from dotenv import load_dotenv
-try:
-    from settings import settings
-except ImportError:
-    # For testing purposes, create a simple settings object
-    class Settings:
-        DATABASE_URL = "sqlite:///./test.db"
-        DEBUG = True
-    
-    settings = Settings()
 
-# Load environment variables
-load_dotenv()
+from config import settings
+from utils import encrypt_data, decrypt_data, get_encryption_cipher
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Encryption setup
-ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
-if not ENCRYPTION_KEY:
-    # Generate a new key if not provided
-    ENCRYPTION_KEY = Fernet.generate_key().decode()
-    logger.warning("⚠️  No ENCRYPTION_KEY provided, using generated key")
-
-try:
-    cipher_suite = Fernet(ENCRYPTION_KEY.encode())
-except Exception as e:
-    logger.error(f"❌ Encryption setup failed: {e}")
-    cipher_suite = None
-
-def encrypt_value(value: str) -> str:
-    """Encrypt a string value"""
-    if not cipher_suite or not value:
-        return value
-    try:
-        return cipher_suite.encrypt(value.encode()).decode()
-    except Exception as e:
-        logger.error(f"❌ Encryption failed: {e}")
-        return value
-
-def decrypt_value(encrypted_value: str) -> str:
-    """Decrypt a string value"""
-    if not cipher_suite or not encrypted_value:
-        return encrypted_value
-    try:
-        return cipher_suite.decrypt(encrypted_value.encode()).decode()
-    except Exception as e:
-        logger.error(f"❌ Decryption failed: {e}")
-        return encrypted_value
-
-# Create SQLAlchemy engine with environment variable support
-DATABASE_URL = os.getenv('DB_URL', settings.DATABASE_URL)
+# Create SQLAlchemy engine with configuration
+db_config = settings.get_database_config()
 engine = create_engine(
-    DATABASE_URL,
+    db_config["url"],
     poolclass=StaticPool,
     pool_pre_ping=True,
-    echo=settings.DEBUG
+    echo=db_config["echo"]
 )
 
 # Create SessionLocal
@@ -233,37 +189,37 @@ class Subscription(Base):
 def encrypt_project_metadata(mapper, connection, target):
     """Encrypt sensitive fields before insert"""
     if target.metadata_encrypted:
-        target.metadata_encrypted = encrypt_value(target.metadata_encrypted)
+        target.metadata_encrypted = encrypt_data(target.metadata_encrypted)
 
 @event.listens_for(Project, 'before_update')
 def encrypt_project_metadata_update(mapper, connection, target):
     """Encrypt sensitive fields before update"""
     if target.metadata_encrypted:
-        target.metadata_encrypted = encrypt_value(target.metadata_encrypted)
+        target.metadata_encrypted = encrypt_data(target.metadata_encrypted)
 
 @event.listens_for(Content, 'before_insert')
 def encrypt_content_data(mapper, connection, target):
     """Encrypt content data before insert"""
     if target.content_data:
-        target.content_data = encrypt_value(target.content_data)
+        target.content_data = encrypt_data(target.content_data)
 
 @event.listens_for(Content, 'before_update')
 def encrypt_content_data_update(mapper, connection, target):
     """Encrypt content data before update"""
     if target.content_data:
-        target.content_data = encrypt_value(target.content_data)
+        target.content_data = encrypt_data(target.content_data)
 
 @event.listens_for(Revenue, 'before_insert')
 def encrypt_revenue_metadata(mapper, connection, target):
     """Encrypt revenue metadata before insert"""
     if target.metadata_encrypted:
-        target.metadata_encrypted = encrypt_value(target.metadata_encrypted)
+        target.metadata_encrypted = encrypt_data(target.metadata_encrypted)
 
 @event.listens_for(Revenue, 'before_update')
 def encrypt_revenue_metadata_update(mapper, connection, target):
     """Encrypt revenue metadata before update"""
     if target.metadata_encrypted:
-        target.metadata_encrypted = encrypt_value(target.metadata_encrypted)
+        target.metadata_encrypted = encrypt_data(target.metadata_encrypted)
 
 # Audit logging events
 def log_audit_event(db: Session, table_name: str, record_id: int, operation: str, 

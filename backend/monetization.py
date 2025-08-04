@@ -29,7 +29,7 @@ from pydantic import BaseModel
 
 from database import get_db
 from database import User, Subscription as DBSubscription
-from settings import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

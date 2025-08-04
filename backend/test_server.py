@@ -1,9 +1,27 @@
+#!/usr/bin/env python3
+"""
+Simple test server for CKEmpire
+"""
+
+import sys
+import os
 from fastapi import FastAPI
-from routers.finance import router as finance_router
+from fastapi.middleware.cors import CORSMiddleware
+
+# Add current directory to path
+sys.path.append(os.path.dirname(__file__))
 
 app = FastAPI()
-app.include_router(finance_router, prefix="/api/v1")
+
+@app.get("/")
+def read_root():
+    return {"message": "CKEmpire API", "status": "running"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    print("🚀 Starting CKEmpire Test Server...")
+    print("📍 URL: http://127.0.0.1:8006")
+    uvicorn.run(app, host="127.0.0.1", port=8006) 
