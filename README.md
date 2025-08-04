@@ -83,7 +83,7 @@ CKEmpire2/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/CKEmpire2.git
+   git clone https://github.com/cklegendsofficial-max/CKEmpire2.git
    cd CKEmpire2
    ```
 
@@ -189,4 +189,4 @@ For questions or support, please open an issue on GitHub.
 
 ---
 
-**CKEmpire2** - Building digital empires with AI-powered content generation and business development. 
+**CKEmpire2** - Building digital empires with AI-powered content generation and business development.
