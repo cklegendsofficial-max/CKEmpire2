@@ -1,0 +1,2 @@
+# CKEmpire2
+localAI
